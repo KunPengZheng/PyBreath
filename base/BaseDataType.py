@@ -39,17 +39,45 @@ def number():
     # 2. isinstance()会认为子类是一种父类类型。
     print(isinstance(a, int))
 
-    print(type(A()) == A)
-    print(type(A()) == A)
+    # Python3 中，bool 是 int 的子类，True 和 False 可以和数字相加， True==1、False==0 会返回 True
+    # 从 python 3.8 开始，使用 is 和 is not 运算符时，会抛出 SyntaxWarning 语句警告信息,将对应语句中is/is not用== 和 != 代替
+    issubclass(bool, int)
+    print(True == 1)
+    print(False == 0)
+
+    # 当你指定一个值时，Number 对象就会被创建，您也可以使用del语句删除一些对象引用。
+    var1 = 1
+    var2 = 10
+    print(var1)
+    print(var2)
+    del var1, var2
+
+    # 数值的除法包含两个运算符：/ 返回一个浮点数，// 返回一个整数。
+    print(2 / 4)  # 0.5
+    print(2 // 4)  # 0
+
+    # 数值的乘法包含两个运算符：* 表示乘法，**表示乘方
+    print(3 * 7)  # 21
+    print(2 ** 5)  # 32
 
 
-class A:
-    pass
-
-
-class B(A):
-    pass
+# 注意，Python 没有单独的字符类型，一个字符就是长度为1的字符串。
+def string():
+    # Python中的字符串用单引号' 或双引号 " 括起来，同时使用反斜杠 \ 转义特殊字符。
+    # Python 字符串不能被改变。向一个索引位置赋值，比如str[0] = 'm'会导致错误。
+    str = 'Runoob'
+    # 字符串的截取的语法格式如下：变量[头下标:尾下标]，索引值以 0 为开始值，-1 为从末尾的开始位置。
+    print(str[0:6])  # 和java一样，包头不包尾
+    print(str[0:-1])  # 只有end可以是负数，str[-1,-6]无效
+    print(str[0:])  # 从0开始到所有结束，相当于[0,str的字符串长度]
+    print(str * 2)  # 输出字符串两次，也可以写成 print (2 * str)
+    print(str + "TEST")  # 连接字符串
+    print('Ru\noob')  # 使用反斜杠 \ 转义特殊字符
+    print(r'Ru\noob')  # 如果你不想让反斜杠发生转义，可以在字符串前面添加一个 r，表示原始字符串
 
 
 if __name__ == '__main__':
-    print_data_type()
+    # print_data_type()
+    # assignment()
+    number()
+    string()
