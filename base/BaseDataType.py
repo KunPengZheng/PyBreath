@@ -17,10 +17,39 @@ def print_data_type():
 
 # 赋值
 def assignment():
-    # Python允许你同时为多个变量赋值
+    # Python允许你同时为多个变量赋值（赋值对象）
     a = b = c = 1
-    # 为多个对象指定多个变量
     a1, b1, c1 = 1, 2.0, "runoob"
+
+
+class A:
+    pass
+
+
+class B(A):
+    pass
+
+
+"""
+isinstance 和 type 的区别在于：
+1. type()不会认为子类是一种父类类型。
+2. isinstance()会认为子类是一种父类类型。
+"""
+
+
+def type_isinstance():
+    # true
+    print(isinstance(B(), A))
+    # false
+    print(type(B()) == A)
+
+
+# del语句删除单个或多个对象
+def deleteReference():
+    var1 = 10
+    del var1
+    # UnboundLocalError: local variable 'var1' referenced before assignment 未绑定的本地错误，表示使用变量前之前要赋值
+    print(var1)
 
 
 """
@@ -33,12 +62,11 @@ Python3 支持 int、float、bool、complex（复数）。
 
 def number():
     a, b, c, d = 20, 5.5, True, 4 + 3j
+    # <class 'int'> <class 'float'> <class 'bool'> <class 'complex'>
     print(type(a), type(b), type(c), type(d))
-    # isinstance 和 type 的区别在于：
-    # 1. type()不会认为子类是一种父类类型。
-    # 2. isinstance()会认为子类是一种父类类型。
     print(isinstance(a, int))
 
+    # 在 Python2 中是没有布尔型的，它用数字 0 表示 False，用 1 表示 True。
     # Python3 中，bool 是 int 的子类，True 和 False 可以和数字相加， True==1、False==0 会返回 True
     # 从 python 3.8 开始，使用 is 和 is not 运算符时，会抛出 SyntaxWarning 语句警告信息,将对应语句中is/is not用== 和 != 代替
     issubclass(bool, int)
@@ -66,7 +94,7 @@ def string():
     # Python中的字符串用单引号' 或双引号 " 括起来，同时使用反斜杠 \ 转义特殊字符。
     # Python 字符串不能被改变。向一个索引位置赋值，比如str[0] = 'm'会导致错误。
     str = 'Runoob'
-    # 字符串的截取的语法格式如下：变量[头下标:尾下标]，索引值以 0 为开始值，-1 为从末尾的开始位置。
+    # 字符串的截取的语法格式如下：变量[头下标:尾下标]，索引值以 0 为从左向右的开始位置，-1 为从右向左的开始位置。
     print(str[0:6])  # 和java一样，包头不包尾
     print(str[0:-1])  # 只有end可以是负数，str[-1,-6]无效
     print(str[0:])  # 从0开始到所有结束，相当于[0,str的字符串长度]
@@ -79,5 +107,7 @@ def string():
 if __name__ == '__main__':
     # print_data_type()
     # assignment()
+    # deleteReference()
+    type_isinstance()
     number()
     string()
