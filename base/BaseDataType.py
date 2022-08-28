@@ -60,7 +60,7 @@ Python3 支持 int、float、bool、complex（复数）。
 """
 
 
-def number():
+def number_demo():
     a, b, c, d = 20, 5.5, True, 4 + 3j
     # <class 'int'> <class 'float'> <class 'bool'> <class 'complex'>
     print(type(a), type(b), type(c), type(d))
@@ -90,7 +90,7 @@ def number():
 
 
 # 注意，Python 没有单独的字符类型，一个字符就是长度为1的字符串。
-def string():
+def string_demo():
     # Python中的字符串用单引号' 或双引号 " 括起来，同时使用反斜杠 \ 转义特殊字符。
     # Python 字符串不能被改变。向一个索引位置赋值，比如str[0] = 'm'会导致错误。
     str = 'Runoob'
@@ -104,10 +104,33 @@ def string():
     print(r'Ru\noob')  # 如果你不想让反斜杠发生转义，可以在字符串前面添加一个 r，表示原始字符串
 
 
+"""
+1.列表中元素的类型可以不相同，它支持数字，字符串甚至可以包含列表（所谓嵌套）
+2.列表是写在方括号 [] 之间、用逗号分隔开的元素列表。
+3.索引规则和字符串一样
+3.列表中的元素是可以改变的
+"""
+
+
+def list_demo():
+    list1 = [1, 2, 3.0, "4", "5"]
+    list2 = [6]
+    print(list1)  # 输出列表
+    print(list1 * 2)  # 输出列表两次，星号 * 是重复操作
+    print(list1 + list2)  # 加号 + 是列表连接运算符
+    print(list1[0])  # 输出列表start元素
+    print(list1[0:])  # 输出列表start及其后面的所有元素，相当于list1[0:len(list1) - 1]]
+    print(list1[1:2])  # 输出start和end之前的元素
+    print(list1[0:4:2])  # 输出start和end之前的元素，参数3为索引的步长，果第三个参数为负数表示逆向读取（必须配合逆向索引的角标）
+    list2[0] = 7  # 修改元素
+    print(list2)
+
+
 if __name__ == '__main__':
     # print_data_type()
     # assignment()
     # deleteReference()
-    type_isinstance()
-    number()
-    string()
+    # type_isinstance()
+    # number_demo()
+    # string_demo()
+    list_demo()
