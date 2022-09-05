@@ -42,7 +42,7 @@ def tuple_simplify():
 
 
 """
-元组推导式格式为：
+set集合推导式格式为：
 1.{ expression for item in Sequence }
 2.{ expression for item in Sequence if conditional }
 """

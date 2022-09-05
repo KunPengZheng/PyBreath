@@ -60,51 +60,6 @@ def deleteReference():
     print(var1)
 
 
-
-
-"""
-1. 元组（tuple）与列表类似，不同之处在于元组的元素不能修，虽然tuple的元素不可改变，但它可以包含可变的对象，比如list列表
-2. 元组写在小括号 () 里，元素之间用逗号隔开。
-3. 元组中的元素类型也可以不相同
-4. string、list 和 tuple 都属于 sequence（序列）。
-"""
-
-
-def tuple_demo():
-    tuple1 = (1, 2.0, "3")
-    tuple2 = ()  # 空元组
-    tuple3 = (20,)  # 一个元素，需要在元素后添加逗号
-    # Tuples don't support item assignment
-    # tuple3[0] = 1
-
-
-"""
-1.元素不重复（和java的set是一样的）
-2.可以使用大括号 { } 或者 set() 函数创建集合，()创建的集合只能包含一个元素
-3.创建一个空集合必须用 set() 而不是 { }，因为 { } 是用来创建一个空字典。
-"""
-
-
-def set_demo():
-    set1 = {1, 2.0, "3"}
-    set2 = set("2")  # ()创建的集合只能包含一个元素
-    set3 = set()  # 空集合
-    print(set1)
-    print(set3)
-    # 使用in关键字测试元素是否在指定set中
-    if 'Runoob' in set1:
-        print('Runoob 在集合中')
-    else:
-        print('Runoob 不在集合中')
-    # set可以进行集合运算
-    a = set('abracadabra')
-    b = set('alacazam')
-    print(a - b)  # a 和 b 的差集
-    print(a | b)  # a 和 b 的并集
-    print(a & b)  # a 和 b 的交集
-    print(a ^ b)  # a 和 b 中不同时存在的元素
-
-
 """
 1. 列表是有序的对象集合，字典是无序的对象集合。两者之间的区别在于：字典当中的元素是通过键来存取的，而不是通过偏移存取。
 2. 字典的关键字必须为不可变类型，且不能重复。
