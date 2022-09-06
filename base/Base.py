@@ -27,6 +27,7 @@ def assignment():
 
 
 class A:
+    # pass是空语句，是为了保持程序结构的完整性。pass 不做任何事情，一般用做占位语句。
     pass
 
 
@@ -60,8 +61,28 @@ def deleteReference():
     print(var1)
 
 
+"""
+条件语句
+1、每个条件后面要使用冒号":" ，表示接下来是满足条件后要执行的语句块。
+2、使用缩进来划分语句块，相同缩进数的语句在一起组成一个语句块。
+3、在Python中没有switch – case语句。
+4、 Python 中用 elif 代替了 else if，简化写法
+"""
+
+
+def if_else():
+    ele = 3
+    if ele > 0:
+        print(">0")
+    elif ele < 0:
+        print("<0")
+    else:
+        print("==0")
+
+
 if __name__ == '__main__':
     # print_data_type()
     # assignment()
     # deleteReference()
     type_isinstance()
+    if_else()
