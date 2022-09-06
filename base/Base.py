@@ -60,35 +60,8 @@ def deleteReference():
     print(var1)
 
 
-"""
-1. 列表是有序的对象集合，字典是无序的对象集合。两者之间的区别在于：字典当中的元素是通过键来存取的，而不是通过偏移存取。
-2. 字典的关键字必须为不可变类型，且不能重复。
-3. 字典是一种映射类型，它的元素是键值对。
-4. 创建空字典使用 { }。
-"""
-
-
-def dictionary_demo():
-    dic1 = {}  # 空字典
-    dic1["1"] = "1"
-    dic1[2] = 2
-    print(dic1)
-    dic2 = {"1": 1, 2: 2}
-    print(dic2)
-    print(dic2["1"])  # 获取key为"1"的value
-    print(dic2[2])  # 获取key为2的value
-    print(dic2.keys())  # 获取所有的key
-    print(dic2.values())  # 获取所有的value
-
-
 if __name__ == '__main__':
     # print_data_type()
     # assignment()
     # deleteReference()
-    # type_isinstance()
-    # number_demo()
-    # string_demo()
-    # list_demo()
-    # tuple_demo()
-    # set_demo()
-    dictionary_demo()
+    type_isinstance()
