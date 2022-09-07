@@ -17,6 +17,8 @@ def 函数名（参数列表）:
     > 所谓匿名，意即不再使用 def 语句这样标准的形式定义一个函数。lambda 只是一个表达式，函数体比 def 简单很多。
     > lambda 的主体是一个表达式，而不是一个代码块。
     > lambda 函数拥有自己的命名空间，且不能访问自己参数列表之外或全局命名空间里的参数。
+8. 以将匿名函数封装在一个函数内，这样可以使用同样的代码来创建多个匿名函数（retrun返回的就是匿名函数）。
+9. 强制位置参数。形参语法 / 用来指明在/之前的函数形参必须使用指定位置参数的形似，不能使用关键字参数的形式。
 """
 
 
@@ -43,10 +45,30 @@ def variable_params_dic(s, **ss):
     print(ss)
 
 
+def lamda_demo():
+    lambda1 = lambda a: a + 10
+    print(lambda1(5))
+
+
+# 以将匿名函数封装在一个函数内，这样可以使用同样的代码来创建多个匿名函数（retrun返回的就是匿名函数）。
+def lambda_return_demo(n):
+    return lambda a: a * n
+
+
+# 强制位置参数。形参语法 / 用来指明在/之前的函数形参必须使用指定位置参数的形似，不能使用关键字参数的形式。
+def forced_position_params(a, b, /, c, d):
+    print(a, b, c, d)
+
+
 if __name__ == '__main__':
     params_name(s="参数名")
     variable_params_tuple(1, 2, 3, 4, sss=5)
     variable_params_dic(1, a=2, b=3)  # 默认key为字符串
+    lamda_demo()
 
-    lambda1 = lambda a: a + 10
-    print(lambda1(5))
+    # 传递函数的参数，获取lambda表达式
+    lambda_return = lambda_return_demo(2)
+    # 调用lambda表达式，传递lambda的参数
+    print(lambda_return(11))
+
+    forced_position_params(1, 2, c=3, d=4)
