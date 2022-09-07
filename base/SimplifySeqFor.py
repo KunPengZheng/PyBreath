@@ -12,9 +12,9 @@
 2. [expression for item in Sequence if conditional]
 
 参数解析：
-expression：列表的元素的表达式，可以是有返回值的函数。（步骤2）
+expression：列表的元素的表达式，可以是有返回值的函数。（步骤3）
 for item in Sequence：迭代 Sequence 将 item 传入到 expression 表达式中。（步骤1）
-if condition：条件语句，可以过滤列表中不符合条件的值。（步骤3）
+if condition：条件语句，可以过滤列表中不符合条件的值。（步骤2）
 """
 
 
