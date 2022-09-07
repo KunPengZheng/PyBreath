@@ -19,6 +19,9 @@ def dictionary_demo():
     dic2 = {"1": 1, 2: 2}
     print(dic2)
 
+    # 如果关键字只是简单的字符串，使用关键字参数指定键值对有时候更方便
+    print(dict(sape=4139, guido=4127, jack=4098))
+
     print(dic2["1"])  # 获取key为"1"的value，相当于dict.get(key, default=None)
     print(dic2.get("1"))
     print(dic2.setdefault("3", 2))  # 和get()类似, 但如果键不存在于字典中，将会添加键并将值设为default
@@ -32,6 +35,10 @@ def dictionary_demo():
     dic4 = {"c": 3, "d": 4}
     dic3.update(dic4)  # 把字典dict2的键/值对更新到dict里。相当于列表的"+"操作运算符
     print(dic3)
+
+    # 遍历获取key和value
+    for k, v in dic3.items():
+        print(k, v)
 
 
 if __name__ == '__main__':

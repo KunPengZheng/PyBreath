@@ -50,18 +50,37 @@ def list_demo():
     print("operator.eq(a,b): ", operator.eq(a, b))
     print("operator.eq(c,b): ", operator.eq(c, b))
 
+    max_min_list = [1, 2, 3, 4]
     # 返回列表元素最大值
-    print(max(list1))
+    print(max(max_min_list))
     # 返回列表元素最小值
-    print(min(list1))
+    print(min(max_min_list))
+
     # 统计某个元素在列表中出现的次数
     print(list1.count("4"))
     # 在列表末尾添加另外一个序列
-    print(list1.extend(list2))
+    list1.extend(list2)
     # 从列表中找出某个值第一个匹配项的索引位置
     print(list1.index(1))
     # 将对象插入列表指定位置
-    print(list1.insert(0, 0))
+    list1.insert(0, 0)
+
+    del_list = [-1, 1, 66.25, 333, 333, 1234.5]
+    del del_list[0]  # 删除指定角标的元素
+    del del_list[2:4]  # 删除指定范围的元素
+    del del_list[:]  # clean
+    del del_list  # 删除变量
+
+    # reversed()反序
+    reversed_list = [1, 2, 3]
+    r = reversed(reversed_list)
+    for i in r:
+        print(i)
+
+    # sorted() 函数按照自然顺序返回一个已排序的序列
+    sorted_list = [3, 2, 1]
+    for f in sorted(sorted_list):
+        print(f)
 
 
 if __name__ == '__main__':
