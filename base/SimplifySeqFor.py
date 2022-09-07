@@ -4,6 +4,7 @@
 1.Sequence可以是任何类型的序列
 2.生成的序列类型是根据推导式来的，只有tuple推导式返回的是生成器对象，需要借助tuple(生成器对象)转换；其余都是返回对应类型
 3.推倒式格式就只有最外层的符号不同而已，其余相同
+4.推导式可以使用复杂表达式或嵌套函数
 """
 
 """
@@ -22,6 +23,17 @@ def list_simplify():
     list1 = ['Bob', 'Tom', 'alice', 'Jerry', 'Wendy', 'Smith']
     list2 = [ele.upper() for ele in list1 if len(ele) > 3]
     print(list2)
+
+    # 同时for两个列表的示例
+    vec1 = [2, 4, 6, 7]
+    vec2 = [4, 3, -9]
+    print([x * y for x in vec1 for y in vec2])
+    # 相当于👇的逻辑
+    # for x in vec1:
+    #     for y in vec2:
+    #         print(x * y)
+
+    #
 
 
 """
@@ -73,7 +85,7 @@ def dictionary_simplify():
 
 
 if __name__ == '__main__':
-    # list_simplify()
+    list_simplify()
     # tuple_simplify()
     # set_simplify()
-    dictionary_simplify()
+    # dictionary_simplify()
