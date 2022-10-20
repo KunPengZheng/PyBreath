@@ -22,8 +22,7 @@ def write_demo():
     f = open("/Users/ykwl/Desktop/foo.txt", "w")
     f.write("Python 是一个非常好的语言。\n是的，的确非常好!!\n")
     # 关闭打开的文件
-    # 在文本文件中 (那些打开文件的模式下没有 b 的), 只会相对于文件起始位置进行定位。当你处理完一个文件后, 调用 f.close() 来关闭
-    # 文件并释放系统的资源，如果尝试再调用该文件，则会抛出异常。不过一般无论模式是不是b都调用close
+    # 文件并释放系统的资源，如果尝试再调用该文件，则会抛出异常。
     f.close()
 
 
@@ -77,6 +76,7 @@ def seek_demo():
     read = f.read(1)
     # 打印结果：seek: 13, read: b'd'
     print("seek: " + str(seek) + ", read: " + str(read))
+    f.close()
 
 
 # with as ：自动关闭文件
