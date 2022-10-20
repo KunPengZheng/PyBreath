@@ -1,5 +1,3 @@
-import pickle
-import pprint
 
 """
 File(文件) 方法
