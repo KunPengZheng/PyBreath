@@ -3,6 +3,7 @@
 1.隐式类型转换 - 自动完成
 2.显式类型转换 - 需要使用类型函数来转换
 """
+from datetime import datetime
 
 
 def hide_transform():
@@ -31,9 +32,14 @@ def show_transform():
     print(int_to_str)
     print(float_to_str)
 
-    # 将对象 x 转换为表达式字符串。对其他类型的处理是一样的，但对str的处理不同，repr外层多了一层引号
-    str_to_repr = repr("1")
-    print(str_to_repr)
+    # str()和repr()输出的都是 str 类型。
+    # 但repr()对str的处理不同，repr外层多了一层引号。
+    print(repr("1"))
+    print(repr(1))
+    # repr() 的输出追求明确性，除了对象内容，还需要展示出对象的数据类型信息，适合开发和调试阶段使用。
+    now = datetime.now()
+    print(str(now))
+    print(repr(now))
 
     # eval() 函数用来执行一个字符串表达式，并返回表达式的值
     eval1 = eval("2+2")

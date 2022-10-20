@@ -1,6 +1,10 @@
 import pickle
 import pprint
 
+"""
+输入和输出
+"""
+
 
 # 读取键盘输入
 def input_demo():
@@ -116,3 +120,4 @@ if __name__ == '__main__':
     # with_as_demo()
 
     pickle_demo()
+    pass
