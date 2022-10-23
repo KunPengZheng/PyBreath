@@ -18,6 +18,8 @@ __pow__: 乘方
 
 """
 
+from dataclasses import dataclass
+
 
 class Speaker:
     topic = ''
@@ -81,6 +83,32 @@ class Sample(Speaker, Student):
         Speaker.__init__(self, n, t)
 
 
+# dataclass注解 对类的构造函数进行了精简
+@dataclass
+class DataClassDemo:
+    x: int  # 构造函数需要赋值的变量
+    y: int
+
+    # 👆相当于👇的写法
+    # def __init__(self, x, y):
+    #     self.x = x
+    #     self.y = y
+
+    # 普通方法，默认有个self参数，且只能被对象调用。
+    def add(self):
+        print("普通方法:", self.x + self.y)
+
+    # 用 @staticmethod 装饰的不带 self 参数的方法叫做静态方法，类的静态方法可以没有参数，可以直接使用类名调用。
+    @staticmethod
+    def static_method():
+        print("静态方法")
+
+    # 类方法: 默认有个 cls 参数，可以被类和对象调用，需要加上 @classmethod 装饰器。
+    @classmethod
+    def cls_method(cls):
+        print("类方法:", cls)
+
+
 if __name__ == '__main__':
     sample = Sample("Tim", 25, 80, 4, "Python")
     sample.speak()  # 方法名同，默认调用的是在括号中参数位置排前父类的方法
@@ -89,4 +117,14 @@ if __name__ == '__main__':
     student.speak()
     # super调用父类的方法
     super(Student, student).speak()
+
+    dataClassDemo = DataClassDemo(1, 2)
+    # 对象调用普通方法
+    dataClassDemo.add()
+    # 对象或类调用类方法
+    dataClassDemo.cls_method()
+    DataClassDemo.cls_method()
+    # 类名调用静态方法
+    DataClassDemo.static_method()
+
     pass
