@@ -83,16 +83,11 @@ class Sample(Speaker, Student):
         Speaker.__init__(self, n, t)
 
 
-# dataclass注解 对类的构造函数进行了精简
+# dataclass注解，同kotlin的数据类作用一致，强调数据（即属性）在构造的时候就应该确定值
 @dataclass
 class DataClassDemo:
-    x: int  # 构造函数需要赋值的变量
+    x: int
     y: int
-
-    # 👆相当于👇的写法
-    # def __init__(self, x, y):
-    #     self.x = x
-    #     self.y = y
 
     # 普通方法，默认有个self参数，且只能被对象调用。
     def add(self):
