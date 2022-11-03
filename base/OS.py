@@ -1,33 +1,40 @@
-"""
-File(文件) 方法
-open() 方法用于打开一个文件，并返回文件对象。
-"""
+import os
+import stat
 
 
-def common_demo():
-    f = open("/Users/ykwl/Desktop/foo.txt", "wb")
-
-    """
-      flush() 方法是用来刷新缓冲区的，即将缓冲区中的数据立刻写入文件，同时清空缓冲区，不需要是被动的等待输出缓冲区写入。
-      一般情况下，文件关闭后会自动刷新缓冲区，但有时你需要在关闭前刷新它，这时就可以使用 flush() 方法。
-    """
-    f.flush()
-
-    """
-      fileno() 方法返回一个整型的文件描述符(file descriptor FD 整型)，可用于底层操作系统的 I/O 操作。
-    """
-    fno = f.fileno()
-    print("文件描述符为: ", fno)
-
-    """
-    方法检测文件是否连接到一个终端设备，如果是返回 True，否则返回 False。
-    """
-    ret = f.isatty()
-    print("返回值 : ", ret)
-
+def open_demo():
+    f = open("/Users/ykwl/Desktop/foo.txt", "w")
     f.close()
     pass
 
 
+# 检验权限模式
+def access_demo():
+    open_demo()
+
+    # 测试path是否存在
+    f_ok = os.access("/Users/ykwl/Desktop/foo.txt", os.F_OK)
+    # 测试path是否可读
+    r_ok = os.access("/Users/ykwl/Desktop/foo.txt", os.R_OK)
+    # 测试path是否可写
+    w_ok = os.access("/Users/ykwl/Desktop/foo.txt", os.W_OK)
+    # 测试path是否可执行
+    x_ok = os.access("/Users/ykwl/Desktop/foo.txt", os.X_OK)
+    print("access：", f_ok, r_ok, w_ok, x_ok)
+    pass
+
+
+def chdir_demo():
+    # 查看当前工作目录
+    getcwd = os.getcwd()
+    print("当前工作目录为 %s" % getcwd)
+    os.chdir(getcwd + "/temp")
+    getcwd = os.getcwd()
+    print("目录修改成功 %s" % getcwd)
+    pass
+
+
 if __name__ == '__main__':
+    access_demo()
+    chdir_demo()
     pass
