@@ -1,5 +1,4 @@
 import os
-import stat
 
 
 def open_demo():
