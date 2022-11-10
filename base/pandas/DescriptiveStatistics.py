@@ -2,6 +2,7 @@ import pandas as pd  # as是别名的意思，相当于kotlin的as、
 import numpy as np
 
 """
+描述性统计
 极客教程: https://geek-docs.com/pandas/pandas-tutorials/pandas-tutorial.html
 """
 
@@ -26,26 +27,6 @@ def statistics_demo():
     pass
 
 
-def adder(ele1, ele2):
-    return ele1 + ele2
-
-
-def pipe_demo():
-    dictionary = {'Site': [1, 2, 3], 'Age': [10, 12, 13]}
-    data_frame = pd.DataFrame(dictionary)
-    # 通过将函数和适当数量的参数作为管道参数来执行自定义操作，从而对整个DataFrame(所有元素)执行操作。
-    # adder有两个参数，参数1默认传递的是DataFrame的元素，参数2是外部传入的
-    pipe = data_frame.pipe(adder, 2)
-    print("默认情况下axis=0，返回数值列的Bressel标准偏差，:\n", pipe)
-    # apply = data_frame.apply(data_frame.mean)
-    # print(apply)
-
-    apply = data_frame.apply(np.sum)
-    print(apply)
-    pass
-
-
 if __name__ == '__main__':
-    # statistics_demo()
-    pipe_demo()
+    statistics_demo()
     pass
