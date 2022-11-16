@@ -17,8 +17,8 @@ def statistics_demo():
     df = pd.DataFrame(data)
     print("默认情况下axis=0，返回所有数值列轴的值的总和:\n", df.sum())  # 默认只计算数字的列
     print("axis=1，返回所请求数值行轴的值的总和:\n", df.sum(1))
-    print("默认情况下axis=0，返回所有数值列轴的平均值，:\n", df.mean())
-    print("默认情况下axis=0，返回数值列的Bressel标准偏差，:\n", df.std())
+    print("默认情况下axis=0，返回所有数值列轴的平均值:\n", df.mean())
+    print("默认情况下axis=0，返回数值列的Bressel标准偏差:\n", df.std())
     # include参数，默认是number：
     # object – 汇总字符串列
     # number – 汇总数字列
