@@ -82,16 +82,17 @@ def show_transform():
     kwargs_dict = dict(a=1, b=2)
     print(kwargs_dict)
     # 使用可迭代对象创建字典(推荐)
+    zip_demo()
     z = zip(['one', 'two', 'three'], [1, 2, 3])
     print(dict(z))
     # 使用映射来创建字典。映射类型（Mapping Types）是一种关联式的容器类型，它存储了对象与对象之间的映射关系。(推荐)
     pair1 = ('one', 1)  # Pair是映射类型
     pair2 = ('two', 2)
     pair3 = ('three', 3)
-    list_pair = (pair1, pair2, pair3)
-    print(dict(list_pair))
+    tuple_pair = (pair1, pair2, pair3)
+    print(dict(tuple_pair))
 
-    # 转换为不可变的set
+    # 转换为不可变的set。返回一个冻结的集合，冻结后集合不能再添加或删除任何元素。
     f = frozenset(set1)
 
     # chr() 用一个范围在 (0～255，可以是10进制也可以是16进制的形式的数字）整数作参数，返回一个对应的ASCII 字符。
@@ -106,6 +107,23 @@ def show_transform():
     # 将一个整数转换为一个八进制字符串
     print(oct(10))
 
+    pass
+
+
+def zip_demo():
+    """
+    zip() 函数用于将可迭代的对象作为参数，将对象中对应的元素打包成一个个元组，然后返回由这些元组组成的对象，这样做的好处是节约了不少的内存。
+    可以使用 list() 转换来输出列表。
+    如果各个迭代器的元素个数不一致，则返回列表长度与最短的对象相同，利用 * 号操作符，可以将元组解压为列表。
+    """
+    a = [1, 2, 3]
+    b = [4, 5, 6]
+    c = [4, 5, 6, 7, 8]
+    print(list(zip(a, b)))  # 打包为元组的列表
+    print(list(zip(a, c)))  # 元素个数与最短的列表一致
+    a1, a2 = zip(*zip(a, b))  # 与 zip 相反，zip(*) 可理解为解压，返回二维矩阵式
+    print(list(a1))
+    print(list(a2))
     pass
 
 
