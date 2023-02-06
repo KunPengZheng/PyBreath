@@ -6,6 +6,11 @@
 from datetime import datetime
 
 
+class DataTypeClass:
+    def __repr__(self):
+        return "重写DataTypeClass的__repr__方法"
+
+
 def hide_transform():
     num_int = 1
     num_float = 1.0
@@ -32,21 +37,27 @@ def show_transform():
     print(int_to_str)
     print(float_to_str)
 
-    # str()和repr()输出的都是 str 类型。
-    # 但repr()对str的处理不同，repr外层多了一层引号。
+    # repr调用的其实就对象所属类的专有方法__repr__
+    # 1. str()和repr()输出的都是 str 类型，但repr()对str的处理不同，repr外层多了一层引号。
+    # 2. print方法也会调用到对象所属类的专有方法__repr__
+    # 3. str一般用于给人看的，而repr是给解析器也就是机器看的。一般用于打印日志的时使用str
     print(repr("1"))
     print(repr(1))
-    # repr() 的输出追求明确性，除了对象内容，还需要展示出对象的数据类型信息，适合开发和调试阶段使用。
     now = datetime.now()
     print(str(now))
     print(repr(now))
+    print(repr(DataTypeClass()))
+    print(DataTypeClass())
 
     # eval() 函数用来执行一个字符串表达式，并返回表达式的值
     eval1 = eval("2+2")
     x = 7
     eval2 = eval("2 * x")
+    y = "ss"
+    eval3 = eval("2 * y")  # y是字符串，连续输出两次
     print(eval1)
     print(eval2)
+    print(eval3)
 
     list1 = [1, 2.0, "3"]
     tuple1 = (1, 2.0, "3")
