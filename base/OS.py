@@ -27,7 +27,7 @@ def chdir_demo():
     # 查看当前工作目录
     getcwd = os.getcwd()
     print("当前工作目录为 %s" % getcwd)
-    os.chdir(getcwd + "/temp")
+    os.chdir(getcwd + "/folder1")
     getcwd = os.getcwd()
     print("目录修改成功 %s" % getcwd)
     pass

@@ -3,7 +3,7 @@
 2. 在 Python 中，变量就是变量，它没有类型，我们所说的"类型"是变量所指的内存中的对象的类型。
     > 类型属于对象，对象有不同类型的区分，变量是没有类型的(仅仅是一个对象的引用（一个指针）)。
 3. 等号（=）用来给变量赋值。左边是一个变量名，右边是存储在变量中的值。
-4. strings, tuples, 和 numbers 是不可更改的对象(immutable)，而 list,dict 等则是可以修改的对象(mutable)。
+4. strings, tuples, 和 numbers 是不可更改的对象(immutable)，而 list,dict，set 则是可以修改的对象(mutable)。
     > 不可变类型：变量赋值 a=5 后再赋值 a=10，这里实际是新生成一个 int 值对象 10，再让 a 指向它，而 5 被丢弃，不是改变 a 的值，相当于新生成了 a。
     > 可变类型：变量赋值 la=[1,2,3,4] 后再赋值 la[2]=5 则是将 list la 的第三个元素值更改，本身la没有动，只是其内部的一部分值被修改了。
 5. python 函数的参数传递：
@@ -19,6 +19,26 @@ def print_data_type():
     print(int_var)
     print(float_var)
     print(str_var)
+
+
+def mutable_immutable():
+    # 不可变类型，修改后内存地址发生改变
+    a = "1"
+    print(id(a))
+    a = "2"
+    print(id(a))
+
+    # 可变类型，修改后内存地址不发生改变
+    list1 = [1, 2, 3]
+    print(id(list1))
+    list1.append(4)
+    print(id(list1))
+
+    set1 = {1, 2, 3}
+    print(id(set1))
+    set1.add(4)
+    print(id(set1))
+    pass
 
 
 """
@@ -43,7 +63,7 @@ class B(A):
 
 """
 isinstance 和 type 的区别在于：
-1. type()不会认为子类是一种父类类型。type() 函数可以用来查询变量所指的对象类型
+1. type()不会认为子类是一种父类类型。type() 函数可以用来查询变量所指的对象的类型
 2. isinstance()会认为子类是一种父类类型。
 """
 
@@ -90,5 +110,7 @@ if __name__ == '__main__':
     # print_data_type()
     # assignment()
     # deleteReference()
-    type_isinstance()
-    if_else()
+    # type_isinstance()
+    # if_else()
+    # mutable_immutable()
+    pass

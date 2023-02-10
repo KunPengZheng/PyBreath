@@ -13,37 +13,40 @@ def list_demo():
     list2 = [6, 7, 8, 9]
 
     print(list1)  # 输出列表
-    print(list1 * 2)  # 星号 * 是重复操作，相当于两个list1使用 + 进行拼接
-    print(list1 + list2)  # 加号 + 是列表连接运算符
-    print(1 in list1)  # 元素是否存在于列表中
-    print(len(list1))  # 列表长度
+    print("* 运算符:", list1 * 2)  # 星号 * 是重复操作，相当于两个list1使用 + 进行拼接
+    print("+ 运算符:", list1 + list2)  # 加号 + 是列表连接运算符，相当于extend()
+    print("in:", 1 in list1)  # 元素是否存在于列表中
+    print("len:", len(list1))  # 列表长度
 
     # 迭代
     for ele in list1:
         print(ele)
 
     print(list1[0])  # 输出列表start元素
-    print(list1[0:])  # 输出列表start及其后面的所有元素，相当于list1[0:len(list1) - 1]]
-    print(list1[1:2])  # 输出start和end之前的元素
-    print(list1[0:4:2])  # 输出start和end之前的元素，参数3为索引的步长，果第三个参数为负数表示逆向读取（必须配合逆向索引的角标）
+    print("start:", list1[0:])  # 输出列表start及其后面的所有元素，相当于list1[0:len(list1) - 1]]
+    print("start和end:", list1[1:2])  # 输出start和end之前的元素
+    print("start和end和步长:", list1[0:4:2])  # 输出start和end之前的元素，参数3为索引的步长，果第三个参数为负数表示逆向读取（必须配合逆向索引的角标）
 
     list2[3] = 10  # 修改元素
-    print(list2)
-    del list2[3]  # 删除元素元素
-    print(list2)
+    print("修改元素:", list2)
+    del list2[3]  # 删除元素
+    print("删除元素:", list2)
     list2.append(9)  # 添加元素
-    print(list2)
-    list2.remove(9)  # 移除指定的value项
-    pop = list2.pop(2)  # 移除列表中的一个元素（默认最后一个元素），并且返回该元素的值
-    print(pop)
+    print("添加元素:", list2)
+    list2.remove(9)  # 移除指定的元素
+    print("移除指定的元素:", list2)
+    pop = list2.pop(2)  # 移除指定角标的元素并返回该元素，无指定角标则默认最后一个元素
+    print("pop移除指定角标的元素并返回该元素:", pop)
     list2.reverse()  # 反向列表中元素
-    print(list2)
-    list2.sort()
-    copy = list2.copy()
+    print("reverse:", list2)
+    list2.sort()  # 自然顺序排序
+    print("sort:", list2)
+    copy = list2.copy()  # 浅拷贝
     print(f"list2的内存地址:{id(list2)}，copy的内存地址:{id(copy)}")
-    list2.clear()
+    list2.clear()  # 清空
+    print("clear:", list2)
 
-    # 列表比较
+    # 列表比较，比较内容
     a = [1, 2]
     b = [2, 3]
     c = [2, 3]
@@ -52,16 +55,16 @@ def list_demo():
 
     max_min_list = [1, 2, 3, 4]
     # 返回列表元素最大值
-    print(max(max_min_list))
+    print("返回列表元素最大值:", max(max_min_list))
     # 返回列表元素最小值
-    print(min(max_min_list))
+    print("返回列表元素最小值:", min(max_min_list))
 
     # 统计某个元素在列表中出现的次数
-    print(list1.count("4"))
-    # 在列表末尾添加另外一个序列
+    print("统计某个元素在列表中出现的次数:", list1.count("4"))
+    # 在列表末尾添加另外一个序列，相当于 + 运算符
     list1.extend(list2)
     # 从列表中找出某个值第一个匹配项的索引位置
-    print(list1.index(1))
+    print("从列表中找出某个值第一个匹配项的索引位置:", list1.index(1))
     # 将对象插入列表指定位置
     list1.insert(0, 0)
 

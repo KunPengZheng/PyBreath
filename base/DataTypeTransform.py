@@ -19,6 +19,18 @@ def hide_transform():
 
 
 def show_transform():
+    # chr() 用一个范围在 (0～255，可以是10进制也可以是16进制的形式的数字）整数作参数，返回一个对应的ASCII 字符。
+    int_to_char = chr(100)
+    # 和chr相反
+    char_to_int = ord(int_to_char)
+    print(int_to_char)
+    print(char_to_int)
+
+    # 将一个整数转换为一个十六进制字符串
+    print(hex(10))
+    # 将一个整数转换为一个八进制字符串
+    print(oct(10))
+
     # int() 强制转换为整型
     float_to_int = int(1.0)
     str_to_int = int("1")
@@ -36,28 +48,6 @@ def show_transform():
     float_to_str = str(1.0)
     print(int_to_str)
     print(float_to_str)
-
-    # repr调用的其实就对象所属类的专有方法__repr__
-    # 1. str()和repr()输出的都是 str 类型，但repr()对str的处理不同，repr外层多了一层引号。
-    # 2. print方法也会调用到对象所属类的专有方法__repr__
-    # 3. str一般用于给人看的，而repr是给解析器也就是机器看的。一般用于打印日志的时使用str
-    print(repr("1"))
-    print(repr(1))
-    now = datetime.now()
-    print(str(now))
-    print(repr(now))
-    print(repr(DataTypeClass()))
-    print(DataTypeClass())
-
-    # eval() 函数用来执行一个字符串表达式，并返回表达式的值
-    eval1 = eval("2+2")
-    x = 7
-    eval2 = eval("2 * x")
-    y = "ss"
-    eval3 = eval("2 * y")  # y是字符串，连续输出两次
-    print(eval1)
-    print(eval2)
-    print(eval3)
 
     list1 = [1, 2.0, "3"]
     tuple1 = (1, 2.0, "3")
@@ -92,21 +82,60 @@ def show_transform():
     tuple_pair = (pair1, pair2, pair3)
     print(dict(tuple_pair))
 
-    # 转换为不可变的set。返回一个冻结的集合，冻结后集合不能再添加或删除任何元素。
+    pass
+
+
+def frozenset_demo():
+    """
+    转换为不可变的set。返回一个冻结的集合，冻结后集合不能再添加或删除任何元素。
+    set和frozenset，相当于list和tuple的区别
+    """
+    set1 = {1, 2.0, "3"}
     f = frozenset(set1)
+    # f.add(4)  # 会抛出异常 AttributeError: 'frozenset' object has no attribute 'add'
+    set1.add(f)
+    print(set1)
 
-    # chr() 用一个范围在 (0～255，可以是10进制也可以是16进制的形式的数字）整数作参数，返回一个对应的ASCII 字符。
-    int_to_char = chr(100)
-    # 和chr相反
-    char_to_int = ord(int_to_char)
-    print(int_to_char)
-    print(char_to_int)
 
-    # 将一个整数转换为一个十六进制字符串
-    print(hex(10))
-    # 将一个整数转换为一个八进制字符串
-    print(oct(10))
+def repr_demo():
+    """
+     repr调用的其实就对象所属类的专有方法__repr__
+     1. str()和repr()输出的都是 str 类型，但repr()对str的处理不同，repr外层多了一层引号。
+     2. print方法也会调用到对象所属类的专有方法__repr__
+     3. str一般用于给人看的，而repr是给解析器也就是机器看的。一般用于打印日志的时使用str
+    """
+    print(repr("1"))
+    print(repr(1))
+    now = datetime.now()
+    print(str(now))
+    print(repr(now))
+    print(repr(DataTypeClass()))
+    print(DataTypeClass())
 
+
+def eval_demo():
+    """
+    eval() 函数用来执行一个字符串表达式，并返回表达式的值
+    """
+    eval1 = eval("2+2")
+    x = 7
+    eval2 = eval("2 * x")
+    y = "ss"
+    eval3 = eval("2 * y")  # y是字符串，连续输出两次
+    print(eval1)
+    print(eval2)
+    print(eval3)
+
+    # eval 方法能使字符串本身的引号去掉，保留字符的原本属性。可用于读取配置文件中的数据
+    x = "7"
+    x_int = eval(x)
+    print(x_int, type(x_int))
+    y = "[{11,22},{22,33},{33,44},{44,55}]"
+    print(eval(y))
+
+    # eval() 函数也可以直接用来提取用户输入的多个值。
+    # 例子： 字符串："我们","你们" ; 数值：10,5
+    print(eval(input("请输入:")))
     pass
 
 
@@ -130,3 +159,6 @@ def zip_demo():
 if __name__ == '__main__':
     hide_transform()
     show_transform()
+    eval_demo()
+    repr_demo()
+    frozenset_demo()

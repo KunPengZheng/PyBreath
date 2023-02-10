@@ -7,19 +7,19 @@
 4.推导式可以使用复杂表达式或嵌套函数
 """
 
-"""
-列表推导式格式为：
-1. [expression for item in Sequence] 
-2. [expression for item in Sequence if conditional]
-
-参数解析：
-expression：列表的元素的表达式，可以是有返回值的函数。（步骤3）
-for item in Sequence：迭代 Sequence 将 item 传入到 expression 表达式中。（步骤1）
-if condition：条件语句，可以过滤列表中不符合条件的值。（步骤2）
-"""
-
 
 def list_simplify():
+    """
+    列表推导式格式为：
+    1. [expression for item in Sequence]
+    2. [expression for item in Sequence if conditional]
+
+    参数解析：
+    expression：列表的元素的表达式，可以是有返回值的函数。（步骤3）
+    for item in Sequence：迭代 Sequence 将 item 传入到 expression 表达式中。（步骤1）
+    if condition：条件语句，可以过滤列表中不符合条件的值。（步骤2）
+    """
+
     list1 = ['Bob', 'Tom', 'alice', 'Jerry', 'Wendy', 'Smith']
     list2 = [ele.upper() for ele in list1 if len(ele) > 3]
     print(list2)
@@ -32,8 +32,6 @@ def list_simplify():
     # for x in vec1:
     #     for y in vec2:
     #         print(x * y)
-
-    #
 
 
 """

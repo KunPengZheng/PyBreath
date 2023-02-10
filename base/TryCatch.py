@@ -1,13 +1,10 @@
-"""
-
-"""
 import sys
 
 
 def try_catch():
     try:
         result = 1 / 0
-    except ZeroDivisionError as err:
+    except ZeroDivisionError as err:  # 这里的as是别名的意思，相当于kotlin的as
         print('Handling run-time error:', err)
     except ValueError:
         print("多个except语块")
@@ -44,7 +41,19 @@ def try_catch_else_finally():
     else:
         print("try块没有发生异常的时候会执行")
     finally:
-        print("try块没有发生异常的时候会执行")
+        print("不管有没有异常都会执行")
+
+
+def divide(x, y):
+    try:
+        result = x / y
+    except ZeroDivisionError:
+        print("division by zero!")
+    else:
+        print("result is", result)
+    finally:
+        # 如果一个异常在 try 子句里（或者在 except 和 else 子句里）被抛出，而又没有任何的 except 把它截住，那么这个异常会在 finally 子句执行后被抛出。
+        print("executing finally clause")
 
 
 def raise_demo():
@@ -71,6 +80,7 @@ if __name__ == '__main__':
     # try_catch()
     # try_catch1()
     # try_catch_else()
+    # divide("2", 0)
     # raise_demo()
-    raise_custom_demo()
+    # raise_custom_demo()
     pass
