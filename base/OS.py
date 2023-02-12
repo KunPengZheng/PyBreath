@@ -36,4 +36,6 @@ def chdir_demo():
 if __name__ == '__main__':
     access_demo()
     chdir_demo()
+    print("获取当前文件所在目录的路径:", os.path.dirname(os.path.realpath(__file__)))
+    print("获取当前文件的路径:", os.path.realpath(__file__))
     pass
