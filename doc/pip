@@ -24,14 +24,11 @@ pip3 install '包名>=1.0.4'     # 最小版本
 升级包：
 pip3 install --upgrade 包名
 
-搜索包：
-pip3 search SomePackage
-
 显示安装包信息：
 pip3 show
 
 查看指定包的详细信息：
-pip3 show -f SomePackage
+pip3 show -f 包名
 
 列出已安装的包：
 pip3 list
@@ -41,6 +38,6 @@ pip3 list -o
 
 
 
-
+/Users/zkp/Library/Python/3.9/lib/python/site-packages/py_mini_racer/py_mini_racer.py
 
 

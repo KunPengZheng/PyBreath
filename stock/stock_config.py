@@ -48,4 +48,4 @@ def save_config(df):
     :param df:
     :return:
     """
-    df.to_csv(sc.config_path, encoding='utf-8', index=False)
+    df.to_csv(sc.config_path, index=False)

@@ -1,3 +1,7 @@
 akshare包安装：（直接在interpreter搜索不到akshare，可以尝试如下方式下载）
-通用安装：pip3 install akshare --upgrade
-阿里镜像安装：pip3 install akshare -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com  --upgrade
+> https://github.com/akfamily/akshare/blob/main/docs/installation.md
+> 需要注意的是，如果是m1的mac在导入akshare的时候就会报错，在👆的链接中有解决方案，下载对应的文件之后放入报错提示的路径即可。（放在py_mini_racer文件夹中）
+
+
+
+

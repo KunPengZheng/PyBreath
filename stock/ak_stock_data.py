@@ -1,9 +1,9 @@
 import time
 
-import akshare as ak
 import stock_config as scg
 import stock_constant as sct
 import stock_db as sdb
+import akshare as ak
 
 
 def stock_code_net_to_csv():
