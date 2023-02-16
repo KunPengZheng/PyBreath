@@ -1,0 +1,46 @@
+https://www.runoob.com/w3cnote/python-pip-install-usage.html
+
+pip ： Python 包管理工具，该工具提供了对Python 包的查找、下载、安装、卸载的功能。
+      Python2.x 版本命令使用pip，Python3.x 版本命令使用pip3
+
+
+判断是否已安装：
+pip --version     # Python2.x 版本命令
+pip3 --version    # Python3.x 版本命令
+
+安装：
+$ sudo python3 get-pip.py
+
+升级：
+pip3 install --upgrade pip   # python3.x
+
+
+
+安装包:
+pip3 install 包名              # 最新版本
+pip3 install 包名==1.0.4       # 指定版本
+pip3 install '包名>=1.0.4'     # 最小版本
+
+升级包：
+pip3 install --upgrade 包名
+
+搜索包：
+pip3 search SomePackage
+
+显示安装包信息：
+pip3 show
+
+查看指定包的详细信息：
+pip3 show -f SomePackage
+
+列出已安装的包：
+pip3 list
+
+查看可升级的包：
+pip3 list -o
+
+
+
+
+
+
