@@ -65,6 +65,11 @@ def read_demo():
     # 使用逻辑运算符 &（与）和 |（或）来链接多个条件语句
     print("条件筛选:\n", data_frame2[(data_frame2["x"] > 2) & (data_frame2["y"] > 7)])
 
+    data_frame3 = pd.DataFrame({"x": [1, 2, 3, 4], "y": ["5", "6", "7", "8"], "z": [True, True, False, False]},
+                               index=["a", "b", "c", "d"])
+    data_frame3 = data_frame3.select_dtypes(include=["int", "bool"])
+    print("根据数据的类型选择列:\n", data_frame3)
+
 
 def add_demo():
     dictionary = {'Site': ['Google', 'Runoob', 'Wiki'], 'Age': [10, 12, 13]}
@@ -152,12 +157,17 @@ def del_demo():
     print("注意concat的行标签存在相同:\n", concat)
     # drop的axis=0表示删除行
     drop = concat.drop(0, axis=0)
-    print("删除行:\n", concat)
+    print("删除行:\n", drop)
+
+    df3 = pd.DataFrame({'col1': [1, 2, 3], 'col2': [4, 5, 6]}, index=["a", "b", "c"])
+    print("同时删除指定的行和列:\n", df3.drop(index="c", columns="col1"))
 
 
 def api_demo():
     dictionary = {'Site': ['Google', 'Runoob', 'Wiki'], 'Age': [10, 12, 13]}
     data_frame = pd.DataFrame(dictionary)
+    # info函数返回有哪些列、有多少非缺失值、每列的类型
+    print(data_frame.info())
     # T (转置)
     print("T交换行和列:\n", data_frame.T)
     # axes返回行轴标签和列轴标签列表
@@ -171,6 +181,10 @@ def api_demo():
     print("head()返回前n行(观察索引值)。默认数量为5，可以传递自定义数值。:\n", data_frame.head())
     print("tail()返回最后n行(观察索引值)。默认数量为5，可以传递自定义数值。:\n", data_frame.tail())
 
+    series = pd.Series(['Google', 'Runoob', 'Wiki'])
+    to_frame = series.to_frame()
+    print("to_frame()将Series转换为DataFrame:\n", to_frame)
+
     data_frame2 = pd.DataFrame({
         'company': ['A', 'A', 'C', 'B', 'B'],
         'salary': [13, 14, 15, 16, 17],
@@ -180,7 +194,7 @@ def api_demo():
     groupby = data_frame2.groupby("company")
     print("分组的平均值:\n", groupby.mean())
     print("分组的次数:\n", groupby.count())
-    # 计数、平均数、标准差、最小值、25% 50% 75% 位置的值、最大值：
+    # 计数、平均数、标准差、最小值、25% 50% 75% 位置的值、最大值。自行选择分位数 percentiles=[.05, .25, .75, .95]
     print("分组的数据描述:\n", groupby.describe())
     # transpose() 方法获得一个竖排的格式
     print("分组的数据描述的竖排的格式:\n", groupby.describe().transpose())
@@ -188,7 +202,7 @@ def api_demo():
     data_frame3 = pd.DataFrame({"col": [444, 555, 666, 444, np.nan]})
     print("不重复的值:\n", data_frame3["col"].unique())
     print("不重复值的个数:\n", data_frame3["col"].nunique())
-    print("同时获得所有值和对应值的计数:\n", data_frame3["col"].value_counts())
+    print("返回不重复的值及其个数:\n", data_frame3["col"].value_counts())
     # 注意：表格变成按 col 列的值从小到大排序。要注意的是，表格的索引 index 还是对应着排序前的行，并没有因为排序而丢失原来的索引数据。
     print("sort_values() 将整个表按某一列的值进行排序:\n", data_frame3.sort_values("col"))
     print("查找空值，对应位置返回布尔值（True/False）表示原 DataFrame 中对应位置的数据是否是空值:\n", data_frame3.isnull())
@@ -199,6 +213,22 @@ def api_demo():
     print("columns获取列名List及其数据类型:\n", data_frame4.columns)
     print("columns获取行名List及其数据类型:\n", data_frame4.index)
 
+    data_frame5 = pd.DataFrame({"col": [2, 3, 4, 5]}, index=["a", "b", "c", "d"])
+    data_frame5 = data_frame5.rename(index={"a": "aa"}, columns={"col": "coll"})
+    print("rename()修改行或列名:\n", data_frame5)
+
+    df1 = pd.DataFrame({'A': [1, 2, 3]}, index=[1, 2, 3])
+    df2 = pd.DataFrame({'A': [1, 2, 3]}, index=[3, 1, 2])
+    # 索引对齐特性，算术运算中会获取相同的列和行索引进行运算
+    print("索引对齐特性:\n", df1 - df2)
+
+    data_frame2 = pd.DataFrame({"x": [1, 2, 3, 4], "y": [5, 6, 7, 8], "z": [9, 10, 11, 12]}, index=["a", "b", "c", "d"])
+    print("idxmax()返回最大值所在索引1:\n", data_frame2.idxmax())  # idxmin()功能类似
+    print("idxmax()返回最大值所在索引2:\n", data_frame2["x"].idxmax())
+    print("nlargest()返回前几个大的元素值1:\n", data_frame2.nlargest(2, columns=["x"]))  # nsmallest()功能类似
+    print("nlargest()返回前几个大的元素值2:\n", data_frame2["x"].nlargest(2))
+    print("clip()是指低于指定的lower用lower替换，高于指定的upper用upper替换:\n", data_frame2["x"].clip(lower=1, upper=3))
+    print("replace()是对某些值进行替换:\n", data_frame2["x"].replace([1, 2], [5, 5]))
     pass
 
 
@@ -238,12 +268,12 @@ def read_write_excel():
 
 
 if __name__ == '__main__':
-    # create_demo()
-    # read_demo()
-    # add_demo()
-    # del_demo()
-    # change_demo()
-    # mult_index()
-    # api_demo()
+    create_demo()
+    read_demo()
+    add_demo()
+    del_demo()
+    change_demo()
+    mult_index()
+    api_demo()
     # read_write_csv()
-    read_write_excel()
+    # read_write_excel()

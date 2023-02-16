@@ -46,6 +46,13 @@ def series_demo():
     # 对 Series 进行算术运算操作，Pandas 将会根据索引 index，对响应的数据进行计算，结果将会以浮点数的形式存储，以避免丢失精度。 如果 Pandas
     # 在两个 Series 里找不到相同的 index，对应的位置就返回一个空值 NaN。
     print(series6 - series7)
+
+    s = pd.Series(np.random.randn(5), index=['a', 'b', 'c', 'd', 'e'], name='这是一个Series', dtype='float64')
+    print("数据:\n", s.values)
+    print("索引:\n", s.index)
+    print("Series的名字:\n", s.name)
+    print("数据的类型:\n", s.dtype)
+
     pass
 
 
