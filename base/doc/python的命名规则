@@ -1,0 +1,11 @@
+模块名写法: module_name ;
+包名写法: package_name ;
+类名: ClassName ;
+方法名: method_name ;
+异常名: ExceptionName ;
+函数名: function_name ;
+全局常量名: GLOBAL_CONSTANT_NAME ;
+全局变量名: global_var_name ;
+实例名: instance_var_name ;
+函数参数名: function_parameter_name ;
+局部变量名: local_var_name .

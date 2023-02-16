@@ -106,6 +106,21 @@ def if_else():
         print("==0")
 
 
+def line_break():
+    """
+    换行，表达式太长想要换行，如果直接换行会报错。使用以下方式表示连接
+    1.加反斜杠（推荐）
+    2.添加括号()
+    """
+    c = "aaaaaa{}" \
+        .format("1")
+    print(c, type(c))
+    c = ("aaaaaa{}"
+         .format("2"))
+    print(c, type(c))
+    pass
+
+
 if __name__ == '__main__':
     # print_data_type()
     # assignment()
@@ -113,4 +128,5 @@ if __name__ == '__main__':
     # type_isinstance()
     # if_else()
     # mutable_immutable()
+    line_break()
     pass

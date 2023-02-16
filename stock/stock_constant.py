@@ -4,7 +4,7 @@ import os
 start_date = '2015-01-01'
 end_date = '2022-10-15'
 
-project_path = os.path.split(os.path.abspath(os.path.realpath(__file__)))[0] + "/.."
+project_path = os.path.split(os.path.abspath(os.path.realpath(__file__)))[0]
 
 # 沪交所股票代码路径，深交所股票代码路径
 sh_code_path = f'{project_path}/csvfile/sh_code.csv'

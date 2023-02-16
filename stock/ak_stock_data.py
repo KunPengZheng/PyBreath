@@ -120,4 +120,6 @@ def update_stock_zh_a_daily_eastmoney():
 
 if __name__ == '__main__':
     start()
+    # df = sdb.stock_daily("000001", "2022-01-01", "2022-09-04")
+    # print(df)
     pass
