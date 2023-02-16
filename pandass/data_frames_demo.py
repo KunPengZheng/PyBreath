@@ -250,9 +250,9 @@ def mult_index():
 def read_write_csv():
     data_frame = pd.DataFrame({"x": [1, 2, 3, 4], "y": [5, 6, 7, 8], "z": [9, 10, 11, 12]}, index=["a", "b", "c", "d"])
     # 参数 index=False 参数是因为不希望 Pandas 把行索引也存到文件中
-    data_frame.to_csv("CVS_DataFrame", index=False)
+    data_frame.to_csv("cvs_dataframe.csv", index=False)
 
-    csv = pd.read_csv("CVS_DataFrame")
+    csv = pd.read_csv("cvs_dataframe.csv")
     print("读取csv文件:\n", csv)
     pass
 
@@ -260,9 +260,9 @@ def read_write_csv():
 def read_write_excel():
     data_frame = pd.DataFrame({"x": [1, 2, 3, 4], "y": [5, 6, 7, 8], "z": [9, 10, 11, 12]}, index=["a", "b", "c", "d"])
     # 参数 index=False 参数是因为不希望 Pandas 把行索引也存到文件中
-    data_frame.to_excel("Excel_DataFrame.xlsx", sheet_name="Sheet1", index=False)
+    data_frame.to_excel("excel_dataframe.xlsx", sheet_name="Sheet1", index=False)
 
-    excel = pd.read_excel("Excel_DataFrame.xlsx", sheet_name="Sheet1")
+    excel = pd.read_excel("excel_dataframe.xlsx", sheet_name="Sheet1")
     print("读取excel文件:\n", excel)
     pass
 
