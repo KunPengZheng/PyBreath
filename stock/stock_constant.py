@@ -1,7 +1,7 @@
 import os
 
 # 获取交易的开始和结束时间
-start_date = '2015-01-01'
+start_date = '2023-01-01'
 end_date = '2022-10-15'
 
 project_path = os.path.split(os.path.abspath(os.path.realpath(__file__)))[0]

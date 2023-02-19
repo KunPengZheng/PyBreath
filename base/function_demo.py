@@ -7,7 +7,8 @@ def 函数名（参数列表）:
 
 1. 以 def 关键词开头
 2. 函数的第一行语句可以选择性地使用文档字符串，用于存放函数说明
-3. return [表达式] 结束函数，选择性地返回一个值给调用方，不带表达式的 return 相当于返回 None。
+3. return [表达式] 结束函数，选择性地返回一个值给调用方，不带表达式的 return 相当于返回 None。可以返回多个返回值，其实
+    就是用tuple进行包裹返回。
 4. 调用的时候可以使用 参数名 = 参数值进行传递
 5. 函数定义的时候支持默认参数
 6. 支持不定长参数，一般放在最后，如果没放在最后，那么在调用的时最后的参数需要使用 "参数名 = 参数值进行传递" 表示。
@@ -30,6 +31,13 @@ def 函数名（参数列表）:
 
 def return_demo():
     return 1
+
+
+def return_mult_demo():
+    """
+    多个返回值类型
+    """
+    return 1, "字符串"
 
 
 def none_demo():
@@ -85,3 +93,9 @@ if __name__ == '__main__':
     # a和b是强位置参数，不能使用关键字参数的方式进行传递
     # forced_position_params(a=1, b=2, c=3, d=4)
     key_position_params(1, 2, d=4, c=3)
+
+    return1, return2 = return_mult_demo()
+    print(return1, return2)
+
+    str_lambda = lambda _: str(_)
+    print(type(str_lambda(1)))

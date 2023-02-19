@@ -169,6 +169,7 @@ def api_demo():
     # info函数返回有哪些列、有多少非缺失值、每列的类型
     print(data_frame.info())
     # T (转置)
+    print("len()行的长度:\n", len(data_frame))
     print("T交换行和列:\n", data_frame.T)
     # axes返回行轴标签和列轴标签列表
     print("axes返回行轴标签和列轴标签列表:\n", data_frame.axes)
@@ -216,6 +217,8 @@ def api_demo():
     data_frame5 = pd.DataFrame({"col": [2, 3, 4, 5]}, index=["a", "b", "c", "d"])
     data_frame5 = data_frame5.rename(index={"a": "aa"}, columns={"col": "coll"})
     print("rename()修改行或列名:\n", data_frame5)
+    data_frame5.columns = ["col2"]
+    print("属性columns修改列名:\n", data_frame5)
 
     df1 = pd.DataFrame({'A': [1, 2, 3]}, index=[1, 2, 3])
     df2 = pd.DataFrame({'A': [1, 2, 3]}, index=[3, 1, 2])
@@ -229,6 +232,19 @@ def api_demo():
     print("nlargest()返回前几个大的元素值2:\n", data_frame2["x"].nlargest(2))
     print("clip()是指低于指定的lower用lower替换，高于指定的upper用upper替换:\n", data_frame2["x"].clip(lower=1, upper=3))
     print("replace()是对某些值进行替换:\n", data_frame2["x"].replace([1, 2], [5, 5]))
+
+    df_empty_data = pd.DataFrame(columns=['code', 'name'])
+    df = pd.DataFrame({'Site': ['Google', 'Runoob', 'Wiki'], 'Age': [10, 12, 13]})
+    for row_index, columns_s in df.iterrows():
+        print(f"遍历row_index:{row_index}")
+        print("遍历columns_s:\n", columns_s)
+        # 参数1是行，参数2是列List。下面的代码可以理解成"将对应行的每一列进行赋值"
+        df_empty_data.loc[len(df_empty_data), df_empty_data.columns] = (columns_s['Site'], columns_s['Age'])
+    print("df_empty_data:\n", df_empty_data)
+    print("shape()返回数据维度的元组（列数，行数）:\n", df_empty_data.shape)
+    # 参数一：新增的列在列中的位置；参数二：列名；参数三：默认值
+    df_empty_data.insert(0, 'count', "1")
+    print("insert()插入列:\n", df_empty_data)
     pass
 
 
