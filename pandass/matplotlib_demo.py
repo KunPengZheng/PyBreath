@@ -172,8 +172,45 @@ def subplots_demo():
     ax[1, 0].set_title('title 3')
     ax[1, 1].set_title('title 4')
 
+    """
+    subplots_adjust 设置间距:
+        > left, bottom, right, top这四个参数的每个参数的取值范围通常都在0-1之间。与其说是“间距”，倒不如说是图像边缘的“坐标”更确切。
+          使用这四个参数时，将画布左下角视为坐标原点，画布的宽和高都视为1。如果参数取值大于1，则可能会出现图像的损失，图像会移动到画布之外，
+          而不会报错。且left不能大于等于right，bottom不能大于等于top，如果违反这一点则会发生报错。
+        > wspace和 hspace则分别表示水平方向上图像间的距离和垂直方向上图像间的距离。其的取值是可以取得大于1，具体的则具体情形自行
+          调试选出合适的。这两个参数用于画布有多个子图时。  
+    """
+    plt.subplots_adjust(wspace=1, hspace=1)
+    # 设置超级标题
     plt.suptitle("RUNOOB subplot Test")
     plt.show()
+    pass
+
+
+def figures_demo():
+    """
+    figure()参数：
+        > figsize	tuple	figure.figsize	图像的长和宽（英寸）
+        > dpi	    int	    figure.dpi	分辨率（点/英寸）
+        > facecolor	tuple	figure.facecolor	绘制区域背景色
+        > edgecolor	tuple	figure.edgecolor	绘图区域边缘的颜色
+        > frameon	bool	True	是否绘制图像边缘
+    """
+    # 创建一个宽12，高6的空白图像区域(figsize * dpi)
+    fig = plt.figure(figsize=(12, 6))
+
+    # rect可以设置子图的位置与大小
+    rect1 = [0.10, 0.55, 0.65, 0.35]  # [左, 下, 宽, 高] 规定的矩形区域 （全部是0~1之间的数，表示比例）
+    rect2 = [0.10, 0.10, 0.65, 0.35]
+    rect3 = [0.80, 0.10, 0.15, 0.80]
+
+    # 在fig中添加子图ax，并赋值位置rect
+    ax1 = plt.axes(rect1)
+    ax2 = plt.axes(rect2)
+    ax3 = plt.axes(rect3)
+
+    plt.show()
+    plt.close()
     pass
 
 
@@ -288,7 +325,8 @@ if __name__ == '__main__':
     # mult_line()
     # axis_label_title_font()
     # subplot_demo()
-    subplots_demo()
+    # subplots_demo()
+    # figures_demo()
     # grid()
     # scatter()
     # bar()
