@@ -95,37 +95,85 @@ def axis_label_title_font():
 
 def subplot_demo():
     """
+    subplot()方法来绘制多个子图（多图）。
+    """
+    # plot 1:
+    x = np.array([0, 6])
+    y = np.array([0, 100])
+    # 参数：
+    #  > nrows, ncols：相当于将画布网格化，即划分行列数；然后从左到右，从上到下的顺序对每个子区域进行编号 1...N 。
+    #      左上的子区域的编号为 1、右下的区域编号为 N，编号可以通过参数 index 来设置。
+    #  > index参数：设置 numRows ＝ 2，numCols ＝ 2，就是将图表绘制成 2x2 的图片区域。
+    #    > plotNum ＝ 1, 表示的坐标为(1, 1), 即第一行第一列的子图。
+    #    > plotNum ＝ 2, 表示的坐标为(1, 2), 即第一行第二列的子图。
+    #    > plotNum ＝ 3, 表示的坐标为(2, 1), 即第二行第一列的子图。
+    #    > plotNum ＝ 4, 表示的坐标为(2, 2), 即第二行第二列的子图。
+    plt.subplot(2, 2, 1)
+    plt.plot(x, y)
+    plt.title("plot 1")
+    # plot 2:
+    x = np.array([1, 2, 3, 4])
+    y = np.array([1, 4, 9, 16])
+    plt.subplot(2, 2, 2)
+    plt.plot(x, y)
+    plt.title("plot 2")
+    # plot 3:
+    x = np.array([1, 2, 3, 4])
+    y = np.array([3, 5, 7, 9])
+    plt.subplot(2, 2, 3)
+    plt.plot(x, y)
+    plt.title("plot 3")
+    # plot 4:
+    x = np.array([1, 2, 3, 4])
+    y = np.array([4, 5, 6, 7])
+    plt.subplot(2, 2, 4)
+    plt.plot(x, y)
+    plt.title("plot 4")
+
+    plt.suptitle("RUNOOB subplot Test")
+    plt.show()
+    pass
+
+
+def subplots_demo():
+    """
     subplot() 和 subplots() 方法来绘制多个子图（多图）。
     """
-    x = [1, 2, 3, 4, 5]
-    y = [3, 6, 7, 9, 2]
-    x1 = [3, 6, 7, 9, 2]
-    y1 = [1, 2, 3, 4, 5]
+    x = np.array([1, 2, 3, 4, 5])
+    y = np.array([1, 2, 3, 4, 5])
 
-    # 方式一，推荐
-    # 实例化两个子图(1,2)表示1行2列。plt.subplots() 是返回一个元组，包含了 figure 对象(控制总体图形大小)和 axes 对象(控制绘图，坐标之类的)
-    fig, ax = plt.subplots(1, 2, )
-    ax[0].plot(x, y, label='trend')
-    ax[1].plot(x1, y1, color='cyan')
-    ax[0].set_title('title 1')
-    ax[1].set_title('title 2')
+    x1 = np.array([6, 7, 8, 9, 10])
+    y1 = np.array([6, 7, 8, 9, 10])
+
+    x2 = np.array([11, 12, 13, 14, 15])
+    y2 = np.array([11, 12, 13, 14, 15])
+
+    x3 = np.array([16, 17, 18, 19, 20])
+    y3 = np.array([16, 17, 18, 19, 20])
+
+    # subplots() 设置子图的配置，是返回一个元组，包含了 figure 对象(画布)和 axes 对象 或者 axes数组 (控制绘图，坐标之类的)
+    # 参数：
+    #  > nrows, ncols：相当于将画布网格化，即划分行列数；然后从左到右，从上到下的顺序对每个子区域进行编号 1...N 。
+    #      左上的子区域的编号为 1、右下的区域编号为 N，编号可以通过参数 index 来设置。
+    #  > sharex、sharey：设置子图的x，y轴是否共享，可设置为 'none（False）'、'all（True）'、'row' 或 'col'
+    #       > none或者False，表示每个子图都有自己的x，y轴
+    #       > all或者True，表示每个子图共享x，y轴
+    #       > 'row' 每个子图行共享一个 x 轴或 y 轴
+    #       > 'col' 每个子图列共享一个 x 轴或 y 轴
+    fig, ax = plt.subplots(2, 2, sharex="none", sharey="none")
+    print("ax打印:\n", ax)
+    ax[0, 0].plot(x, y, color='r')
+    ax[0, 1].plot(x1, y1, color='b')
+    ax[1, 0].plot(x2, y2, color='g')
+    ax[1, 1].plot(x3, y3, color='r')
+
+    ax[0, 0].set_title('title 1')
+    ax[0, 1].set_title('title 2')
+    ax[1, 0].set_title('title 3')
+    ax[1, 1].set_title('title 4')
+
+    plt.suptitle("RUNOOB subplot Test")
     plt.show()
-
-    # # 方式二
-    # plt.figure(1)
-    # # 把绘图区域划分行和列。12表示子图分布:一行2列；最后一个1表示第1个子图，从左往右。
-    # # 第三个数字plotNum。假如前面两个数字是22（即 numRows ＝ 2，numCols ＝ 2）
-    # # > plotNum ＝ 1, 表示的坐标为(1, 1), 即第一行第一列的子图。
-    # # > plotNum ＝ 2, 表示的坐标为(1, 2), 即第一行第二列的子图。
-    # # > plotNum ＝ 3, 表示的坐标为(2, 1), 即第二行第一列的子图。
-    # # > plotNum ＝ 4, 表示的坐标为(2, 2), 即第二行第二列的子图。
-    # plt.subplot(121)
-    # plt.plot(x, y, label='trend')
-    # plt.title('title 1', fontsize=12, color='r')  # r: red
-    # plt.subplot(122)  # 第二个子图
-    # plt.plot(x, y, c='cyan')
-    # plt.title('title 2')
-    # plt.show()
     pass
 
 
@@ -240,8 +288,9 @@ if __name__ == '__main__':
     # mult_line()
     # axis_label_title_font()
     # subplot_demo()
+    subplots_demo()
     # grid()
     # scatter()
     # bar()
-    pie()
+    # pie()
     pass
