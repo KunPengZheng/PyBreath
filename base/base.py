@@ -99,6 +99,10 @@ def deleteReference():
 def if_else():
     ele = 3
     if ele > 0:
+        if None:  # None在判断语句中相当于False
+            print("None等同于true")
+        else:
+            print("None等同于flase")
         print(">0")
     elif ele < 0:
         print("<0")
@@ -129,4 +133,8 @@ if __name__ == '__main__':
     # if_else()
     # mutable_immutable()
     line_break()
+
+    # 因为有精度问题，所以是False。0.1 + 0.2 = 0.30000000000000004
+    print(0.1 + 0.2 == 0.3)
+    print(math.isclose(0.1 + 0.2, 0.3))  # 可以使用 math 的 isclose 代替：
     pass

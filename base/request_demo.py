@@ -37,7 +37,8 @@ put(url, data, args)	发送 PUT 请求到指定 url
 request(method, url, args)	向指定的 url 发送指定的请求方法
 """
 
-if __name__ == '__main__':
+
+def simple_demo():
     # 发送请求
     # x = requests.get('https://www.runoob.com/')
     x = requests.get('https://www.runoob.com/try/ajax/json_demo.json')
@@ -46,5 +47,35 @@ if __name__ == '__main__':
     print("响应的状态码:", x.status_code)
     print("响应状态的描述:", x.reason)
     print("返回编码:", x.apparent_encoding)
+    pass
 
+
+def params_headers_demo():
+    kw = {'s': 'python 教程'}
+
+    # 设置请求头
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36"}
+
+    # params 接收一个字典或者字符串的查询参数，字典类型自动转换为url编码，不需要urlencode()
+    response = requests.get("https://www.runoob.com/", params=kw, headers=headers)
+
+    print("查看响应状态码:", response.status_code)
+    print("查看响应头部字符编码:", response.encoding)
+    print("响应的url地址:", response.url)
+    print("查看响应内容:", response.text)
+
+
+def post_demo():
+    myobj = {'fname': 'RUNOOB', 'lname': 'Boy'}
+    # 发送请求
+    x = requests.post('https://www.runoob.com/try/ajax/demo_post2.php', data=myobj)
+    # 返回网页内容
+    print("返回网页内容:", x.text)
+
+
+if __name__ == '__main__':
+    # simple_demo()
+    # params_headers_demo()
+    post_demo()
     pass

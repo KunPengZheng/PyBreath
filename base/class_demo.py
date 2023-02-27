@@ -1,4 +1,5 @@
 """
+Python从设计之初就已经是一门面向对象的语言（因为有类的存在）
 
 类的专有方法：
 __init__ : 构造函数，在生成对象时调用
@@ -104,6 +105,43 @@ class DataClassDemo:
         print("类方法:", cls)
 
 
+# 全局变量
+global_num = 1
+
+def global_demo():
+    """
+    global关键字可以用在任何地方，包括最上层函数和嵌套函数中，即使之前未定义该变量，global修饰后也可以直接使用
+    global关键字修饰变量后标识该变量是全局变量，对该变量进行修改就是修改全局变量
+    """
+
+    # local variable 'global_num' referenced before assignment。
+    # 局部作用域引用错误，因为 global_demo 函数中的 global_num 使用的是局部，未定义，无法修改。
+    # global_num = global_num + 1
+
+    # 解决：1.将global_num声名为局部变量并在使用前赋值； 2. 在变量前使用global关键字（当内部作用域想修改外部作用域的变量时）
+    global global_num
+    global_num = global_num + 1
+    print(global_num)
+
+
+def nonlocal_demo():
+    """
+    nonlocal关键字只能用于嵌套函数中，并且外层函数需定义了相应的局部变量（外层中的同名变量若是全局变量也会报错），否则会发生错误。
+    nonlocal关键字修饰变量后标识该变量是上一级函数中的局部变量，一般在嵌套函数中使用。对该变量进行修改也会同时修改其引用的上一级函数的局部变量。
+    如果上一级函数中不存在该局部变量，nonlocal位置会发生错误（最上层的函数使用nonlocal修饰变量必会报错）
+    """
+
+    nonlocal_num = 10
+
+    def inner_demo():
+        nonlocal nonlocal_num
+        nonlocal_num = 5
+
+    print("nonlocal_num:", nonlocal_num)
+    inner_demo()
+    print("nonlocal_num:", nonlocal_num)
+
+
 if __name__ == '__main__':
     sample = Sample("Tim", 25, 80, 4, "Python")
     sample.speak()  # 方法名同，默认调用的是在括号中参数位置排前父类的方法
@@ -122,4 +160,6 @@ if __name__ == '__main__':
     # 类名调用静态方法
     DataClassDemo.static_method()
 
+    global_demo()
+    nonlocal_demo()
     pass

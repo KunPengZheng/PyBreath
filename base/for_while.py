@@ -3,6 +3,7 @@ while循环语句
 1. 在 Python 中没有 do..while 循环
 2. 死循环，通过设置条件表达式永远不为 false 来实现无限循环
 3. while 循环使用 else 语句，如果while的条件判断语句为false，那么就执行else中的代码块
+4. for 循环使用else语句，在正常遍历结束后就会执行else语句，如果是break的清空下else是不会被执行的
 4. while循环体中只有一条语句，你可以将该语句与while写在同一行中。如：while (flag): print ('欢迎')
 5. python也有break和continue关键字
 """
@@ -52,7 +53,6 @@ def for_demo():
         print('What is your {0}?  It is {1}.'.format(q, a))
         # 相当于👆的逻辑
         # print(f'What is your {q}?  It is {a}.')
-
 
 if __name__ == '__main__':
     while_demo()

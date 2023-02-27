@@ -1,3 +1,6 @@
+import operator
+
+
 # 算数运算符
 def arithmetic_demo():
     print(2 ** 3)  # 返回x的y次平方
@@ -54,10 +57,45 @@ def is_demo():
     print(id(a))
 
 
+def operator_module():
+    """
+    Python2.x 版本中，使用 cmp() 函数来比较两个列表、数字或字符串等的大小关系。
+    Python 3.X 的版本中已经没有 cmp() 函数，如果你需要实现比较功能，需要引入 operator 模块，适合任何对。
+
+    更多的函数：https://www.runoob.com/python3/python-operator.html
+    """
+    # 数字
+    x = 10
+    y = 20
+    print("x:", x, ", y:", y)
+    print("operator.lt(x,y): ", operator.lt(x, y))  # 与 a < b 相同
+    print("operator.gt(y,x): ", operator.gt(y, x))  # 与 a > b 相同
+    print("operator.eq(x,x): ", operator.eq(x, x))  # 与 a == b 相同
+    print("operator.ne(y,y): ", operator.ne(y, y))  # 与 a != b 相同
+    print("operator.le(x,y): ", operator.le(x, y))  # 与 a <= b 相同
+    print("operator.ge(y,x): ", operator.ge(y, x))  # 与 a >= b 相同
+
+    # 初始化变量
+    a = 4
+    b = 3
+
+    # 使用 add() 让两个值相加
+    print("add() 运算结果 :", end="")
+    print(operator.add(a, b))
+    # 使用 sub() 让两个值相减
+    print("sub() 运算结果 :", end="")
+    print(operator.sub(a, b))
+    # 使用 mul() 让两个值相乘
+    print("mul() 运算结果 :", end="")
+    print(operator.mul(a, b))
+    pass
+
+
 if __name__ == '__main__':
     # arithmetic_demo()
     # assign_demo()
     # logic_demo()
     # in_demo()
     is_demo()
+    operator_module()
     pass

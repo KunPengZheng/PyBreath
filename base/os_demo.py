@@ -1,4 +1,5 @@
 import os
+import shutil
 
 
 def open_demo():
@@ -33,9 +34,21 @@ def chdir_demo():
     pass
 
 
+def replace_demo():
+    path = 'google.txt'
+    # 创建文件
+    getcwd = os.getcwd()
+    t = open(getcwd + "/" + path, "w")
+    t.close()
+    # 将文件或目录 src 重命名为 dst，如果 dst 是非空目录，则会引发 OSError。如果 dst 存在并且是一个文件，如果用户有权限，它将被替换。
+    os.replace(getcwd + "/" + path, getcwd + "/" + 'gg.txt')
+    pass
+
+
 if __name__ == '__main__':
-    access_demo()
-    chdir_demo()
-    print("获取当前文件所在目录的路径:", os.path.dirname(os.path.realpath(__file__)))
-    print("获取当前文件的路径:", os.path.realpath(__file__))
+    # access_demo()
+    # chdir_demo()
+    # print("获取当前文件所在目录的路径:", os.path.dirname(os.path.realpath(__file__)))
+    # print("获取当前文件的路径:", os.path.realpath(__file__))
+    replace_demo()
     pass

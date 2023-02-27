@@ -41,8 +41,21 @@ def map_demo():
     pass
 
 
+def outer_demo():
+    """
+    嵌套函数
+    """
+
+    def inner_demo():
+        print("我是inner_demo")
+
+    inner_demo()
+    print("我是outer_demo")
+
+
 if __name__ == '__main__':
     pipe_demo()
     apply_demo()
     map_demo()
+    outer_demo()
     pass
