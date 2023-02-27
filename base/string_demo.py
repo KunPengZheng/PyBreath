@@ -23,6 +23,7 @@ def string_demo():
     print(r'Ru\noob')  # 如果你不想让反斜杠发生转义，可以在字符串前面添加一个 r或者R，表示原始字符串
 
     print("我叫 %s 今年 %d 岁!" % ('小明', 10))  # 字符串格式化符号 和 格式化操作符辅助指令
+    print("我叫 {} 今年 {} 岁!".format('小明', 10))  # 字符串格式化符号 和 格式化操作符辅助指令
     name = 'Runoob'
     # f-string python3.6 之后版本添加的，称之为字面量格式化字符串，是新的格式化字符串的语法。相当于kotlin的${}
     # f-string 格式化字符串以 f 开头，后面跟着字符串，字符串中的表达式用大括号 {} 包起来，它会将变量或表达式计算后的值替换进去。
@@ -104,6 +105,6 @@ def api_demo():
 
 
 if __name__ == '__main__':
-    # string_demo()
+    string_demo()
     api_demo()
     pass
