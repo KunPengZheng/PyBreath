@@ -41,36 +41,6 @@ def create_demo():
     print("data_frame4:\n", data_frame4)
 
 
-def read_demo():
-    dictionary = {'Site': ['Google', 'Runoob', 'Wiki'], 'Age': [10, 12, 13]}
-    data_frame = pd.DataFrame(dictionary)
-
-    # 返回指定行索引的Series。
-    print("loc返回指定的行:\n", data_frame.loc[0])
-    print("loc提取指定的行和列的内容:\n", data_frame.loc[0, "Site"])
-    # 返回指定多个行索引的DataFrame。iloc的参数只能是整数
-    print("iloc返回多行:\n", data_frame.iloc[[0, 1]])
-    print("loc返回多个指定行和列的内容:\n", data_frame.loc[[0, 1], ["Site"]])
-    # 可以使用:运算符选择多行
-    print("运算符选择多行:\n", data_frame[0:2])
-
-    # 返回指定列索引的Series。
-    print("返回指定的列:\n", data_frame["Site"])
-    # 返回多个指定列索引的DataFrame
-    print("返回多列:\n", data_frame[["Site", 'Age']])
-
-    data_frame2 = pd.DataFrame({"x": [1, 2, 3, 4], "y": [5, 6, 7, 8], "z": [9, 10, 11, 12]}, index=["a", "b", "c", "d"])
-    # 通过 data_frame2["x"] > 2 筛选出只有cd行符合，ab行不符合。所以输出内容只有cd行
-    print("条件筛选:\n", data_frame2[data_frame2["x"] > 2])
-    # 使用逻辑运算符 &（与）和 |（或）来链接多个条件语句
-    print("条件筛选:\n", data_frame2[(data_frame2["x"] > 2) & (data_frame2["y"] > 7)])
-
-    data_frame3 = pd.DataFrame({"x": [1, 2, 3, 4], "y": ["5", "6", "7", "8"], "z": [True, True, False, False]},
-                               index=["a", "b", "c", "d"])
-    data_frame3 = data_frame3.select_dtypes(include=["int", "bool"])
-    print("根据数据的类型选择列:\n", data_frame3)
-
-
 def add_demo():
     dictionary = {'Site': ['Google', 'Runoob', 'Wiki'], 'Age': [10, 12, 13]}
     data_frame = pd.DataFrame(dictionary)
@@ -285,7 +255,6 @@ def read_write_excel():
 
 if __name__ == '__main__':
     create_demo()
-    read_demo()
     add_demo()
     del_demo()
     change_demo()
