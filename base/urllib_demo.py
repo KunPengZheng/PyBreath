@@ -2,6 +2,8 @@ import urllib.request
 import urllib.error
 import urllib.parse
 import urllib.robotparser
+# 导入BeautifulSoup
+from bs4 import BeautifulSoup as bf
 
 """
 urllib 库用于操作网页 URL，并对网页的内容进行抓取处理。
@@ -95,9 +97,9 @@ def robotparser_demo():
     可爬取协议——Robots协议:
      > robots.txt（统一小写）是一种存放于网站根目录下的 robots 协议，它通常用于告诉搜索引擎对网站的抓取规则。
         该协议有三个属性：
-        Uer-agent : 描述了对哪些爬虫有效
-        Disallow : 描述了哪些网页不可爬
-        Allow : 声明哪些网页可爬，比Disallow优先级高
+        Uer-agent : 索引擎爬虫的名字，各大搜索引擎都有固定的名字，如百度Baisuspider，如果该项为*(通配符) 表示协议对任何搜索引擎爬虫均有效；
+        Disallow :  禁止访问的路径；
+        Allow : 允许访问的路径；比Disallow优先级高
 
         例子：该协议对所有爬虫有效,不允许抓取所有页面,但可以抓取 public 目录
         Uer-agent : *
@@ -119,9 +121,36 @@ def robotparser_demo():
     pass
 
 
+def smple_crawler():
+    """
+    爬虫: 一段自动抓取互联网信息的程序   https://juejin.cn/post/6985093530473463816
+    """
+
+    # 因为现在大部分的网站都是有反爬的，会给你识别到是不是用户访问页面的。这里就需要访问的时候添加headers属性
+    header = {
+        'User-Agent': 'Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+    }  # 头部信息
+    request = urllib.request.Request("http://bjdh.tv/", headers=header)
+    # request = urllib.request.Request("http://bjdh.app/", headers=header)
+    # request = urllib.request.Request("https://at28uhry.hxaa80.com/#/", headers=header)
+    # request = urllib.request.Request("https://at28uhry.hxaa80.com/#/moves/playvideo/29494", headers=header)
+    # 请求获取HTML
+    html = urllib.request.urlopen(request)
+    # 用BeautifulSoup解析html
+    obj = bf(html.read(), 'html.parser')
+    # 从标签head、title里提取标题
+    print("打印标题:", obj.head.title)
+    # 获取所有img标签
+    for img in obj.find_all('img'):
+        # 打印img标签的src属性
+        # print(img["src"])
+        print(img)
+
+
 if __name__ == '__main__':
     # simple_demo()
     # try_except_demo()
     # parse_demo()
     # request_class_config_demo()
-    robotparser_demo()
+    # robotparser_demo()
+    smple_crawler()
