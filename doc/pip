@@ -37,6 +37,10 @@ pip3 list
 pip3 list -o
 
 
+pip下载python库太慢，配置镜像提速 ：
+https://zhuanlan.zhihu.com/p/46975553
+https://www.cnblogs.com/h2285409/p/17092669.html
+
 
 /Users/zkp/Library/Python/3.9/lib/python/site-packages/py_mini_racer/py_mini_racer.py
 
