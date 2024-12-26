@@ -10,7 +10,6 @@ try:
         raise FileNotFoundError("未找到文件 file1.xlsx，请检查文件路径。")
 
     try:
-        # wb2 = load_workbook("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF供应商对账表1223-111.xlsx")  # 表2文件
         wb2 = load_workbook("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF供应商对账表1223-111.xlsx")  # 表2文件
     except FileNotFoundError:
         raise FileNotFoundError("未找到文件 file2.xlsx，请检查文件路径。")
@@ -125,7 +124,6 @@ try:
     # 动态查找表2的“款号”和“采购价”列
     sku_col_2 = None
     purchase_price_col_2 = None
-    result_price_rmb_col = None
 
     try:
         for col in sheet2.iter_cols(1, sheet2.max_column):
@@ -133,9 +131,7 @@ try:
                 sku_col_2 = col[0].column
             elif col[0].value == "采购价":  # 表2的“采购价”列
                 purchase_price_col_2 = col[0].column
-            elif col[0].value == "采购价（RMB）":  # 假设标题在第1行
-                result_price_rmb_col = col[0].column
-            if sku_col_2 and purchase_price_col_2 and result_price_rmb_col:
+            if sku_col_2 and purchase_price_col_2:
                 break
     except Exception as e:
         raise Exception(f"查找表2中的列时发生错误: {e}")
@@ -144,8 +140,6 @@ try:
         raise ValueError("表2中未找到 '款号' 列，请确认列名是否正确。")
     if purchase_price_col_2 is None:
         raise ValueError("表2中未找到 '采购价' 列，请确认列名是否正确。")
-    if result_price_rmb_col is None:
-        raise ValueError("表2中未找到 '采购价（RMB）' 列，请确认列名是否正确。")
 
     # 表4的列位置直接使用
     sku_col_4 = 8  # 表4的 H 列对应的列号
@@ -173,18 +167,6 @@ try:
                 # 将匹配到的成本价写入表2的采购价列
                 sheet2.cell(row_2, purchase_price_col_2).value = matched_cost
 
-                purchase_price_value = sheet2.cell(row_2, purchase_price_col_2).value
-                quantity_value = sheet2.cell(row_2, quantity_dest_col).value
-                freight_value = sheet2.cell(row_2, freight_col).value
-                exchange_rate_value = sheet2.cell(row_2, exchange_rate_col).value
-
-                print(f"dsdsdsds: {purchase_price_value},{quantity_value},{freight_value},{exchange_rate_value}")
-
-                # 公式
-                formula = f"(({purchase_price_value} * {quantity_value}) + {freight_value}) * {exchange_rate_value}"
-                # 将公式写入采购价（RMB）列
-                sheet2.cell(row_2, result_price_rmb_col).value = f"={formula}"
-
     except Exception as e:
         raise Exception(f"匹配和写入数据时发生错误: {e}")
 
@@ -197,3 +179,41 @@ try:
 
 except Exception as error:
     print(f"程序运行时发生错误: {error}")
+
+# 文件路径
+file_path = "/Users/zkp/Desktop/B&Y/CZFF供应商对账/3333.xlsx"
+app = xw.App(visible=False)
+wb = xw.Book(file_path)
+sheet = wb.sheets[0]
+
+# 假设表中的列号（根据你的表结构调整列号）
+purchase_price_col = "D"  # 采购价列（例如 E 列）
+quantity_col = "E"  # 数量列（例如 F 列）
+freight_col = "F"  # 运费列（例如 G 列）
+exchange_rate_col = "G"  # 汇率列（例如 H 列）
+purchase_price_rmb_col = "H"  # 采购价（RMB）列（例如 I 列）
+
+# 遍历数据行，从第2行开始（假设第1行是标题行）
+for row in range(2, sheet.used_range.last_cell.row + 1):
+    # 获取采购价、数量、运费、汇率的值
+    purchase_price = sheet.range(f"{purchase_price_col}{row}").value
+    quantity = sheet.range(f"{quantity_col}{row}").value
+    freight = sheet.range(f"{freight_col}{row}").value
+    exchange_rate = sheet.range(f"{exchange_rate_col}{row}").value
+    # print(f"完成:{purchase_price},{quantity},{freight},{exchange_rate}")
+    # print(f"完成1111:{type(purchase_price)},{type(quantity)},{type(freight)},{type(exchange_rate)}")
+
+    # 检查数据是否有效
+    if purchase_price is not None and quantity is not None and freight is not None and exchange_rate is not None:
+        # 计算采购价（RMB）
+        purchase_price_rmb = ((purchase_price * float(quantity)) + freight) * exchange_rate
+        print(f"完成1:{purchase_price_rmb}")
+        # 写入计算结果到采购价（RMB）列
+        sheet.range(f"{purchase_price_rmb_col}{row}").value = purchase_price_rmb
+
+# 保存文件并关闭
+wb.save(file_path)
+wb.close()
+app.quit()
+
+print(f"完成")
