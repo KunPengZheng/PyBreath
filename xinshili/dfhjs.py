@@ -1,7 +1,7 @@
 import openpyxl
 import xlwings as xw
 import os
-import requests
+import utils
 
 
 def copy(source_file, target_file, output_file, columns_to_replace):
@@ -111,25 +111,11 @@ def tip_format(file_path, exchange_rate):
     print("格式化 和 底部总和公式 插入成功！")
 
 
-def get_usd_to_cny_rate():
-    url = "https://api.exchangerate.host/live?access_key=c9ba58232ee9b955236a7def78ba88d2&currencies=CNY"
-    try:
-        response = requests.get(url)
-        data = response.json()
-        # 获取 USD 对 CNY 的汇率
-        rate = data["quotes"]["USDCNY"]
-        print(f"当前 USD 对 CNY 的汇率是：{rate}")
-        return rate
-    except Exception as e:
-        print(f"获取汇率失败：{e}")
-        return None
-
-
 # 源表文件路径
 source_file = input("请输入源表文件的绝对路径：")
 # exchange_rate_input = input("请输入（美对中）汇率（四舍五入 保留两位数，再+0.01）：")
 # exchange_rate = float(exchange_rate_input)
-exchange_rate = round(float(get_usd_to_cny_rate()), 2) + 0.01
+exchange_rate = round(float(utils.get_usd_to_cny_rate()), 2) + 0.01
 
 # 检查路径是否有效
 if os.path.isabs(source_file) and os.path.isfile(source_file):

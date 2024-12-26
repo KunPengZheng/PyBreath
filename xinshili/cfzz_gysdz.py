@@ -2,7 +2,7 @@ import re
 from openpyxl import load_workbook
 import xlwings as xw
 import os
-import requests
+import utils
 from datetime import datetime
 
 
@@ -150,24 +150,10 @@ def calculate_rmb_prices(file_path):
         raise Exception(f"计算和写入采购价（RMB）时发生错误: {e}")
 
 
-def get_usd_to_cny_rate():
-    url = "https://api.exchangerate.host/live?access_key=c9ba58232ee9b955236a7def78ba88d2&currencies=CNY"
-    try:
-        response = requests.get(url)
-        data = response.json()
-        # 获取 USD 对 CNY 的汇率
-        rate = data["quotes"]["USDCNY"]
-        print(f"当前 USD 对 CNY 的汇率是：{rate}")
-        return rate
-    except Exception as e:
-        print(f"获取汇率失败：{e}")
-        return None
-
-
 def main():
     try:
         source_file = input("请输入源表文件的绝对路径：")
-        exchange_rate = round(float(get_usd_to_cny_rate()), 2) + 0.01
+        exchange_rate = round(float(utils.get_usd_to_cny_rate()), 2) + 0.01
 
         # 加载文件
         wb1 = load_excel_file(source_file)
