@@ -1,219 +1,168 @@
+import re
 from openpyxl import load_workbook
 import xlwings as xw
-import re  # 用于提取括号中的数值
 
-try:
-    # 打开文件1和文件2
+
+def load_excel_file(file_path):
+    """
+    加载 Excel 文件
+    """
     try:
-        wb1 = load_workbook("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF待发货 订单-2024-12-24-19_09.xlsx")  # 表1文件
+        return load_workbook(file_path)
     except FileNotFoundError:
-        raise FileNotFoundError("未找到文件 file1.xlsx，请检查文件路径。")
+        raise FileNotFoundError(f"未找到文件: {file_path}")
+    except Exception as e:
+        raise Exception(f"加载文件 {file_path} 时发生错误: {e}")
 
-    try:
-        wb2 = load_workbook("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF供应商对账表1223-111.xlsx")  # 表2文件
-    except FileNotFoundError:
-        raise FileNotFoundError("未找到文件 file2.xlsx，请检查文件路径。")
 
+def get_active_sheet(workbook):
+    """
+    获取活动表
+    """
     try:
-        wb4 = load_workbook("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF产品核对表1114.xlsx")
-    except FileNotFoundError:
-        raise FileNotFoundError("未找到文件 file4.xlsx，请检查文件路径。")
-
-    # 获取活动表
-    try:
-        sheet1 = wb1.active
-        sheet2 = wb2.active
-        sheet4 = wb4.active
+        return workbook.active
     except Exception as e:
         raise Exception(f"获取活动表时发生错误: {e}")
 
-    # 动态查找表1的列
-    paid_time_col = None
-    order_id_col = None
-    quantity_col = None
-    seller_sku_col = None
+
+def find_columns(sheet, column_names):
+    """
+    动态查找指定列名的列号
+    """
     try:
-        for col in sheet1.iter_cols(1, sheet1.max_column):
-            if col[0].value == "Paid Time":  # 假设标题在第1行
-                paid_time_col = col[0].column  # 获取列号
-            elif col[0].value == "Order ID":  # 假设标题在第1行
-                order_id_col = col[0].column  # 获取列号
-            elif col[0].value == "Quantity":  # 假设标题在第1行
-                quantity_col = col[0].column  # 获取列号
-            elif col[0].value == "Seller SKU":  # 假设标题在第1行
-                seller_sku_col = col[0].column  # 获取列号
-            if paid_time_col and order_id_col and quantity_col and seller_sku_col:
-                break
+        column_map = {}
+        for col in sheet.iter_cols(1, sheet.max_column):
+            header = col[0].value
+            if header in column_names:
+                column_map[header] = col[0].column
+                if len(column_map) == len(column_names):
+                    break
+        if len(column_map) < len(column_names):
+            missing = set(column_names) - set(column_map.keys())
+            raise ValueError(f"未找到以下列名: {missing}")
+        return column_map
     except Exception as e:
-        raise Exception(f"查找表1中的列时发生错误: {e}")
+        raise Exception(f"查找列时发生错误: {e}")
 
-    if paid_time_col is None:
-        raise ValueError("表1中未找到 'Paid Time' 列，请确认列名是否正确。")
-    if order_id_col is None:
-        raise ValueError("表1中未找到 'Order ID' 列，请确认列名是否正确。")
-    if quantity_col is None:
-        raise ValueError("表1中未找到 'Quantity' 列，请确认列名是否正确。")
-    if seller_sku_col is None:
-        raise ValueError("表1中未找到 'Seller SKU' 列，请确认列名是否正确。")
 
-    # 动态查找表2的列
-    date_col = None
-    order_number_col = None
-    quantity_dest_col = None
-    freight_col = None
-    sku_col = None
-    exchange_rate_col = None
-    try:
-        for col in sheet2.iter_cols(1, sheet2.max_column):
-            if col[0].value == "日期":  # 假设标题在第1行
-                date_col = col[0].column
-            elif col[0].value == "订单单号":  # 假设标题在第1行
-                order_number_col = col[0].column
-            elif col[0].value == "数量":  # 假设标题在第1行
-                quantity_dest_col = col[0].column
-            elif col[0].value == "运费":  # 假设标题在第1行
-                freight_col = col[0].column
-            elif col[0].value == "款号":  # 假设标题在第1行
-                sku_col = col[0].column
-            elif col[0].value == "汇率":  # 假设标题在第1行
-                exchange_rate_col = col[0].column
-            if date_col and order_number_col and quantity_dest_col and freight_col and sku_col and exchange_rate_col:
-                break
-    except Exception as e:
-        raise Exception(f"查找表2中的列时发生错误: {e}")
-
-    if date_col is None:
-        raise ValueError("表2中未找到 '日期' 列，请确认列名是否正确。")
-    if order_number_col is None:
-        raise ValueError("表2中未找到 '订单单号' 列，请确认列名是否正确。")
-    if quantity_dest_col is None:
-        raise ValueError("表2中未找到 '数量' 列，请确认列名是否正确。")
-    if freight_col is None:
-        raise ValueError("表2中未找到 '运费' 列，请确认列名是否正确。")
-    if sku_col is None:
-        raise ValueError("表2中未找到 '款号' 列，请确认列名是否正确。")
-    if exchange_rate_col is None:
-        raise ValueError("表2中未找到 '汇率' 列，请确认列名是否正确。")
-
-    # 遍历表1并复制数据到表2（从表2的第2行开始）
+def write_data_to_sheet(sheet1, sheet2, columns1, columns2):
+    """
+    从表1复制数据到表2
+    """
     try:
         target_row = 2  # 表2从第2行开始写入
         for row in range(3, sheet1.max_row + 1):  # 跳过表1的第2行
             # 从表1获取数据
-            paid_time_value = sheet1.cell(row, paid_time_col).value
-            order_id_value = sheet1.cell(row, order_id_col).value
-            quantity_value = sheet1.cell(row, quantity_col).value
-            seller_sku_value = sheet1.cell(row, seller_sku_col).value
+            paid_time_value = sheet1.cell(row, columns1["Paid Time"]).value
+            order_id_value = sheet1.cell(row, columns1["Order ID"]).value
+            quantity_value = sheet1.cell(row, columns1["Quantity"]).value
+            seller_sku_value = sheet1.cell(row, columns1["Seller SKU"]).value
 
-            # 写入表2的各列
-            sheet2.cell(target_row, date_col).value = paid_time_value
-            sheet2.cell(target_row, order_number_col).value = order_id_value
-            sheet2.cell(target_row, quantity_dest_col).value = quantity_value
-            sheet2.cell(target_row, sku_col).value = seller_sku_value
+            # 写入表2
+            sheet2.cell(target_row, columns2["日期"]).value = paid_time_value
+            sheet2.cell(target_row, columns2["订单单号"]).value = order_id_value
+            sheet2.cell(target_row, columns2["数量"]).value = quantity_value
+            sheet2.cell(target_row, columns2["款号"]).value = seller_sku_value
 
-            # 接口获取到到汇率写入表2的汇率列
-            sheet2.cell(target_row, freight_col).value = f"=2.99+IF(E{target_row}=1,0,(E{target_row}-1)*0.5)"
+            # 写入公式到运费和汇率列
+            sheet2.cell(target_row, columns2["运费"]).value = f"=2.99+IF(E{target_row}=1,0,(E{target_row}-1)*0.5)"
+            sheet2.cell(target_row, columns2["汇率"]).value = 7.31
 
-            # 写入公式到运费列
-            sheet2.cell(target_row, exchange_rate_col).value = 7.31
-
-            target_row += 1  # 表2写入下一行
+            target_row += 1
     except Exception as e:
-        raise Exception(f"写入数据时发生错误: {e}")
+        raise Exception(f"写入数据到表2时发生错误: {e}")
 
-    # 动态查找表2的“款号”和“采购价”列
-    sku_col_2 = None
-    purchase_price_col_2 = None
 
-    try:
-        for col in sheet2.iter_cols(1, sheet2.max_column):
-            if col[0].value == "款号":  # 表2的“款号”列
-                sku_col_2 = col[0].column
-            elif col[0].value == "采购价":  # 表2的“采购价”列
-                purchase_price_col_2 = col[0].column
-            if sku_col_2 and purchase_price_col_2:
-                break
-    except Exception as e:
-        raise Exception(f"查找表2中的列时发生错误: {e}")
-
-    if sku_col_2 is None:
-        raise ValueError("表2中未找到 '款号' 列，请确认列名是否正确。")
-    if purchase_price_col_2 is None:
-        raise ValueError("表2中未找到 '采购价' 列，请确认列名是否正确。")
-
-    # 表4的列位置直接使用
-    sku_col_4 = 8  # 表4的 H 列对应的列号
-    cost_col_4 = 5  # 表4的 E 列对应的列号
-
-    # 遍历表2的款号列，匹配表4的款号列，并提取括号中的值
+def match_and_write_prices(sheet2, sheet4, columns2, sku_col_4, cost_col_4):
+    """
+    匹配表2和表4的款号，并提取成本价写入表2
+    """
     try:
         for row_2 in range(2, sheet2.max_row + 1):  # 从表2的第2行开始
-            sku_value_2 = sheet2.cell(row_2, sku_col_2).value
+            sku_value_2 = sheet2.cell(row_2, columns2["款号"]).value
             if sku_value_2:
                 matched_cost = None
                 for row_4 in range(2, sheet4.max_row + 1):  # 从表4的第2行开始
                     sku_value_4 = sheet4.cell(row_4, sku_col_4).value
                     if sku_value_4 == sku_value_2:  # 匹配款号
                         cost_value_4 = sheet4.cell(row_4, cost_col_4).value
-                        # print(f"dsdsdsd:{cost_value_4}")
                         # 提取括号中的数值
                         match = re.search(r"（([\d.]+)", cost_value_4)
-                        # print(f"dsdsdsd1111:{match}")
                         if match:
-                            matched_cost = float(match.group(1))  # 转为浮点数
-                            # print(f"dsdsdsd22222:{matched_cost}")
+                            matched_cost = float(match.group(1))
                         break
-
                 # 将匹配到的成本价写入表2的采购价列
-                sheet2.cell(row_2, purchase_price_col_2).value = matched_cost
-
+                sheet2.cell(row_2, columns2["采购价"]).value = matched_cost
     except Exception as e:
-        raise Exception(f"匹配和写入数据时发生错误: {e}")
+        raise Exception(f"匹配和写入成本价时发生错误: {e}")
 
-    # 保存修改后的表2
+
+def calculate_rmb_prices(file_path):
+    """
+    计算采购价（RMB）并写入表格
+    """
     try:
-        wb2.save("/Users/zkp/Desktop/B&Y/CZFF供应商对账/3333.xlsx")
-        print("文件更新成功，保存为 3333.xlsx")
+        app = xw.App(visible=False)
+        wb = xw.Book(file_path)
+        sheet = wb.sheets[0]
+
+        # 假设表中的列号
+        purchase_price_col = "D"
+        quantity_col = "E"
+        freight_col = "F"
+        exchange_rate_col = "G"
+        purchase_price_rmb_col = "H"
+
+        for row in range(2, sheet.used_range.last_cell.row + 1):
+            purchase_price = sheet.range(f"{purchase_price_col}{row}").value
+            quantity = sheet.range(f"{quantity_col}{row}").value
+            freight = sheet.range(f"{freight_col}{row}").value
+            exchange_rate = sheet.range(f"{exchange_rate_col}{row}").value
+
+            if purchase_price and quantity and freight and exchange_rate:
+                purchase_price_rmb = ((purchase_price * float(quantity)) + freight) * exchange_rate
+                sheet.range(f"{purchase_price_rmb_col}{row}").value = purchase_price_rmb
+
+        wb.save(file_path)
+        wb.close()
+        app.quit()
     except Exception as e:
-        raise Exception(f"保存文件时发生错误: {e}")
+        raise Exception(f"计算和写入采购价（RMB）时发生错误: {e}")
 
-except Exception as error:
-    print(f"程序运行时发生错误: {error}")
 
-# 文件路径
-file_path = "/Users/zkp/Desktop/B&Y/CZFF供应商对账/3333.xlsx"
-app = xw.App(visible=False)
-wb = xw.Book(file_path)
-sheet = wb.sheets[0]
+def main():
+    try:
+        # 加载文件
+        wb1 = load_excel_file("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF待发货 订单-2024-12-24-19_09.xlsx")
+        wb2 = load_excel_file("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF供应商对账表1223-111.xlsx")
+        wb4 = load_excel_file("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF产品核对表1114.xlsx")
 
-# 假设表中的列号（根据你的表结构调整列号）
-purchase_price_col = "D"  # 采购价列（例如 E 列）
-quantity_col = "E"  # 数量列（例如 F 列）
-freight_col = "F"  # 运费列（例如 G 列）
-exchange_rate_col = "G"  # 汇率列（例如 H 列）
-purchase_price_rmb_col = "H"  # 采购价（RMB）列（例如 I 列）
+        # 获取活动表
+        sheet1 = get_active_sheet(wb1)
+        sheet2 = get_active_sheet(wb2)
+        sheet4 = get_active_sheet(wb4)
 
-# 遍历数据行，从第2行开始（假设第1行是标题行）
-for row in range(2, sheet.used_range.last_cell.row + 1):
-    # 获取采购价、数量、运费、汇率的值
-    purchase_price = sheet.range(f"{purchase_price_col}{row}").value
-    quantity = sheet.range(f"{quantity_col}{row}").value
-    freight = sheet.range(f"{freight_col}{row}").value
-    exchange_rate = sheet.range(f"{exchange_rate_col}{row}").value
-    # print(f"完成:{purchase_price},{quantity},{freight},{exchange_rate}")
-    # print(f"完成1111:{type(purchase_price)},{type(quantity)},{type(freight)},{type(exchange_rate)}")
+        # 查找列
+        columns1 = find_columns(sheet1, ["Paid Time", "Order ID", "Quantity", "Seller SKU"])
+        columns2 = find_columns(sheet2, ["日期", "订单单号", "数量", "运费", "款号", "汇率", "采购价"])
 
-    # 检查数据是否有效
-    if purchase_price is not None and quantity is not None and freight is not None and exchange_rate is not None:
+        # 写入数据
+        write_data_to_sheet(sheet1, sheet2, columns1, columns2)
+
+        # 匹配款号和成本价
+        match_and_write_prices(sheet2, sheet4, columns2, sku_col_4=8, cost_col_4=5)
+
+        # 保存文件
+        output_path = "/Users/zkp/Desktop/B&Y/CZFF供应商对账/3333.xlsx"
+        wb2.save(output_path)
+
         # 计算采购价（RMB）
-        purchase_price_rmb = ((purchase_price * float(quantity)) + freight) * exchange_rate
-        print(f"完成1:{purchase_price_rmb}")
-        # 写入计算结果到采购价（RMB）列
-        sheet.range(f"{purchase_price_rmb_col}{row}").value = purchase_price_rmb
+        calculate_rmb_prices(output_path)
 
-# 保存文件并关闭
-wb.save(file_path)
-wb.close()
-app.quit()
+        print("文件处理完成！")
+    except Exception as e:
+        print(f"程序运行时发生错误: {e}")
 
-print(f"完成")
+
+if __name__ == "__main__":
+    main()
