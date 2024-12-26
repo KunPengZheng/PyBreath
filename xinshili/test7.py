@@ -1,7 +1,9 @@
 import re
 from openpyxl import load_workbook
 import xlwings as xw
+import os
 import requests
+from datetime import datetime
 
 
 def load_excel_file(file_path):
@@ -122,11 +124,28 @@ def calculate_rmb_prices(file_path):
 
             if purchase_price and quantity and freight and exchange_rate:
                 purchase_price_rmb = ((purchase_price * float(quantity)) + freight) * exchange_rate
-                sheet.range(f"{purchase_price_rmb_col}{row}").value = purchase_price_rmb
+                sheet.range(f"{purchase_price_rmb_col}{row}").value = round(purchase_price_rmb, 2)
+
+        last_row = sheet.range('H' + str(sheet.cells.last_cell.row)).end('up').row
+        h_values = sheet.range(f'H2:H{last_row}').value
+        h_total = round(sum(value for value in h_values if isinstance(value, (int, float))), 2)
+
+        sheet.range("L1").value = f"总计:¥ {h_total} 元"
+
+        # 自动调整所有单元格的列宽和行高
+        sheet.used_range.columns.autofit()  # 自动调整所有列宽
+        sheet.used_range.rows.autofit()  # 自动调整所有行高
+
+        # 设置所有单元格内容居中
+        used_range = sheet.used_range
+        used_range.api.HorizontalAlignment = -4108  # xlCenter，水平居中
+        used_range.api.VerticalAlignment = -4108  # xlCenter，垂直居中
 
         wb.save(file_path)
         wb.close()
         app.quit()
+
+        return h_total
     except Exception as e:
         raise Exception(f"计算和写入采购价（RMB）时发生错误: {e}")
 
@@ -171,11 +190,21 @@ def main():
         match_and_write_prices(sheet2, sheet4, columns2, sku_col_4=8, cost_col_4=5)
 
         # 保存文件
-        output_path = "/Users/zkp/Desktop/B&Y/CZFF供应商对账/3333.xlsx"
+        output_path = "/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF供应商对账表_temp.xlsx"
         wb2.save(output_path)
 
         # 计算采购价（RMB）
-        calculate_rmb_prices(output_path)
+        prices = calculate_rmb_prices(output_path)
+
+        # 获取今天的日期
+        today = datetime.now()
+        # 格式化为 "月-日"
+        month_day = today.strftime("%m%d")
+
+        old_file_path = output_path
+        new_file_path = "/Users/zkp/Desktop/B&Y/CZFF供应商对账/" + "CZFF供应商对账表" + str(
+            prices) + "元-" + month_day + ".xlsx"
+        os.rename(old_file_path, new_file_path)
 
         print("文件处理完成！")
     except Exception as e:
