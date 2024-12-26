@@ -182,14 +182,9 @@ def main():
         # 计算采购价（RMB）
         prices = calculate_rmb_prices(output_path)
 
-        # 获取今天的日期
-        today = datetime.now()
-        # 格式化为 "月-日"
-        month_day = today.strftime("%m%d")
-
         old_file_path = output_path
         new_file_path = "/Users/zkp/Desktop/B&Y/CZFF供应商对账/" + "CZFF供应商对账表" + str(
-            prices) + "元-" + month_day + ".xlsx"
+            prices) + "元-" + utils.get_yd() + ".xlsx"
         os.rename(old_file_path, new_file_path)
 
         print(f"文件已重命名为：{new_file_path}")

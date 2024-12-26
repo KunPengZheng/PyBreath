@@ -120,7 +120,7 @@ exchange_rate = round(float(utils.get_usd_to_cny_rate()), 2) + 0.01
 # 检查路径是否有效
 if os.path.isabs(source_file) and os.path.isfile(source_file):
     file_name_without_extension = os.path.splitext(os.path.basename(source_file))[0]
-    last_four_chars = file_name_without_extension[-4:]  # 获取文件名最后四个字符
+    # last_four_chars = file_name_without_extension[-4:]  # 获取文件名最后四个字符
     target_file = "/Users/zkp/Desktop/B&Y/代发货结算/代发货结算表模版.xlsx"  # 目标表文件路径
     output_file = "/Users/zkp/Desktop/B&Y/代发货结算/" + file_name_without_extension + "_temp.xlsx"  # 输出文件路径
 
@@ -133,7 +133,7 @@ if os.path.isabs(source_file) and os.path.isfile(source_file):
 
     old_file_path = output_file
     new_file_path = "/Users/zkp/Desktop/B&Y/代发货结算/" + "代发货结算表" + str(
-        total_rows) + "单" + last_four_chars + ".xlsx"
+        total_rows) + "单" + utils.get_yd() + ".xlsx"
 
     try:
         # 修改文件名称
