@@ -206,7 +206,7 @@ def main():
             prices) + "元-" + month_day + ".xlsx"
         os.rename(old_file_path, new_file_path)
 
-        print("文件处理完成！")
+        print(f"文件已重命名为：{new_file_path}")
     except Exception as e:
         print(f"程序运行时发生错误: {e}")
 
