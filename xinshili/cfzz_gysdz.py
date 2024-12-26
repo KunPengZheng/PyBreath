@@ -67,7 +67,7 @@ def write_data_to_sheet(sheet1, sheet2, columns1, columns2, exchange_rate):
             sheet2.cell(target_row, columns2["数量"]).value = quantity_value
             sheet2.cell(target_row, columns2["款号"]).value = seller_sku_value
 
-            # 写入公式到运费和汇率列
+            # 写入公式到运费和汇率列，1个为2.99，在此基础上增加一个+0.5
             sheet2.cell(target_row, columns2["运费"]).value = f"=2.99+IF(E{target_row}=1,0,(E{target_row}-1)*0.5)"
             sheet2.cell(target_row, columns2["汇率"]).value = exchange_rate
 
