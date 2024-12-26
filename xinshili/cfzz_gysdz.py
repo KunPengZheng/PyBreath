@@ -3,7 +3,6 @@ from openpyxl import load_workbook
 import xlwings as xw
 import os
 import utils
-from datetime import datetime
 
 
 def load_excel_file(file_path):
@@ -183,11 +182,12 @@ def main():
         prices = calculate_rmb_prices(output_path)
 
         old_file_path = output_path
-        new_file_path = "/Users/zkp/Desktop/B&Y/CZFF供应商对账/" + "CZFF供应商对账表" + str(
-            prices) + "元-" + utils.get_yd() + ".xlsx"
+        new_file_dir = "/Users/zkp/Desktop/B&Y/CZFF供应商对账/"
+        new_file_path = new_file_dir + "CZFF供应商对账表" + str(prices) + "元-" + utils.get_yd() + ".xlsx"
         os.rename(old_file_path, new_file_path)
-
         print(f"文件已重命名为：{new_file_path}")
+
+        utils.open_dir(new_file_dir)
     except Exception as e:
         print(f"程序运行时发生错误: {e}")
 

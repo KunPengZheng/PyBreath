@@ -132,13 +132,16 @@ if os.path.isabs(source_file) and os.path.isfile(source_file):
     tip_format(output_file, exchange_rate)
 
     old_file_path = output_file
-    new_file_path = "/Users/zkp/Desktop/B&Y/代发货结算/" + "代发货结算表" + str(
+    new_file_dir = "/Users/zkp/Desktop/B&Y/代发货结算/"
+    new_file_path = new_file_dir + "代发货结算表" + str(
         total_rows) + "单" + utils.get_yd() + ".xlsx"
 
     try:
         # 修改文件名称
         os.rename(old_file_path, new_file_path)
         print(f"文件已重命名为：{new_file_path}")
+
+        utils.open_dir(new_file_dir)
     except FileNotFoundError:
         print("文件未找到，请检查路径！")
     except PermissionError:
