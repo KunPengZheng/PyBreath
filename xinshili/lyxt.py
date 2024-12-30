@@ -109,12 +109,12 @@ for row in range(2, source_sheet.max_row):
     target_sheet[f"C{row}"].value = "包裹"
     target_sheet[f"D{row}"].value = "USD"
     target_sheet[f"H{row}"].value = "US"
-    target_sheet[f"X{row}"].value = "1"
+    target_sheet[f"X{row}"].value = 1
     target_sheet[f"AC{row}"].value = "产品"
     target_sheet[f"AD{row}"].value = "Product"
     target_sheet[f"AE{row}"].value = "个"
-    target_sheet[f"AF{row}"].value = "1"
-    target_sheet[f"AG{row}"].value = "20"
+    target_sheet[f"AF{row}"].value = 1
+    target_sheet[f"AG{row}"].value = 20
     target_sheet[f"AX{row}"].value = "Huang Shan"
     target_sheet[f"AY{row}"].value = "Huang Shan"
     target_sheet[f"AZ{row}"].value = "US"
