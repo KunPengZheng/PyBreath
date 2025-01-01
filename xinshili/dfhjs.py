@@ -113,9 +113,7 @@ def tip_format(file_path, exchange_rate):
 
 # 源表文件路径
 source_file = input("请输入源表文件的绝对路径：")
-# exchange_rate_input = input("请输入（美对中）汇率（四舍五入 保留两位数，再+0.01）：")
-# exchange_rate = float(exchange_rate_input)
-exchange_rate = round(float(utils.get_usd_to_cny_rate()), 2) + 0.01
+exchange_rate = utils.get_usd_to_cny_rate()
 
 # 检查路径是否有效
 if os.path.isabs(source_file) and os.path.isfile(source_file):

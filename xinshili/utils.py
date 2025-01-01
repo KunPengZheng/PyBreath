@@ -3,18 +3,21 @@ from datetime import datetime
 import os
 import subprocess
 
+
 def get_usd_to_cny_rate():
-    url = "https://api.exchangerate.host/live?access_key=c9ba58232ee9b955236a7def78ba88d2&currencies=CNY"
-    try:
-        response = requests.get(url)
-        data = response.json()
-        # 获取 USD 对 CNY 的汇率
-        rate = data["quotes"]["USDCNY"]
-        print(f"当前 USD 对 CNY 的汇率是：{rate}")
-        return rate
-    except Exception as e:
-        print(f"获取汇率失败：{e}")
-        return None
+    # url = "https://api.exchangerate.host/live?access_key=c9ba58232ee9b955236a7def78ba88d2&currencies=CNY"
+    # try:
+    #     response = requests.get(url)
+    #     data = response.json()
+    #     # 获取 USD 对 CNY 的汇率
+    #     rate = data["quotes"]["USDCNY"]
+    #     exchange_rate = round(rate, 2) + 0.01
+    #     print(f"当前 USD 对 CNY 的汇率是：{rate}, {exchange_rate}")
+    #     return exchange_rate
+    # except Exception as e:
+    #     print(f"获取汇率失败：{e}")
+    #     return None
+    return 7.36
 
 
 def get_yd():

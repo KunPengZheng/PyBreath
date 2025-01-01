@@ -152,7 +152,7 @@ def calculate_rmb_prices(file_path):
 def main():
     try:
         source_file = input("请输入源表文件的绝对路径：")
-        exchange_rate = round(float(utils.get_usd_to_cny_rate()), 2) + 0.01
+        exchange_rate = utils.get_usd_to_cny_rate()
 
         # 加载文件
         wb1 = load_excel_file(source_file)
