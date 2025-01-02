@@ -1,7 +1,6 @@
-import os
-
 import pandas as pd
 import utils
+from pathlib import Path
 
 
 # 以出库单号为判断条件，出现重复只保留第一条，其余都删除
@@ -29,8 +28,8 @@ def remove_duplicates_in_column(file_path, sheet_name, column_name, output_path)
 
 
 input_file = input("请输入源表文件的绝对路径：")  # 输入 Excel 文件路径
-file_name_no_ext = os.path.splitext(input_file)[0]
-output_file = "/Users/zkp/Desktop/B&Y/删除重复/" + file_name_no_ext + "_temp.xlsx"
+file_name_no_ext = Path(input_file).stem
+output_file = "/Users/zkp/Desktop/B&Y/删除重复/" + file_name_no_ext + "_result.xlsx"
 
 sheet = "Sheet1"  # 需要处理的工作表
 column = "Outbound Order No/出库单号"  # 需要去重的列名称
