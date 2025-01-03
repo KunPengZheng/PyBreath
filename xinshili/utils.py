@@ -32,3 +32,23 @@ def open_dir(folder_path):
     # 使用 os.system 调用 macOS 的 open 命令
     # os.system(f"open {folder_path}")
     subprocess.run(["open", folder_path])
+
+
+def get_filename_without_extension(file_path):
+    """
+    获取路径的文件名（不含后缀）
+    """
+    filename = os.path.basename(file_path)  # 获取文件名（包含后缀）
+    name_without_extension = os.path.splitext(filename)[0]  # 去掉后缀
+    return name_without_extension
+
+
+def ensure_directory_exists(dir_path):
+    """
+    确保文件夹存在，不存在则创建
+    """
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+        print(f"文件夹已创建: {dir_path}")
+    else:
+        print(f"文件夹已存在: {dir_path}")

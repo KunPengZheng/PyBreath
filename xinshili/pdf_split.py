@@ -2,6 +2,8 @@ import pikepdf
 import pdfplumber
 import re
 
+from xinshili.utils import get_filename_without_extension, ensure_directory_exists
+
 
 def extract_text_from_pdf(pdf_path):
     text = ""
@@ -36,12 +38,17 @@ def split_pdf(input_pdf_path, output_folder):
 
 
 # 示例使用
-input_pdf = "/Users/zkp/Desktop/B&Y/pdf/新年礼物-01-03-12单.pdf"  # 输入 PDF 文件路径
-output_folder = "/Users/zkp/Desktop/B&Y/pdf/"  # 输出目录路径
+input_pdf = input("请输入源表文件的绝对路径：")
+output_folder = "/Users/zkp/Desktop/B&Y/pdf/" + get_filename_without_extension(input_pdf) + "/"  # 输出目录路径
 
+ensure_directory_exists(output_folder)
+
+# 扫描所有pdf的文本内容
 text = extract_text_from_pdf(input_pdf)
 
+# 匹配获取到面单号
 pattern = r'\b\d{22,34}\b'
 matches = re.findall(pattern, text)
 
+# 裁剪为单独的pdf
 split_pdf(input_pdf, output_folder)

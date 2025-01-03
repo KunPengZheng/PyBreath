@@ -108,6 +108,7 @@ def match_and_fill_with_openpyxl(file1_path, file2_path, output_path):
 
             # 判断匹配内容是否满足条件
             if (isinstance(matched_content, str) and "预警" in matched_content) or \
+                    (isinstance(matched_content, str) and "缺货" in matched_content) or \
                     (isinstance(matched_content, (int, float)) and matched_content < 10):
                 ws1.cell(row=row, column=16).value = 0  # P列是第16列
             else:
