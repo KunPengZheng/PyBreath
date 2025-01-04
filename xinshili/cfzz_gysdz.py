@@ -1,50 +1,12 @@
 import re
-from openpyxl import load_workbook
 import xlwings as xw
 import os
 import utils
+from xinshili import openpyxl_utils
 
-
-def load_excel_file(file_path):
-    """
-    加载 Excel 文件
-    """
-    try:
-        return load_workbook(file_path)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"未找到文件: {file_path}")
-    except Exception as e:
-        raise Exception(f"加载文件 {file_path} 时发生错误: {e}")
-
-
-def get_active_sheet(workbook):
-    """
-    获取活动表
-    """
-    try:
-        return workbook.active
-    except Exception as e:
-        raise Exception(f"获取活动表时发生错误: {e}")
-
-
-def find_columns(sheet, column_names):
-    """
-    动态查找指定列名的列号
-    """
-    try:
-        column_map = {}
-        for col in sheet.iter_cols(1, sheet.max_column):
-            header = col[0].value
-            if header in column_names:
-                column_map[header] = col[0].column
-                if len(column_map) == len(column_names):
-                    break
-        if len(column_map) < len(column_names):
-            missing = set(column_names) - set(column_map.keys())
-            raise ValueError(f"未找到以下列名: {missing}")
-        return column_map
-    except Exception as e:
-        raise Exception(f"查找列时发生错误: {e}")
+"""
+风向标:CZFF供应商对账表
+"""
 
 
 def write_data_to_sheet(sheet1, sheet2, columns1, columns2, exchange_rate):
@@ -54,21 +16,29 @@ def write_data_to_sheet(sheet1, sheet2, columns1, columns2, exchange_rate):
     try:
         target_row = 2  # 表2从第2行开始写入
         for row in range(3, sheet1.max_row + 1):  # 跳过表1的第2行
-            # 从表1获取数据
-            paid_time_value = sheet1.cell(row, columns1["Paid Time"]).value
-            order_id_value = sheet1.cell(row, columns1["Order ID"]).value
-            quantity_value = sheet1.cell(row, columns1["Quantity"]).value
-            seller_sku_value = sheet1.cell(row, columns1["Seller SKU"]).value
+            # 从表1获取数据,写入表2
+            openpyxl_utils.set_cell_value(sheet2, target_row, columns2["日期"],
+                                          openpyxl_utils.get_cell_value(sheet1, row,
+                                                                        columns1["Paid Time"]))
 
-            # 写入表2
-            sheet2.cell(target_row, columns2["日期"]).value = paid_time_value
-            sheet2.cell(target_row, columns2["订单单号"]).value = order_id_value
-            sheet2.cell(target_row, columns2["数量"]).value = quantity_value
-            sheet2.cell(target_row, columns2["款号"]).value = seller_sku_value
+            openpyxl_utils.set_cell_value(sheet2, target_row, columns2["订单单号"],
+                                          openpyxl_utils.get_cell_value(sheet1, row,
+                                                                        columns1["Order ID"]))
+
+            openpyxl_utils.set_cell_value(sheet2, target_row, columns2["数量"],
+                                          openpyxl_utils.get_cell_value(sheet1, row,
+                                                                        columns1["Quantity"]))
+
+            openpyxl_utils.set_cell_value(sheet2, target_row, columns2["款号"],
+                                          openpyxl_utils.get_cell_value(sheet1, row,
+                                                                        columns1["Seller SKU"]))
 
             # 写入公式到运费和汇率列，1个为2.99，在此基础上增加一个+0.5
-            sheet2.cell(target_row, columns2["运费"]).value = f"=2.99+IF(E{target_row}=1,0,(E{target_row}-1)*0.5)"
-            sheet2.cell(target_row, columns2["汇率"]).value = exchange_rate
+            openpyxl_utils.set_cell_value(sheet2, target_row, columns2["运费"],
+                                          f"=2.99+IF(E{target_row}=1,0,(E{target_row}-1)*0.5)")
+
+            # 汇率
+            openpyxl_utils.set_cell_value(sheet2, target_row, columns2["汇率"], exchange_rate)
 
             target_row += 1
     except Exception as e:
@@ -81,20 +51,20 @@ def match_and_write_prices(sheet2, sheet4, columns2, sku_col_4, cost_col_4):
     """
     try:
         for row_2 in range(2, sheet2.max_row + 1):  # 从表2的第2行开始
-            sku_value_2 = sheet2.cell(row_2, columns2["款号"]).value
+            sku_value_2 = openpyxl_utils.get_cell_value(sheet2, row_2, columns2["款号"])
             if sku_value_2:
                 matched_cost = None
                 for row_4 in range(2, sheet4.max_row + 1):  # 从表4的第2行开始
-                    sku_value_4 = sheet4.cell(row_4, sku_col_4).value
+                    sku_value_4 = openpyxl_utils.get_cell_value(sheet4, row_4, sku_col_4)
                     if sku_value_4 == sku_value_2:  # 匹配款号
-                        cost_value_4 = sheet4.cell(row_4, cost_col_4).value
+                        cost_value_4 = openpyxl_utils.get_cell_value(sheet4, row_4, cost_col_4)
                         # 提取括号中的数值
                         match = re.search(r"（([\d.]+)", cost_value_4)
                         if match:
                             matched_cost = float(match.group(1))
                         break
                 # 将匹配到的成本价写入表2的采购价列
-                sheet2.cell(row_2, columns2["采购价"]).value = matched_cost
+                openpyxl_utils.set_cell_value(sheet2, row_2, columns2["采购价"], matched_cost)
     except Exception as e:
         raise Exception(f"匹配和写入成本价时发生错误: {e}")
 
@@ -155,18 +125,18 @@ def main():
         exchange_rate = utils.get_usd_to_cny_rate()
 
         # 加载文件
-        wb1 = load_excel_file(source_file)
-        wb2 = load_excel_file("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF供应商对账表模版.xlsx")
-        wb4 = load_excel_file("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF产品核对表1114.xlsx")
+        wb1 = openpyxl_utils.load_excel_file(source_file)
+        wb2 = openpyxl_utils.load_excel_file("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF供应商对账表模版.xlsx")
+        wb4 = openpyxl_utils.load_excel_file("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF产品核对表1114.xlsx")
 
         # 获取活动表
-        sheet1 = get_active_sheet(wb1)
-        sheet2 = get_active_sheet(wb2)
-        sheet4 = get_active_sheet(wb4)
+        sheet1 = openpyxl_utils.get_active_sheet(wb1)
+        sheet2 = openpyxl_utils.get_active_sheet(wb2)
+        sheet4 = openpyxl_utils.get_active_sheet(wb4)
 
         # 查找列
-        columns1 = find_columns(sheet1, ["Paid Time", "Order ID", "Quantity", "Seller SKU"])
-        columns2 = find_columns(sheet2, ["日期", "订单单号", "数量", "运费", "款号", "汇率", "采购价"])
+        columns1 = openpyxl_utils.find_columns(sheet1, ["Paid Time", "Order ID", "Quantity", "Seller SKU"])
+        columns2 = openpyxl_utils.find_columns(sheet2, ["日期", "订单单号", "数量", "运费", "款号", "汇率", "采购价"])
 
         # 写入数据
         write_data_to_sheet(sheet1, sheet2, columns1, columns2, exchange_rate)

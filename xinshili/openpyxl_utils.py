@@ -1,0 +1,95 @@
+from openpyxl import load_workbook
+
+
+def load_excel_file(file_path):
+    """
+    加载 Excel 文件
+    """
+    try:
+        return load_workbook(file_path)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"未找到文件: {file_path}")
+    except Exception as e:
+        raise Exception(f"加载文件 {file_path} 时发生错误: {e}")
+
+
+def get_active_sheet(workbook):
+    """
+    获取活动表
+    """
+    try:
+        return workbook.active
+    except Exception as e:
+        raise Exception(f"获取活动表时发生错误: {e}")
+
+
+def find_column(sheet, column_name):
+    """
+    动态查找指定列名的列号。
+
+    :param sheet: openpyxl 的 Worksheet 对象，表示 Excel 工作表。
+    :param column_name: 需要查找的单一列名（字符串）。
+    :return: 对应的列号（整数）。
+    :raises: 如果未找到指定列名，抛出 ValueError。
+
+    eg: find_column(sheet,"价格")
+    """
+    try:
+        # 遍历工作表的每一列
+        for col in sheet.iter_cols(1, sheet.max_column):
+            # 获取当前列的第一行值（表头）
+            header = col[0].value
+
+            # 如果表头匹配目标列名，返回对应的列号
+            if header == column_name:
+                return col[0].column
+
+        # 如果未找到目标列名，抛出异常
+        raise ValueError(f"未找到列名: {column_name}")
+
+    except Exception as e:
+        # 捕获异常，并抛出自定义错误信息
+        raise Exception(f"查找列时发生错误: {e}")
+
+
+def find_columns(sheet, column_names):
+    """
+    动态查找多个列名的列号。
+
+    :param sheet: openpyxl 的 Worksheet 对象，表示 Excel 工作表。
+    :param column_names: 需要查找的列名列表（list）。
+    :return: 包含列名和对应列号的字典 {列名: 列号}。
+    :raises: 当某些列名未找到时，抛出 ValueError。
+    """
+    column_map = {}
+    missing_columns = []
+
+    for column_name in column_names:
+        try:
+            # 调用单列查找函数
+            column_map[column_name] = find_column(sheet, column_name)
+        except ValueError:
+            # 如果列名未找到，记录到缺失列表
+            missing_columns.append(column_name)
+
+    # 如果有未找到的列名，抛出异常
+    if missing_columns:
+        raise ValueError(f"未找到以下列名: {missing_columns}")
+
+    return column_map
+
+
+def get_cell_value(sheet, row, column):
+    """
+    通过 openpyxl 获取工作表 sheet 中第 row 行的 column 列单元格的值
+    eg: get_columns_value_by_row(sheet1,1,"A")
+    """
+    return sheet.cell(row, column).value
+
+
+def set_cell_value(sheet, row, column, value):
+    """
+    通过 openpyxl 设置工作表 sheet 中第 row 行的 column 列单元格的值
+    eg: set_columns_value_by_row(sheet1,1,"A","黑色")
+    """
+    sheet.cell(row, column).value = value

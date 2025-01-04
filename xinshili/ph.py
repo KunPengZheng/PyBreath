@@ -80,6 +80,47 @@ def check_chinese_in_excel(file_path):
                 print(f"第{row}行，{col_letter} 列包含中文：{cell_value}")
 
 
+def check_contains_2024(file_path):
+    """
+    检查 B 列第二行开始的每个单元格是否包含 '2024'，存在的打印所在的行数。
+    :param file_path: Excel 文件路径
+    """
+    # 加载工作簿和工作表
+    wb = load_workbook(file_path)
+    sheet = wb.active  # 默认第一个工作表
+
+    # 遍历 B 列（第二列），从第二行开始
+    for row in range(2, sheet.max_row + 1):
+        cell = sheet.cell(row=row, column=2)  # B 列是第2列
+        if cell.value and '2024' in str(cell.value):  # 转为字符串后检查是否包含 '2024'
+            cell.value = str(cell.value).replace('2024', '2025')  # 替换 '2024' 为 '2025'
+            print(f"B列第 {row} 行包含 '2024'")
+
+
+def check_price_min(file_path):
+    """
+    检查 O 列第二行开始的每个单元格的价格是否 <= 4，存在的打印所在的行数。
+    :param file_path: Excel 文件路径
+    """
+    # 加载工作簿和工作表
+    wb = load_workbook(file_path)
+    sheet = wb.active  # 默认第一个工作表
+
+    # O 列是第 15 列
+    column_index = 15
+
+    # 遍历 O 列从第二行开始的每一行
+    for row in range(2, sheet.max_row + 1):
+        cell = sheet.cell(row=row, column=column_index)
+        if cell.value is not None:  # 确保单元格不是空的
+            try:
+                value = float(cell.value)  # 转为浮点数以便比较
+                if value <= 4:
+                    print(f"第 {row} 行的 O 列单元格值为 {value}")
+            except ValueError:
+                print(f"第 {row} 行的 O 列单元格值 {cell.value} 不是数字")
+
+
 def match_and_fill_with_openpyxl(file1_path, file2_path, output_path):
     """
     根据文件1的E列数据匹配文件2的B列，如果匹配成功，将文件2的I列内容填充到文件1的P列。
@@ -132,5 +173,7 @@ output_path = "/Users/zkp/Desktop/B&Y/铺货/template_tiktokGlobal_result.xlsx"
 check_path = "/Users/zkp/Desktop/B&Y/铺货/table_1.xlsx"  # 问题：xls转换为xlsx
 
 copy_columns_with_format(src_file_path, dst_file_path, output_path, start_row=2, cols_range='A:AG')
-check_chinese_in_excel(output_path)
 match_and_fill_with_openpyxl(output_path, check_path, output_path)
+check_chinese_in_excel(output_path)
+check_contains_2024(output_path)
+check_price_min(output_path)
