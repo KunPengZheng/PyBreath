@@ -9,8 +9,10 @@ def extract_text_from_pdf(pdf_path):
     text = ""
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
-            text += page.extract_text()
-    # print(f"打印内容：{text}")
+            # page.extract_text(): 扫描文字
+            # replace去除字符串空格
+            text += page.extract_text().replace(" ", "")
+    print(f"打印内容：{text}")
     return text
 
 
