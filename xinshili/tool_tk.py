@@ -1,12 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
-import pikepdf
-import pdfplumber
-import re
-import os
 
-from xinshili.pdf_split import split_pdf
-from xinshili.pdf_split_tk import extract_text_from_pdf
+from xinshili.pdf_split import split_pdf, extract_text_from_pdf
 from xinshili.utils import ensure_directory_exists
 
 
@@ -65,7 +60,7 @@ output_label = tk.Label(root, text="未选择输出目录", wraplength=400)
 output_label.pack()
 
 # 开始处理按钮
-tk.Button(root, text="开始处理 PDF", command=process_pdf, bg="green", fg="white").pack(pady=20)
+tk.Button(root, text="开始处理 PDF", command=process_pdf).pack(pady=20)
 
 # 运行主循环
 root.mainloop()
