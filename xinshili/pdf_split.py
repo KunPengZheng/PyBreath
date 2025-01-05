@@ -1,56 +1,38 @@
+import os
+
 import pikepdf
 import pdfplumber
 import re
 
-from xinshili.utils import get_filename_without_extension, ensure_directory_exists
+from xinshili.utils import get_filename_without_extension
 
 
 def extract_text_from_pdf(pdf_path):
-    text = ""
+    extract_text = ""
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             # page.extract_text(): 扫描文字
             # replace去除字符串空格
-            text += page.extract_text().replace(" ", "")
-    print(f"打印内容：{text}")
-    return text
+            extract_text += page.extract_text().replace(" ", "")
+    # print(f"打印内容：{extract_text}")
+    # 扫描所有pdf的文本内容，正则匹配获取到面单号
+    return re.findall(r'\b\d{22,34}\b', extract_text)
 
 
-def split_pdf(input_pdf_path, output_folder):
-    # 打开原始 PDF
+def split_pdf(input_pdf_path, output_folder, matches):
     with pikepdf.open(input_pdf_path) as pdf:
         total_pages = len(pdf.pages)
 
         for page_num in range(total_pages):
-            # 创建一个新的 PDF 实例
             new_pdf = pikepdf.Pdf.new()
-
-            # 添加页面
             new_pdf.pages.append(pdf.pages[page_num])
 
-            num_ = matches[page_num]
+            # 使用匹配到的面单号作为文件名
+            if page_num < len(matches):
+                num_ = matches[page_num]
+            else:
+                num_ = f"page_{page_num + 1}"  # 如果没有匹配到，使用默认编号
 
-            # 设置输出文件名
-            output_pdf_path = f"{output_folder}" + num_ + ".pdf"
-
-            # 保存新 PDF 文件
+            output_pdf_path = os.path.join(output_folder, f"{num_}.pdf")
             new_pdf.save(output_pdf_path)
-
             print(f"保存了 {output_pdf_path}")
-
-
-# 示例使用
-input_pdf = input("请输入源表文件的绝对路径：")
-output_folder = "/Users/zkp/Desktop/B&Y/pdf/" + get_filename_without_extension(input_pdf) + "/"  # 输出目录路径
-
-ensure_directory_exists(output_folder)
-
-# 扫描所有pdf的文本内容
-text = extract_text_from_pdf(input_pdf)
-
-# 匹配获取到面单号
-pattern = r'\b\d{22,34}\b'
-matches = re.findall(pattern, text)
-
-# 裁剪为单独的pdf
-split_pdf(input_pdf, output_folder)
