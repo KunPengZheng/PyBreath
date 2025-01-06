@@ -1,4 +1,5 @@
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 
 
 def load_excel_file(file_path):
@@ -93,3 +94,26 @@ def set_cell_value(sheet, row, column, value):
     eg: set_columns_value_by_row(sheet1,1,"A","黑色")
     """
     sheet.cell(row, column).value = value
+
+
+def generate_column_name():
+    """
+    生成从 A 列到 BZ 列的常量，例如 column_A = "A"
+    """
+    for i in range(1, 79):  # 1 到 78 对应 A 到 BZ
+        column_letter = get_column_letter(i)
+        print(f"column_{column_letter} = \"{column_letter}\"")
+
+
+def generate_column_value():
+    """
+    生成 A 列到 BZ 列对应的数字常量，例如 column_A = "1"
+    """
+    columns = {}
+    for i in range(1, 79):  # 1 到 78 对应 A 到 BZ
+        column_letter = get_column_letter(i)  # 获取列名
+        columns[column_letter] = i
+
+    # 打印常量
+    for col, num in columns.items():
+        print(f"column_{col} = {num}")
