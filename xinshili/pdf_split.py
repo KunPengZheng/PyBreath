@@ -4,6 +4,29 @@ import pikepdf
 import pdfplumber
 import re
 
+from openpyxl.workbook import Workbook
+
+
+def save_waybill_numbers_to_excel(waybill_numbers, output_folder):
+    """
+    将运单号逐行写入到 Excel 文件
+    """
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "运单号"
+
+    # 写入标题行
+    ws.append(["运单号"])
+
+    # 写入运单号
+    for number in waybill_numbers:
+        ws.append([number])
+
+    # 保存文件
+    output_file_path = os.path.join(output_folder, "运单号列表.xlsx")
+    wb.save(output_file_path)
+    print(f"运单号列表已保存为：{output_file_path}")
+
 
 def extract_text_from_pdf(pdf_path):
     extract_text = ""
@@ -14,10 +37,13 @@ def extract_text_from_pdf(pdf_path):
             extract_text += page.extract_text().replace(" ", "")
     # print(f"打印内容：{extract_text}")
     # 扫描所有pdf的文本内容，正则匹配获取到面单号
-    return re.findall(r'\b\d{22,34}\b', extract_text)
+    findall = re.findall(r'\b\d{22,34}\b', extract_text)
+    return findall
 
 
 def split_pdf(input_pdf_path, output_folder, matches):
+    save_waybill_numbers_to_excel(matches, output_folder)
+
     with pikepdf.open(input_pdf_path) as pdf:
         total_pages = len(pdf.pages)
 
