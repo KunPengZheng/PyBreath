@@ -4,8 +4,6 @@ import pikepdf
 import pdfplumber
 import re
 
-from xinshili.utils import get_filename_without_extension
-
 
 def extract_text_from_pdf(pdf_path):
     extract_text = ""
