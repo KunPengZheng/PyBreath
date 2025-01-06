@@ -62,7 +62,12 @@ def tip_format(file_path, exchange_rate):
     # 获取 H 列最后一行，并计算总和
     last_row = sheet.range('H' + str(sheet.cells.last_cell.row)).end('up').row
     h_values = sheet.range(f'H2:H{last_row}').value
-    h_total = sum(value for value in h_values if isinstance(value, (int, float)))
+    if isinstance(h_values, (list, tuple)):
+        h_total = sum(value for value in h_values if isinstance(value, (int, float)))
+    elif isinstance(h_values, (int, float)):
+        h_total = h_values
+    else:
+        raise TypeError("h_values 必须是一个数字或可迭代对象")
 
     # 设置字体颜色为红色
     red_color = (255, 0, 0)  # RGB 值表示红色
