@@ -2,8 +2,8 @@ import re
 import os
 import utils
 from xinshili import openpyxl_utils
-from xinshili.xlwings_utils import calculate_formula_1, xw_map, beautify, xw_save, get_last_row_num, \
-    get_range_row_value, set_cell_value
+from xinshili.xlwings_utils import xw_map, beautify, xw_save, get_last_row_num, \
+    get_range_row_value, set_cell_value, calculate_formula
 
 """
 风向标:CZFF供应商对账表
@@ -80,17 +80,23 @@ def calculate_rmb_prices(file_path):
         wb = xwMap["workbook"]
         sheet = xwMap["sheet"]
 
+        # 定义需要读取的列
         column_list = ["D", "E", "F", "G"]
 
+        # 定义计算规则的回调函数
         def callback(column_result_dic):
-            d_ = column_result_dic["D"]
-            e_ = column_result_dic["E"]
-            f_ = column_result_dic["F"]
-            g_ = column_result_dic["G"]
-            result = ((d_ * float(e_)) + f_) * g_
-            return round(result, 2)
+            try:
+                d_ = column_result_dic["D"]
+                e_ = column_result_dic["E"]
+                f_ = column_result_dic["F"]
+                g_ = column_result_dic["G"]
+                result = ((d_ * float(e_)) + f_) * g_
+                return round(result, 2)
+            except Exception as e:
+                raise Exception(f"Error in callback function: {e}")
 
-        calculate_formula_1(sheet, file_path, column_list, "H", callback)
+        # 调用计算函数
+        calculate_formula(sheet, column_list, "H", callback)
 
         last_row = get_last_row_num(sheet, 'H')
         h_values = get_range_row_value(sheet, 'H', 2, last_row)

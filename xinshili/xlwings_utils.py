@@ -33,30 +33,39 @@ def beautify(sheet):
         raise Exception(f"错误: {e}")
 
 
-def calculate_formula_1(sheet, file_path, column_list, target_column, callback):
+def calculate_formula(sheet, column_list, target_column, callback):
     """
-    获取指定列每一行的内容，然后赋值到对应行指定列
+    根据指定规则计算值并写入目标列。
 
-    :param file_path: openpyxl 的 Worksheet 对象，表示 Excel 工作表。
-    :param column_list: 需要查找的列名列表（list）。
-    :param target_column: 需要赋值的列名。
-    :param callback: 计算规则的回调由调用者指定。
-    :raises: 异常。
+    :param sheet: Excel 工作表对象。
+    :param column_list: 需要读取的列名列表（list）。
+    :param target_column: 需要赋值的目标列名。
+    :param callback: 计算规则的回调函数，由调用者定义。
+    :raises Exception: 如果发生错误，抛出异常。
     """
     try:
-        # range包头不包尾，所以+1
+        # 遍历从第二行到最后一行的数据
+        # 2 是起始值，表示从 Excel 工作表的第 2 行开始遍历（一般第 1 行是表头，所以从第 2 行开始处理实际数据）。
+        # range 的结束值是非包含的，因此要加 1 才能遍历到最后一行。
         for row in range(2, sheet.used_range.last_cell.row + 1):
-            column_result_dic = {}  # 空字典
-            for i in range(len(column_list)):
-                # sheet.range(f"{column_list[i]}{row}").value 获取某个单元格的值
-                column_result_dic[column_list[i]] = sheet.range(f"{column_list[i]}{row}").value  # 添加
-                pass
-            # print(row, column_result_dic)
-            # 单元格赋值
-            sheet.range(f"{target_column}{row}").value = callback(column_result_dic)
+            column_result_dic = {}  # 用于存储当前行的列值
+
+            # 读取指定列的值
+            for col in column_list:
+                cell_value = sheet.range(f"{col}{row}").value
+                column_result_dic[col] = cell_value
+
+            print(f"Row {row}: {column_result_dic}")
+
+            # 如果所有需要的列值都存在，则进行计算
+            if all(column_result_dic[col] is not None for col in column_list):
+                calculated_value = callback(column_result_dic)
+                sheet.range(f"{target_column}{row}").value = calculated_value
+            else:
+                print(f"Row {row} has missing values, skipping calculation.")
 
     except Exception as e:
-        raise Exception(f"错误: {e}")
+        raise Exception(f"Error during calculation: {e}")
 
 
 def get_last_row_num(sheet, column_name):
