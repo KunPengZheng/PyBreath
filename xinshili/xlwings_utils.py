@@ -47,6 +47,7 @@ def calculate_formula(sheet, column_list, target_column, callback):
         # 遍历从第二行到最后一行的数据
         # 2 是起始值，表示从 Excel 工作表的第 2 行开始遍历（一般第 1 行是表头，所以从第 2 行开始处理实际数据）。
         # range 的结束值是非包含的，因此要加 1 才能遍历到最后一行。
+        # ⚠️： sheet.used_range.last_cell.row 返回的是 Excel 工作表中最后一个“使用过”的单元格的行号，而不仅仅是有效数据的行号。
         for row in range(2, sheet.used_range.last_cell.row + 1):
             column_result_dic = {}  # 用于存储当前行的列值
 
@@ -55,7 +56,7 @@ def calculate_formula(sheet, column_list, target_column, callback):
                 cell_value = sheet.range(f"{col}{row}").value
                 column_result_dic[col] = cell_value
 
-            print(f"Row {row}: {column_result_dic}")
+            # print(f"Row {row}: {column_result_dic}")
 
             # 如果所有需要的列值都存在，则进行计算
             if all(column_result_dic[col] is not None for col in column_list):
