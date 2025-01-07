@@ -117,3 +117,8 @@ def generate_column_value():
     # 打印常量
     for col, num in columns.items():
         print(f"column_{col} = {num}")
+
+
+def get_max_row(sheet):
+    # 获取最大行号
+    return sheet.max_row
