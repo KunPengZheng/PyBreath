@@ -59,3 +59,11 @@ def round2(nums):
     四舍五入，保留两位数
     """
     return round(nums, 2)
+
+
+def isinstanceNums(value):
+    """
+    判断 value 的数据类型是否为整数（int）或浮点数（float）
+    """
+    return isinstance(value, (int, float))
+

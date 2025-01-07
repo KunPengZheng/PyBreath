@@ -1,8 +1,9 @@
 import re
-import xlwings as xw
 import os
 import utils
 from xinshili import openpyxl_utils
+from xinshili.xlwings_utils import calculate_formula_1, xw_map, beautify, xw_save, get_last_row_num, \
+    get_range_row_value, set_cell_value
 
 """
 风向标:CZFF供应商对账表
@@ -74,45 +75,30 @@ def calculate_rmb_prices(file_path):
     计算采购价（RMB）并写入表格
     """
     try:
-        app = xw.App(visible=False)
-        wb = xw.Book(file_path)
-        sheet = wb.sheets[0]
+        xwMap = xw_map(file_path)
+        app = xwMap["app"]
+        wb = xwMap["workbook"]
+        sheet = xwMap["sheet"]
 
-        # 假设表中的列号
-        purchase_price_col = "D"
-        quantity_col = "E"
-        freight_col = "F"
-        exchange_rate_col = "G"
-        purchase_price_rmb_col = "H"
+        column_list = ["D", "E", "F", "G"]
 
-        for row in range(2, sheet.used_range.last_cell.row + 1):
-            purchase_price = sheet.range(f"{purchase_price_col}{row}").value
-            quantity = sheet.range(f"{quantity_col}{row}").value
-            freight = sheet.range(f"{freight_col}{row}").value
-            exchange_rate = sheet.range(f"{exchange_rate_col}{row}").value
+        def callback(column_result_dic):
+            d_ = column_result_dic["D"]
+            e_ = column_result_dic["E"]
+            f_ = column_result_dic["F"]
+            g_ = column_result_dic["G"]
+            result = ((d_ * float(e_)) + f_) * g_
+            return round(result, 2)
 
-            if purchase_price and quantity and freight and exchange_rate:
-                purchase_price_rmb = ((purchase_price * float(quantity)) + freight) * exchange_rate
-                sheet.range(f"{purchase_price_rmb_col}{row}").value = round(purchase_price_rmb, 2)
+        calculate_formula_1(sheet, file_path, column_list, "H", callback)
 
-        last_row = sheet.range('H' + str(sheet.cells.last_cell.row)).end('up').row
-        h_values = sheet.range(f'H2:H{last_row}').value
-        h_total = round(sum(value for value in h_values if isinstance(value, (int, float))), 2)
+        last_row = get_last_row_num(sheet, 'H')
+        h_values = get_range_row_value(sheet, 'H', 2, last_row)
+        h_total = utils.round2(sum(value for value in h_values if utils.isinstanceNums(value)))
+        set_cell_value(sheet, "L", "1", f"总计:¥ {h_total} 元")
 
-        sheet.range("L1").value = f"总计:¥ {h_total} 元"
-
-        # 自动调整所有单元格的列宽和行高
-        sheet.used_range.columns.autofit()  # 自动调整所有列宽
-        sheet.used_range.rows.autofit()  # 自动调整所有行高
-
-        # 设置所有单元格内容居中
-        used_range = sheet.used_range
-        used_range.api.HorizontalAlignment = -4108  # xlCenter，水平居中
-        used_range.api.VerticalAlignment = -4108  # xlCenter，垂直居中
-
-        wb.save(file_path)
-        wb.close()
-        app.quit()
+        beautify(sheet)
+        xw_save(wb, app)
 
         return h_total
     except Exception as e:
