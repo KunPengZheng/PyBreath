@@ -67,3 +67,9 @@ def isinstanceNums(value):
     """
     return isinstance(value, (int, float))
 
+
+def current_dir():
+    """
+    获取当前文件所在的目录
+    """
+    return os.path.dirname(os.path.abspath(__file__))

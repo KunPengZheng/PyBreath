@@ -118,8 +118,8 @@ def main():
 
         # 加载文件
         wb1 = openpyxl_utils.load_excel_file(source_file)
-        wb2 = openpyxl_utils.load_excel_file("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF供应商对账表模版.xlsx")
-        wb4 = openpyxl_utils.load_excel_file("/Users/zkp/Desktop/B&Y/CZFF供应商对账/CZFF产品核对表1114.xlsx")
+        wb2 = openpyxl_utils.load_excel_file(utils.current_dir() + "/xlsx/fxb/CZFF供应商对账表模版.xlsx")
+        wb4 = openpyxl_utils.load_excel_file(utils.current_dir() + "/xlsx/fxb/CZFF产品核对表.xlsx")
 
         # 获取活动表
         sheet1 = openpyxl_utils.get_active_sheet(wb1)
