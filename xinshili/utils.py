@@ -34,6 +34,10 @@ def open_dir(folder_path):
     subprocess.run(["open", folder_path])
 
 
+def dirname(absolute_path):
+    return os.path.dirname(absolute_path)  # 获取文件所在路径
+
+
 def get_filename_without_extension(file_path):
     """
     获取路径的文件名（不含后缀）
