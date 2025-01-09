@@ -124,7 +124,7 @@ exchange_rate = utils.get_usd_to_cny_rate()
 if os.path.isabs(source_file) and os.path.isfile(source_file):
     file_name_without_extension = os.path.splitext(os.path.basename(source_file))[0]
     # last_four_chars = file_name_without_extension[-4:]  # 获取文件名最后四个字符
-    target_file = "/Users/zkp/Desktop/B&Y/代发货结算/代发货结算表模版.xlsx"  # 目标表文件路径
+    target_file = utils.current_dir() + "/xlsx/dfh/代发货结算表模版.xlsx"  # 目标表文件路径
     output_file = "/Users/zkp/Desktop/B&Y/代发货结算/" + file_name_without_extension + "_temp.xlsx"  # 输出文件路径
 
     # 替换的列名（注意名称要与表格列头匹配，去除空格）
