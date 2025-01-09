@@ -82,8 +82,7 @@ def merge_based_on_largest_header(input_folder, output_file):
     except Exception as e:
         print(f"执行过程中发生错误: {e}")
 
-
 # 示例使用
-input_folder = "/Users/zkp/Desktop/B&Y/合并/mult"  # 替换为存放 Excel 文件的文件夹路径
-output_file = "/Users/zkp/Desktop/B&Y/合并/mult/combined.xlsx"  # 替换为输出文件路径
-merge_based_on_largest_header(input_folder, output_file)
+# input_folder = input("请输入需要合并的文件所在的目录路径：")  # 存放 Excel 文件的文件夹路径
+# output_file = input_folder + "/combined.xlsx"
+# merge_based_on_largest_header(input_folder, output_file)
