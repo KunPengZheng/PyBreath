@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from xinshili.pdf_split2 import split_pdf, extract_text_from_pdf
-from xinshili.utils import ensure_directory_exists
+from xinshili.utils import ensure_directory_exists, open_dir
 
 
 class PDFProcessingThread(QThread):
@@ -107,7 +107,22 @@ class PDFTool(QWidget):
         self.thread.start()
 
     def show_success_message(self, message):
-        QMessageBox.information(self, "成功", message)
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setWindowTitle("成功")
+        msg_box.setText(message)
+        msg_box.setStandardButtons(QMessageBox.Ok)
+
+        # 绑定自定义逻辑到 OK 按钮点击事件
+        msg_box.accepted.connect(self.custom_logic_after_success)
+        msg_box.exec_()
+
+    def custom_logic_after_success(self):
+        # 在这里实现自定义逻辑
+        print("用户点击了 'OK' 按钮，执行自定义逻辑")
+        # 示例：打开输出目录
+        if self.output_folder_path:
+            open_dir(self.output_folder_path)
 
     def show_error_message(self, message):
         QMessageBox.critical(self, "错误", message)
