@@ -1,4 +1,5 @@
 import re
+import pandas as pd
 
 import xlwings as xw
 from openpyxl import load_workbook
@@ -99,7 +100,7 @@ def match_and_fill_with_openpyxl(file1_path, file2_path, output_path):
                 ws1.cell(row=row, column=3).value = 0
                 ws1[f"C{row}"].fill = red_fill
             else:
-                value_ = matched_content - int(ws1.cell(row=row, column=2).value)
+                value_ = int(matched_content) - int(ws1.cell(row=row, column=2).value)
                 ws1.cell(row=row, column=3).value = value_
                 if value_ < 30:
                     ws1[f"C{row}"].fill = red_fill
@@ -109,9 +110,46 @@ def match_and_fill_with_openpyxl(file1_path, file2_path, output_path):
     print(f"结果已保存到: {output_path}")
 
 
+def convert_xls_to_xlsx(input_file, output_file):
+    # 读取 .xls 文件
+    df = pd.read_excel(input_file, engine='xlrd')
+    # 保存为 .xlsx 文件
+    df.to_excel(output_file, index=False, engine='openpyxl')
+    print(f"文件已转换并保存到: {output_file}")
+
+
+def convert_csv_to_xlsx(csv_file, xlsx_file):
+    """
+    将 CSV 文件转换为 XLSX 文件格式。
+
+    :param csv_file: 输入的 CSV 文件路径
+    :param xlsx_file: 输出的 XLSX 文件路径
+    """
+    try:
+        # 读取 CSV 文件
+        data = pd.read_csv(csv_file)
+
+        # 将数据写入 XLSX 文件
+        data.to_excel(xlsx_file, index=False, engine="openpyxl")
+
+        print(f"文件已成功转换为 XLSX 格式: {xlsx_file}")
+    except Exception as e:
+        print(f"转换过程中发生错误: {e}")
+
+
 # 示例使用
-input_file = "/Users/zkp/Downloads/order_120250108092648725_1573179_副本.xlsx"  # 输入文件路径
+input_file = "/Users/zkp/Downloads/order_120250109094522406_1573179.xlsx"  # 输入文件路径
 output_file = "/Users/zkp/Downloads/xsxsxs.xlsx"  # 输出文件路径
-table_1 = "/Users/zkp/Downloads/table_2.xlsx"  # 输出文件路径
+table_1 = "/Users/zkp/Downloads/table_1.xlsx"  # 输出文件路径
 merge_and_sum_sku(input_file, output_file)
 match_and_fill_with_openpyxl(output_file, table_1, output_file)
+
+# 示例使用
+# input_file = "/Users/zkp/Downloads/order_120250109094522406_1573179.xlsx"  # 输入文件路径
+# output_file = "/Users/zkp/Downloads/xsxsxs.xlsx"  # 输出文件路径
+# table_1 = "/Users/zkp/Downloads/table_1.xls"  # 输出文件路径
+# table_3 = "/Users/zkp/Downloads/table_1.csv"  # 输出文件路径
+# table_2 = "/Users/zkp/Downloads/table_1.xlsx"  # 输出文件路径
+# convert_csv_to_xlsx(table_3, table_2)
+# merge_and_sum_sku(input_file, output_file)
+# match_and_fill_with_openpyxl(output_file, table_2, output_file)
