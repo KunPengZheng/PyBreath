@@ -54,8 +54,25 @@ def merge_based_on_largest_header(input_folder, output_file):
         # 写入合并结果到输出文件
         output_wb = app.books.add()
         output_ws = output_wb.sheets[0]
-        output_ws.range("A1").value = list(result_data.keys())  # 写入表头
-        output_ws.range("A2").value = list(zip(*result_data.values()))  # 写入数据
+
+        # 写入表头
+        output_ws.range("A1").value = list(result_data.keys())
+
+        # 写入数据
+        output_ws.range("A2").value = list(zip(*result_data.values()))
+
+        # 强制保留长数字格式和日期格式
+        for col_idx, header in enumerate(result_data.keys(), start=1):
+            column_range = output_ws.range(output_ws.cells(2, col_idx), output_ws.cells(len(result_data[header]) + 1, col_idx))
+            if any(isinstance(val, (int, float)) and len(str(val)) > 11 for val in result_data[header]):
+                column_range.number_format = "0"  # 设置为整数格式
+            elif any(isinstance(val, str) and "-" in val and ":" in val for val in result_data[header]):
+                column_range.number_format = "yyyy-mm-dd hh:mm:ss"  # 设置为日期时间格式
+
+        # 自动调整列宽
+        output_ws.autofit()
+
+        # 保存结果文件
         output_wb.save(output_file)
         output_wb.close()
         print(f"合并完成，结果已保存到: {output_file}")
