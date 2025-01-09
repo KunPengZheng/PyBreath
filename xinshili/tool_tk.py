@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
 )
 
 from xinshili.excel_combined import merge_based_on_largest_header
-from xinshili.pdf_split2 import split_pdf, extract_text_from_pdf
+from xinshili.pdf_split import split_pdf, extract_text_from_pdf
 from xinshili.utils import ensure_directory_exists, open_dir
 
 
