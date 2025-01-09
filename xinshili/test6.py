@@ -47,7 +47,11 @@ def merge_based_on_largest_header(input_folder, output_file):
                 for row in rows:
                     row_dict = {headers[idx]: row[idx] for idx in range(len(headers)) if headers[idx] in result_data}
                     for header in largest_header:
-                        result_data[header].append(row_dict.get(header, None))  # 如果列不存在，则填充None
+                        value = row_dict.get(header, None)
+                        # 如果是运单号列，强制转换为字符串并处理为文本形式
+                        if header == "运单号" and value is not None:
+                            value = f"'{str(value)}"  # 添加前置单引号，确保Excel读取为文本格式
+                        result_data[header].append(value)
 
                 wb.close()
 
@@ -61,13 +65,11 @@ def merge_based_on_largest_header(input_folder, output_file):
         # 写入数据
         output_ws.range("A2").value = list(zip(*result_data.values()))
 
-        # 强制保留长数字格式和日期格式
+        # 强制设置运单号列为文本格式
         for col_idx, header in enumerate(result_data.keys(), start=1):
-            column_range = output_ws.range(output_ws.cells(2, col_idx), output_ws.cells(len(result_data[header]) + 1, col_idx))
-            if any(isinstance(val, (int, float)) and len(str(val)) > 11 for val in result_data[header]):
-                column_range.number_format = "0"  # 设置为整数格式
-            elif any(isinstance(val, str) and "-" in val and ":" in val for val in result_data[header]):
-                column_range.number_format = "yyyy-mm-dd hh:mm:ss"  # 设置为日期时间格式
+            if header == "运单号":
+                column_range = output_ws.range(output_ws.cells(2, col_idx), output_ws.cells(len(result_data[header]) + 1, col_idx))
+                column_range.number_format = "@"  # 设置为文本格式
 
         # 自动调整列宽
         output_ws.autofit()
