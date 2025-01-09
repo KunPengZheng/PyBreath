@@ -58,6 +58,10 @@ def ensure_directory_exists(dir_path):
         print(f"文件夹已存在: {dir_path}")
 
 
+def rename(old_file_path, new_file_path):
+    os.rename(old_file_path, new_file_path)
+
+
 def round2(nums):
     """
     四舍五入，保留两位数
