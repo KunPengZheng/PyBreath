@@ -1,13 +1,15 @@
 import os
-from openpyxl import load_workbook, Workbook
+from openpyxl import Workbook, load_workbook
 
 
-def merge_based_on_largest_header(input_folder, output_file):
+def merge_and_sort_based_on_largest_header(input_folder, output_file, sort_column, ascending=True):
     """
-    合并文件夹中多个文件的相同列名数据，选择表头最多的文件作为模板。
+    合并文件夹中多个文件的相同列名数据，选择表头最多的文件作为模板，并按指定列排序。
 
     :param input_folder: 文件夹路径，包含多个 Excel 文件
     :param output_file: 输出的合并结果文件路径
+    :param sort_column: 指定排序的列名
+    :param ascending: 是否升序排序，True 为升序，False 为降序
     """
     try:
         # 找到表头最多的文件
@@ -50,16 +52,28 @@ def merge_based_on_largest_header(input_folder, output_file):
 
                 wb.close()
 
+        # 转换为列表形式，以便排序
+        merged_data = list(zip(*result_data.values()))
+        headers = list(result_data.keys())
+
+        # 检查排序列是否存在
+        if sort_column not in headers:
+            raise ValueError(f"排序列 '{sort_column}' 不存在，请检查列名是否正确！")
+
+        # 按指定列排序
+        sort_index = headers.index(sort_column)
+        merged_data = sorted(merged_data, key=lambda x: (x[sort_index] is None, x[sort_index]), reverse=not ascending)
+
         # 写入合并结果到输出文件
         output_wb = Workbook()
         output_ws = output_wb.active
         output_ws.title = "合并结果"
 
         # 写入表头
-        output_ws.append(list(result_data.keys()))
+        output_ws.append(headers)
 
         # 写入数据
-        for row in zip(*result_data.values()):
+        for row in merged_data:
             output_ws.append(row)
 
         # 自动调整列宽
@@ -77,13 +91,14 @@ def merge_based_on_largest_header(input_folder, output_file):
 
         # 保存结果文件
         output_wb.save(output_file)
-        print(f"合并完成，结果已保存到: {output_file}")
+        print(f"合并完成并按 '{sort_column}' 排序，结果已保存到: {output_file}")
 
     except Exception as e:
         print(f"执行过程中发生错误: {e}")
 
 
-# 示例使用
 input_folder = input("请输入需要合并的文件所在的目录路径：")  # 存放 Excel 文件的文件夹路径
-output_file = input_folder + "/combined.xlsx"
-merge_based_on_largest_header(input_folder, output_file)
+output_file = input_folder + "/combined1111.xlsx"
+sort_column = "实际发货时间"  # 替换为需要排序的列名
+ascending_order = True  # True表示升序，False表示降序
+merge_and_sort_based_on_largest_header(input_folder, output_file, sort_column, ascending_order)
