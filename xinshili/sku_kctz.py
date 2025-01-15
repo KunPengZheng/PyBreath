@@ -1,6 +1,7 @@
 import csv
 from collections import defaultdict
 from openpyxl import Workbook
+from openpyxl.styles import Alignment
 
 
 def extract_and_count_sku_from_csv_to_xlsx(input_file, output_file, column_name, plus_or_minus):
@@ -49,11 +50,18 @@ def extract_and_count_sku_from_csv_to_xlsx(input_file, output_file, column_name,
         for sku, count in sorted_sku_counts:
             ws.append([sku, count, plus_or_minus])
 
-        # 自动调整列宽
+        # 调整单元格宽度并居中
         for column_cells in ws.columns:
-            max_length = max(len(str(cell.value)) if cell.value else 0 for cell in column_cells)
-            col_letter = column_cells[0].column_letter
-            ws.column_dimensions[col_letter].width = max_length + 2
+            max_length = 0
+            column_letter = column_cells[0].column_letter
+            for cell in column_cells:
+                if cell.value:
+                    cell_length = len(str(cell.value))
+                    if cell_length > max_length:
+                        max_length = cell_length
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+            adjusted_width = max_length + 2  # 增加适当的宽度间隔
+            ws.column_dimensions[column_letter].width = adjusted_width
 
         # 保存文件
         wb.save(output_file)
