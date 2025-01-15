@@ -5,7 +5,8 @@ from openpyxl import Workbook
 
 def extract_and_count_sku_from_csv_to_xlsx(input_file, output_file, column_name="SKU"):
     """
-    从 CSV 文件提取 SKU 列中的内容，以 `*` 为分隔符统计每个标识的数量，并输出为 XLSX 文件。
+    从 CSV 文件提取 SKU 列中的内容，以 `*` 为分隔符统计每个标识的数量，
+    并按 SKU 列排序后输出为 XLSX 文件。
 
     :param input_file: 输入 CSV 文件路径
     :param output_file: 输出统计结果的 XLSX 文件路径
@@ -33,6 +34,9 @@ def extract_and_count_sku_from_csv_to_xlsx(input_file, output_file, column_name=
                         sku, count = part.split("*")
                         sku_counts[sku] += int(count)
 
+        # 对统计结果按 SKU 排序
+        sorted_sku_counts = sorted(sku_counts.items())
+
         # 创建新的 XLSX 文件并写入统计结果
         wb = Workbook()
         ws = wb.active
@@ -42,7 +46,7 @@ def extract_and_count_sku_from_csv_to_xlsx(input_file, output_file, column_name=
         ws.append(["SKU", "数量"])
 
         # 写入数据
-        for sku, count in sku_counts.items():
+        for sku, count in sorted_sku_counts:
             ws.append([sku, count])
 
         # 自动调整列宽
