@@ -114,6 +114,7 @@ def tip_format(file_path, exchange_rate):
     app.quit()
 
     print("格式化 和 底部总和公式 插入成功！")
+    return summary_row * exchange_rate_row
 
 
 # 源表文件路径
@@ -132,12 +133,12 @@ if os.path.isabs(source_file) and os.path.isfile(source_file):
     # 需要-1，第一行为表名
     total_rows = copy(source_file, target_file, output_file, columns_to_replace) - 1
 
-    tip_format(output_file, exchange_rate)
+    price = tip_format(output_file, exchange_rate)
 
     old_file_path = output_file
     new_file_dir = "/Users/zkp/Desktop/B&Y/代发货结算/"
-    new_file_path = new_file_dir + "代发货结算表" + str(
-        total_rows) + "单" + utils.get_yd() + ".xlsx"
+    new_file_path = new_file_dir + "代发货结算表-" + str(
+        total_rows) + "单-" + str(price) + "元-" + utils.get_yd() + ".xlsx"
 
     try:
         # 修改文件名称
