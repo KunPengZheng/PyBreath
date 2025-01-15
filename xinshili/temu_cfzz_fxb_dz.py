@@ -102,11 +102,12 @@ def calculate_rmb_prices(file_path):
         h_values = get_range_row_value(sheet, 'H', 2, last_row)
         h_total = utils.round2(sum(value for value in h_values if utils.isinstanceNums(value)))
         set_cell_value(sheet, "L", "1", f"总计:¥ {h_total} 元")
+        total_rows = sheet.range(f"{'A'}{sheet.cells.last_cell.row}").end('up').row
 
         beautify(sheet)
         xw_save(wb, app)
 
-        return h_total
+        return [h_total, total_rows]
     except Exception as e:
         raise Exception(f"计算和写入采购价（RMB）时发生错误: {e}")
 
@@ -141,11 +142,12 @@ def main():
         wb2.save(output_path)
 
         # 计算采购价（RMB）
-        prices = calculate_rmb_prices(output_path)
+        lists = calculate_rmb_prices(output_path)
 
         old_file_path = output_path
         new_file_dir = "/Users/zkp/Desktop/B&Y/CZFF供应商对账/"
-        new_file_path = new_file_dir + "CZFF供应商对账表" + str(prices) + "元-" + utils.get_yd() + ".xlsx"
+        new_file_path = new_file_dir + "CZFF供应商对账表" + str(lists[0]) + "元-" \
+                        + str(lists[1] - 1) + "单-" + utils.get_yd() + ".xlsx"
         utils.rename(old_file_path, new_file_path)
         print(f"文件已重命名为：{new_file_path}")
         utils.open_dir(new_file_dir)
