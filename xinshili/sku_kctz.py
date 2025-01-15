@@ -3,7 +3,7 @@ from collections import defaultdict
 from openpyxl import Workbook
 
 
-def extract_and_count_sku_from_csv_to_xlsx(input_file, output_file, column_name="SKU"):
+def extract_and_count_sku_from_csv_to_xlsx(input_file, output_file, column_name, plus_or_minus):
     """
     从 CSV 文件提取 SKU 列中的内容，以 `*` 为分隔符统计每个标识的数量，
     并按 SKU 列排序后输出为 XLSX 文件。
@@ -43,11 +43,11 @@ def extract_and_count_sku_from_csv_to_xlsx(input_file, output_file, column_name=
         ws.title = "SKU统计"
 
         # 写入表头
-        ws.append(["SKU", "数量"])
+        ws.append(["SKU", "数量", "增加/减少"])
 
         # 写入数据
         for sku, count in sorted_sku_counts:
-            ws.append([sku, count])
+            ws.append([sku, count, plus_or_minus])
 
         # 自动调整列宽
         for column_cells in ws.columns:
@@ -67,6 +67,6 @@ if __name__ == "__main__":
     # 示例输入和输出路径
     input_csv_file = "/Users/zkp/Desktop/B&Y/库存_统计sku/91单减库存_1 (1).csv"  # 替换为实际输入 CSV 文件路径
     output_xlsx_file = "/Users/zkp/Desktop/B&Y/库存_统计sku/91单减库存_1 (1)_统计.xlsx"  # 替换为实际输出 XLSX 文件路径
-
+    column_name = "SKU"
     # 调用统计函数
-    extract_and_count_sku_from_csv_to_xlsx(input_csv_file, output_xlsx_file)
+    extract_and_count_sku_from_csv_to_xlsx(input_csv_file, output_xlsx_file, column_name, "-")
