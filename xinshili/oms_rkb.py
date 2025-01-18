@@ -8,7 +8,7 @@ from xinshili import utils
 """
 
 
-def expand_sku_and_dimensions_rows(file1, file2, output_file,
+def expand_sku_and_dimensions_rows(file1, file2,
                                    sku_column_file1="SKU", box_column_file1="总共箱数",
                                    qty_column_file1="单箱数量", size_column_file1="箱子尺寸",
                                    weight_column_file1="单箱重量",
@@ -27,7 +27,6 @@ def expand_sku_and_dimensions_rows(file1, file2, output_file,
 
     :param file1: 输入的 Excel 文件 1，包含 SKU、总共箱数、单箱数量、单箱重量和箱子尺寸
     :param file2: 输入的 Excel 文件 2，目标列
-    :param output_file: 输出的 Excel 文件路径
     :param sku_column_file1: 文件 1 中的 SKU 列名
     :param box_column_file1: 文件 1 中的箱数列名
     :param qty_column_file1: 文件 1 中的单箱数量列名
@@ -134,16 +133,35 @@ def expand_sku_and_dimensions_rows(file1, file2, output_file,
             adjusted_width = max_length + 2
             ws2.column_dimensions[column_letter].width = adjusted_width
 
+        # 求和 Package Qty/箱子数量
+        package_qty_sum = sum(
+            cell for row in
+            ws2.iter_cols(min_col=package_qty_idx_file2 + 1, max_col=package_qty_idx_file2 + 1, min_row=2,
+                          values_only=True)
+            for cell in row if isinstance(cell, (int, float))
+        )
+        # 求和 Qty per Package/每箱数量
+        qty_per_package_sum = sum(
+            cell for row in
+            ws2.iter_cols(min_col=qty_idx_file2 + 1, max_col=qty_idx_file2 + 1, min_row=2, values_only=True)
+            for cell in row if isinstance(cell, (int, float))
+        )
+        # print(f"Package Qty/箱子数量总和: {package_qty_sum}")
+        # print(f"Qty per Package/每箱数量总和: {qty_per_package_sum}")
+
+        # 输出路径
+        output_file = "/Users/zkp/Desktop/B&Y/oms_rkd/" + utils.get_filename_without_extension(file1_path) \
+                      + f"_{package_qty_sum}箱" + f"_{qty_per_package_sum}件" + ".xlsx"
+
         # 保存输出文件
         wb2.save(output_file)
         print(f"结果已保存到文件: {output_file}")
         utils.open_dir(utils.get_file_dir(output_file))
+
     except Exception as e:
         print(f"执行过程中发生错误: {e}")
 
 
 file1_path = input("请输入源表文件的绝对路径：")  # eg: "/Users/zkp/PycharmProjects/PyBreath/xinshili/xlsx/rkd/demo.xlsx"
 file2_path = utils.current_dir() + "/xlsx/rkd/入库单模版.xlsx"
-output_file_path = "/Users/zkp/Desktop/B&Y/oms_rkd/" + utils.get_filename_with_extension(file1_path)
-print(file1_path, file2_path, output_file_path)
-expand_sku_and_dimensions_rows(file1_path, file2_path, output_file_path)
+expand_sku_and_dimensions_rows(file1_path, file2_path)
