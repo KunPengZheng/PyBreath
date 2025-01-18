@@ -47,6 +47,14 @@ def get_filename_without_extension(file_path):
     return name_without_extension
 
 
+def get_filename_with_extension(file_path):
+    """
+    获取路径的文件名（含后缀）
+    """
+    filename = os.path.basename(file_path)  # 获取文件名（包含后缀）
+    return filename
+
+
 def ensure_directory_exists(dir_path):
     """
     确保文件夹存在，不存在则创建
@@ -81,3 +89,10 @@ def current_dir():
     获取当前文件所在的目录
     """
     return os.path.dirname(os.path.abspath(__file__))
+
+
+def get_file_dir(file_path):
+    """
+    获取当前文件所在的目录
+    """
+    return os.path.dirname(file_path)
