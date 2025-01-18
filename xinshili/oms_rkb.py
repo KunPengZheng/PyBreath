@@ -1,6 +1,12 @@
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Alignment
 
+from xinshili import utils
+
+"""
+领星oms入库单，用于给仓库管理人员核准需要入库的产品的类别，箱数，总数 是否正确。
+"""
+
 
 def expand_sku_and_dimensions_rows(file1, file2, output_file,
                                    sku_column_file1="SKU", box_column_file1="总共箱数",
@@ -131,14 +137,13 @@ def expand_sku_and_dimensions_rows(file1, file2, output_file,
         # 保存输出文件
         wb2.save(output_file)
         print(f"结果已保存到文件: {output_file}")
-
+        utils.open_dir(utils.get_file_dir(output_file))
     except Exception as e:
         print(f"执行过程中发生错误: {e}")
 
 
-# 示例调用
-file1_path = "/Users/zkp/Desktop/B&Y/入库单/zbw/zyl美西改美中仓库.xlsx"  # 替换为 Excel 文件 1 的路径
-file2_path = "/Users/zkp/Desktop/B&Y/入库单/zbw/入库模版.xlsx"  # 替换为 Excel 文件 2 的路径
-output_file_path = "/Users/zkp/Desktop/B&Y/入库单/zbw/output.xlsx"  # 替换为输出文件路径
-
+file1_path = input("请输入源表文件的绝对路径：")  # eg: "/Users/zkp/PycharmProjects/PyBreath/xinshili/xlsx/rkd/demo.xlsx"
+file2_path = utils.current_dir() + "/xlsx/rkd/入库单模版.xlsx"
+output_file_path = "/Users/zkp/Desktop/B&Y/oms_rkd/" + utils.get_filename_with_extension(file1_path)
+print(file1_path, file2_path, output_file_path)
 expand_sku_and_dimensions_rows(file1_path, file2_path, output_file_path)
