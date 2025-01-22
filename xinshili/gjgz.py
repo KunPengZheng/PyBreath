@@ -82,6 +82,43 @@ def count_warehouse_distribution(file_path, warehouse_column="发货仓库", cou
         return Counter(), defaultdict(int)
 
 
+def count_store_distribution(file_path, store_column="店铺"):
+    """
+    统计每个店铺的数量分布。
+    :param file_path: Excel 文件路径
+    :param store_column: 店铺列名
+    :return: 店铺数量分布 Counter 对象
+    """
+    try:
+        # 加载 Excel 文件
+        workbook = load_workbook(file_path)
+        sheet = workbook.active  # 默认读取第一个表
+
+        # 获取列头
+        headers = [cell.value for cell in sheet[1]]
+
+        # 确定目标列的索引
+        if store_column not in headers:
+            raise ValueError(f"列名 '{store_column}' 不存在！")
+
+        store_index = headers.index(store_column) + 1
+
+        # 初始化计数器
+        store_counter = Counter()
+
+        # 遍历数据行统计店铺数量
+        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
+            store_name = row[store_index - 1]
+            if store_name is not None:
+                store_counter[store_name] += 1
+
+        return store_counter
+
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return Counter()
+
+
 def handle_file(input_file):
     # 获取文件后缀
     file_extension = os.path.splitext(input_file)[1].lower()  # 获取文件后缀，转为小写
@@ -112,6 +149,7 @@ def handle_file(input_file):
         return input_file
 
 
+# 主程序
 input_file = input("请输入文件的绝对路径：")
 xlsx_path = handle_file(input_file)
 
@@ -129,3 +167,10 @@ print("\n发货仓库分布情况：")
 for warehouse, count in warehouse_distribution.items():
     no_track_count = warehouse_no_track[warehouse]
     print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条")
+
+# 统计店铺分布情况
+store_distribution = count_store_distribution(xlsx_path, store_column="店铺")
+
+print("\n店铺分布情况：")
+for store, count in store_distribution.items():
+    print(f"{store}: 总数 {count} 条")
