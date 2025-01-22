@@ -2,6 +2,7 @@ import os
 import re
 from openpyxl import load_workbook
 import pandas as pd
+from collections import Counter, defaultdict
 
 
 def count_no_track(file_path, column_name="快递"):
@@ -40,6 +41,47 @@ def count_no_track(file_path, column_name="快递"):
         return 0, 0
 
 
+def count_warehouse_distribution(file_path, warehouse_column="发货仓库", courier_column="快递"):
+    try:
+        # 加载 Excel 文件
+        workbook = load_workbook(file_path)
+        sheet = workbook.active  # 默认读取第一个表
+
+        # 获取列头
+        headers = [cell.value for cell in sheet[1]]
+
+        # 确定目标列的索引
+        if warehouse_column not in headers or courier_column not in headers:
+            raise ValueError(f"列名 '{warehouse_column}' 或 '{courier_column}' 不存在！")
+
+        warehouse_index = headers.index(warehouse_column) + 1
+        courier_index = headers.index(courier_column) + 1
+
+        # 定义正则模式用于匹配 "无轨迹"（忽略空格和大小写）
+        pattern = re.compile(r"^\s*无轨迹\s*$", re.IGNORECASE)
+
+        # 统计各仓库的总数量及其 "无轨迹" 数量
+        warehouse_counter = Counter()
+        warehouse_no_track_counter = defaultdict(int)
+
+        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
+            warehouse_name = row[warehouse_index - 1]
+            courier_status = row[courier_index - 1]
+
+            if warehouse_name is not None:
+                warehouse_counter[warehouse_name] += 1
+
+                # 判断快递状态是否为 "无轨迹"
+                if courier_status is not None and pattern.match(str(courier_status)):
+                    warehouse_no_track_counter[warehouse_name] += 1
+
+        return warehouse_counter, warehouse_no_track_counter
+
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return Counter(), defaultdict(int)
+
+
 def handle_file(input_file):
     # 获取文件后缀
     file_extension = os.path.splitext(input_file)[1].lower()  # 获取文件后缀，转为小写
@@ -72,6 +114,18 @@ def handle_file(input_file):
 
 input_file = input("请输入文件的绝对路径：")
 xlsx_path = handle_file(input_file)
+
+# 统计 "快递" 列的相关信息
 total_count, no_track_count = count_no_track(xlsx_path, column_name="快递")
 print(f"总条数（除列头）：{total_count}")
 print(f"内容为 '无轨迹' 的总数：{no_track_count}")
+
+# 统计 "发货仓库" 分布及对应的 "无轨迹" 数量
+warehouse_distribution, warehouse_no_track = count_warehouse_distribution(
+    xlsx_path, warehouse_column="发货仓库", courier_column="快递"
+)
+
+print("\n发货仓库分布情况：")
+for warehouse, count in warehouse_distribution.items():
+    no_track_count = warehouse_no_track[warehouse]
+    print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条")
