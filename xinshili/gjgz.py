@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import os
 import re
 from openpyxl import load_workbook
@@ -6,6 +7,7 @@ from collections import Counter, defaultdict
 
 
 def count_no_track(file_path, column_name="快递"):
+    """统计 '快递' 列中所有行数和内容为 '无轨迹' 的数量"""
     try:
         workbook = load_workbook(file_path)
         sheet = workbook.active
@@ -60,6 +62,62 @@ def count_distribution_and_no_track(file_path, key_column, courier_column="快�
         return Counter(), Counter()
 
 
+def analyze_time_segments(file_path, time_column="订购时间", courier_column="快递"):
+    """
+    按时间段（每 3 分钟为一段，忽略秒进行判断）统计 '快递' 列中内容为 '无轨迹' 的数量。
+    输出时包含秒显示。
+    """
+    try:
+        workbook = load_workbook(file_path)
+        sheet = workbook.active
+        headers = [cell.value for cell in sheet[1]]
+        if time_column not in headers or courier_column not in headers:
+            raise ValueError(f"列名 '{time_column}' 或 '{courier_column}' 不存在！")
+
+        time_index = headers.index(time_column) + 1
+        courier_index = headers.index(courier_column) + 1
+        pattern = re.compile(r"^\s*无轨迹\s*$", re.IGNORECASE)
+
+        data = []
+        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
+            order_time = row[time_index - 1]
+            courier_status = row[courier_index - 1]
+            if order_time is not None and isinstance(order_time, str):
+                try:
+                    order_time = datetime.strptime(order_time, "%m-%d %H:%M:%S")
+                    order_time_without_seconds = order_time.replace(second=0)
+                    data.append((order_time, order_time_without_seconds, courier_status))
+                except ValueError:
+                    continue
+
+        data.sort(key=lambda x: x[1])  # 按无秒的时间排序
+        time_segments = defaultdict(list)
+        if data:
+            base_time = data[0][1]  # 使用无秒时间作为基准
+            current_segment = []
+            for full_time, order_time_without_seconds, courier_status in data:
+                if (order_time_without_seconds - base_time).total_seconds() <= 180:  # 3分钟内
+                    current_segment.append((full_time, courier_status))
+                else:
+                    time_segments[base_time].extend(current_segment)
+                    base_time = order_time_without_seconds
+                    current_segment = [(full_time, courier_status)]
+            if current_segment:
+                time_segments[base_time].extend(current_segment)
+
+        segment_no_track_count = {}
+        for segment_start, entries in time_segments.items():
+            no_track_count = sum(
+                1 for _, courier_status in entries if courier_status is not None and pattern.match(str(courier_status)))
+            segment_no_track_count[segment_start] = (no_track_count, entries)
+
+        return segment_no_track_count
+
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return {}
+
+
 def handle_file(input_file):
     file_extension = os.path.splitext(input_file)[1].lower()
     file_dir = os.path.dirname(input_file)
@@ -85,12 +143,10 @@ def handle_file(input_file):
 input_file = input("请输入文件的绝对路径：")
 xlsx_path = handle_file(input_file)
 
-# 统计 "快递" 列的相关信息
 total_count, no_track_count = count_no_track(xlsx_path, column_name="快递")
 print(f"总条数（除列头）：{total_count}")
 print(f"内容为 '无轨迹' 的总数：{no_track_count}")
 
-# 统计 "发货仓库" 分布及对应的 "无轨迹" 数量
 warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
     xlsx_path, key_column="发货仓库", courier_column="快递"
 )
@@ -100,7 +156,6 @@ for warehouse, count in warehouse_distribution.items():
     no_track_count = warehouse_no_track[warehouse]
     print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条")
 
-# 统计店铺分布情况及 '无轨迹' 数量
 store_distribution, store_no_track_distribution = count_distribution_and_no_track(
     xlsx_path, key_column="店铺", courier_column="快递"
 )
@@ -110,7 +165,6 @@ for store, count in store_distribution.items():
     no_track_count = store_no_track_distribution[store]
     print(f"{store}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条")
 
-# 统计 SKU 分布情况及 '无轨迹' 数量
 sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(
     xlsx_path, key_column="sku", courier_column="快递"
 )
@@ -119,3 +173,11 @@ print("\nSKU 分布及对应的 '无轨迹' 情况：")
 for sku, count in sku_distribution.items():
     no_track_count = sku_no_track_distribution[sku]
     print(f"{sku}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条")
+
+time_segment_analysis = analyze_time_segments(xlsx_path, time_column="订购时间", courier_column="快递")
+
+print("\n按时间段统计 '无轨迹' 的数量：")
+for segment_start, (no_track_count, entries) in time_segment_analysis.items():
+    segment_end = segment_start + timedelta(minutes=3)
+    print(
+        f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}: '无轨迹' {no_track_count} 条")
