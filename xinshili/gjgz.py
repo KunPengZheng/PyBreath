@@ -64,8 +64,8 @@ def count_distribution_and_no_track(file_path, key_column, courier_column="快�
 
 def analyze_time_segments(file_path, time_column="订购时间", courier_column="快递"):
     """
-    按时间段（每 3 分钟为一段，忽略秒进行判断）统计 '快递' 列中内容为 '无轨迹' 的数量。
-    输出时包含秒显示。
+    按时间段（每3分钟为一段，忽略秒进行判断）统计总数和 "无轨迹" 的数量。
+    输出时包括秒显示。
     """
     try:
         workbook = load_workbook(file_path)
@@ -78,6 +78,7 @@ def analyze_time_segments(file_path, time_column="订购时间", courier_column=
         courier_index = headers.index(courier_column) + 1
         pattern = re.compile(r"^\s*无轨迹\s*$", re.IGNORECASE)
 
+        # 读取并解析数据
         data = []
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
             order_time = row[time_index - 1]
@@ -90,7 +91,8 @@ def analyze_time_segments(file_path, time_column="订购时间", courier_column=
                 except ValueError:
                     continue
 
-        data.sort(key=lambda x: x[1])  # 按无秒的时间排序
+        # 按时间段归类
+        data.sort(key=lambda x: x[1])  # 按无秒时间排序
         time_segments = defaultdict(list)
         if data:
             base_time = data[0][1]  # 使用无秒时间作为基准
@@ -105,13 +107,19 @@ def analyze_time_segments(file_path, time_column="订购时间", courier_column=
             if current_segment:
                 time_segments[base_time].extend(current_segment)
 
-        segment_no_track_count = {}
+        # 统计每个时间段的总数和无轨迹数量
+        segment_statistics = {}
         for segment_start, entries in time_segments.items():
+            total_count = len(entries)
             no_track_count = sum(
                 1 for _, courier_status in entries if courier_status is not None and pattern.match(str(courier_status)))
-            segment_no_track_count[segment_start] = (no_track_count, entries)
+            segment_statistics[segment_start] = {
+                "total_count": total_count,
+                "no_track_count": no_track_count,
+                "entries": entries,
+            }
 
-        return segment_no_track_count
+        return segment_statistics
 
     except Exception as e:
         print(f"发生错误: {e}")
@@ -206,10 +214,13 @@ for sku, count in sku_distribution.items():
     skuswl = round(100 - ((int(no_track_count) / int(count)) * 100))
     print(f"{sku}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{skuswl}%")
 
+# 分析时间段
 time_segment_analysis = analyze_time_segments(xlsx_path, time_column="订购时间", courier_column="快递")
-print("\n按时间段统计 '无轨迹' 的数量：")
-for segment_start, (no_track_count, entries) in time_segment_analysis.items():
+print("\n按时间段统计结果：")
+for segment_start, stats in time_segment_analysis.items():
     segment_end = segment_start + timedelta(minutes=3)
-    segmentswl = round(100 - ((int(no_track_count) / int(count)) * 100))
-    print(
-        f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}: '无轨迹' {no_track_count} 条，上网率为：{segmentswl}%")
+    total_count = stats["total_count"]
+    no_track_count = stats["no_track_count"]
+    segmentswl = round(100 - ((int(no_track_count) / int(total_count)) * 100))
+    print(f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}:")
+    print(f"  总数: {total_count} 条, 其中 '无轨迹': {no_track_count} 条，上网率为：{segmentswl}%")
