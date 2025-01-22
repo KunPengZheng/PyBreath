@@ -94,7 +94,7 @@ def tip_format(file_path, exchange_rate):
     sheet.range(f'G{settlement_row}').value = "结算"
     sheet.range(f'G{settlement_row}').color = red_color  # 设置字体颜色为红色
 
-    result_price = float(sheet.range(f'H{summary_row}').value) * float(sheet.range(f'H{exchange_rate_row}').value)
+    result_price = utils.round2(float(sheet.range(f'H{summary_row}').value) * float(sheet.range(f'H{exchange_rate_row}').value))
     sheet.range(f'H{settlement_row}').value = result_price
     sheet.range(f'H{settlement_row}').color = red_color  # 设置字体颜色为红色
 
@@ -141,7 +141,6 @@ if os.path.isabs(source_file) and os.path.isfile(source_file):
     new_file_dir = "/Users/zkp/Desktop/B&Y/代发货结算/"
     new_file_path = new_file_dir + "代发货结算表-" + str(
         total_rows) + "单-" + str(price) + "元-" + utils.get_yd() + ".xlsx"
-        # total_rows) + "单-" + utils.get_yd() + ".xlsx"  # ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！ 价格出现错误，需要修改
 
     try:
         # 修改文件名称
