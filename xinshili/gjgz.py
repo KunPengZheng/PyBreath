@@ -139,13 +139,42 @@ def handle_file(input_file):
         return input_file
 
 
-# 主程序
+def extract_number_from_filepath(filepath):
+    """
+    从文件路径中提取文件名中的数字 '21'。
+
+    参数:
+    - filepath: str，文件路径
+
+    返回:
+    - 提取到的数字，若未找到，返回 None
+    """
+    # 获取文件名（去掉路径部分）
+    filename = os.path.basename(filepath)
+
+    # 使用正则匹配文件名中的两位数字
+    match = re.search(r"出库时间(\d{2})", filename)
+    if match:
+        return match.group(1)
+    return None
+
+
 input_file = input("请输入文件的绝对路径：")
 xlsx_path = handle_file(input_file)
+# 出库时间
+ck_time = extract_number_from_filepath(xlsx_path)
+
+# 获取今天的日期
+today = datetime.today()
+# 获取今天是几号
+day_of_month = today.day
+
+time = int(day_of_month) - int(ck_time)  # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
+print(f"出库日期：{ck_time}，跟踪日期：{day_of_month}，间隔时间：{time}")
 
 total_count, no_track_count = count_no_track(xlsx_path, column_name="快递")
-print(f"总条数（除列头）：{total_count}")
-print(f"内容为 '无轨迹' 的总数：{no_track_count}")
+swl = round(100 - ((int(no_track_count) / int(total_count)) * 100))
+print(f"总条数（除列头）：{total_count}，内容为 '无轨迹' 的总数：{no_track_count}，上网率为：{swl}%")
 
 warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
     xlsx_path, key_column="发货仓库", courier_column="快递"
@@ -154,7 +183,8 @@ warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
 print("\n发货仓库分布情况：")
 for warehouse, count in warehouse_distribution.items():
     no_track_count = warehouse_no_track[warehouse]
-    print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条")
+    warehouseswl = round(100 - ((int(no_track_count) / int(count)) * 100))
+    print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{warehouseswl}%")
 
 store_distribution, store_no_track_distribution = count_distribution_and_no_track(
     xlsx_path, key_column="店铺", courier_column="快递"
@@ -163,7 +193,8 @@ store_distribution, store_no_track_distribution = count_distribution_and_no_trac
 print("\n店铺分布及对应的 '无轨迹' 情况：")
 for store, count in store_distribution.items():
     no_track_count = store_no_track_distribution[store]
-    print(f"{store}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条")
+    storeswl = round(100 - ((int(no_track_count) / int(count)) * 100))
+    print(f"{store}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{storeswl}%")
 
 sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(
     xlsx_path, key_column="sku", courier_column="快递"
@@ -172,12 +203,13 @@ sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(
 print("\nSKU 分布及对应的 '无轨迹' 情况：")
 for sku, count in sku_distribution.items():
     no_track_count = sku_no_track_distribution[sku]
-    print(f"{sku}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条")
+    skuswl = round(100 - ((int(no_track_count) / int(count)) * 100))
+    print(f"{sku}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{skuswl}%")
 
 time_segment_analysis = analyze_time_segments(xlsx_path, time_column="订购时间", courier_column="快递")
-
 print("\n按时间段统计 '无轨迹' 的数量：")
 for segment_start, (no_track_count, entries) in time_segment_analysis.items():
     segment_end = segment_start + timedelta(minutes=3)
+    segmentswl = round(100 - ((int(no_track_count) / int(count)) * 100))
     print(
-        f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}: '无轨迹' {no_track_count} 条")
+        f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}: '无轨迹' {no_track_count} 条，上网率为：{segmentswl}%")
