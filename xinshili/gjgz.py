@@ -4,6 +4,8 @@ import re
 from openpyxl import load_workbook
 import pandas as pd
 from collections import Counter, defaultdict
+import requests
+import json
 
 
 def count_no_track(file_path, column_name="快递"):
@@ -178,7 +180,8 @@ today = datetime.today()
 day_of_month = today.day
 
 text = ""
-text += f"更新时间: {datetime.now()}"
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+text += f"更新时间: {current_time}"
 
 time = int(day_of_month) - int(ck_time)  # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
 print(f"出库日期：{ck_time}，跟踪日期：{day_of_month}，间隔时间：{time}")
@@ -238,3 +241,17 @@ for segment_start, stats in time_segment_analysis.items():
     text += f"\n 时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}：订单总数：{total_count}，无轨迹数：{no_track_count}，上网率：{segmentswl}%"
 
 print(text)
+
+# url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal/"
+# # 应用凭证里的 app id 和 app secret
+# post_data = {"app_id": "cli_a71b49e8b4aad013", "app_secret": "7L9WNS6YWwQNVUN3iEtQKgb8BoQSJRzn"}
+# r = requests.post(url, data=post_data)
+# tat = r.json()["tenant_access_token"]  # token
+# print(f"token:{tat}")
+#
+# url = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/BGrnsxMFfhfoumtUDF8cXM8jnGg/values_prepend"
+# header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
+# # 在402cb1这个工作簿内的单元格C3到N8写入内容为helloworld等内容
+# post_data = {"valueRange": {"range": "JZrQj9!B2:B2", "values": [["Hello, World!"]]}}
+# r2 = requests.post(url, data=json.dumps(post_data), headers=header)  # 请求写入
+# print(r2.json())  # 输出来判断写入是否成功

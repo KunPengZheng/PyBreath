@@ -2,6 +2,7 @@ import requests
 from datetime import datetime
 import os
 import subprocess
+import pandas as pd
 
 
 def get_usd_to_cny_rate():
@@ -96,3 +97,30 @@ def get_file_dir(file_path):
     获取当前文件所在的目录
     """
     return os.path.dirname(file_path)
+
+
+def convert_csv_to_xlsx(csv_file, xlsx_file):
+    """
+    将 CSV 文件转换为 XLSX 文件格式。
+
+    :param csv_file: 输入的 CSV 文件路径
+    :param xlsx_file: 输出的 XLSX 文件路径
+    """
+    try:
+        # 读取 CSV 文件
+        data = pd.read_csv(csv_file)
+
+        # 将数据写入 XLSX 文件
+        data.to_excel(xlsx_file, index=False, engine="openpyxl")
+
+        print(f"文件已成功转换为 XLSX 格式: {xlsx_file}")
+    except Exception as e:
+        print(f"转换过程中发生错误: {e}")
+
+
+def current_time():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def day_of_month():
+    return datetime.today().day
