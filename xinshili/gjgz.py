@@ -7,6 +7,8 @@ from collections import Counter, defaultdict
 import requests
 import json
 
+from xinshili.fs_utils import get_token
+
 
 def count_no_track(file_path, column_name="快递"):
     """统计 '快递' 列中所有行数和内容为 '无轨迹' 的数量"""
@@ -169,89 +171,131 @@ def extract_number_from_filepath(filepath):
     return None
 
 
+update_time = "update_time"
+order_count = "order_count"
+no_track_number = "no_track_number"
+track_percent = "track_percent"
+no_track_percent = "no_track_percent"
+warehouse_condition = "warehouse_condition"
+store_condition = "store_condition"
+sku_condition = "sku_condition"
+time_segment_condition = "time_segment_condition"
+
 input_file = input("请输入文件的绝对路径：")
 xlsx_path = handle_file(input_file)
 # 出库时间
 ck_time = extract_number_from_filepath(xlsx_path)
-
 # 获取今天的日期
 today = datetime.today()
 # 获取今天是几号
 day_of_month = today.day
 
+data_map = {}
+
 text = ""
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 text += f"更新时间: {current_time}"
+data_map[update_time] = current_time
 
 time = int(day_of_month) - int(ck_time)  # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
-print(f"出库日期：{ck_time}，跟踪日期：{day_of_month}，间隔时间：{time}")
+# print(f"出库日期：{ck_time}，跟踪日期：{day_of_month}，间隔时间：{time}")
 
 total_count, no_track_count = count_no_track(xlsx_path, column_name="快递")
 swl = round(100 - ((int(no_track_count) / int(total_count)) * 100))
-print(f"总条数（除列头）：{total_count}，内容为 '无轨迹' 的总数：{no_track_count}，上网率为：{swl}%")
+# print(f"总条数（除列头）：{total_count}，内容为 '无轨迹' 的总数：{no_track_count}，上网率为：{swl}%")
 text += "\n----------------------概览----------------------"
 text += f"\n订单总数：{total_count}"
 text += f"\n未上网数：{no_track_count}"
 text += f"\n上网率：{swl}%，未上网率：{100 - swl}%"
 
+data_map[order_count] = total_count
+data_map[no_track_number] = no_track_count
+data_map[track_percent] = swl
+data_map[no_track_percent] = 100 - swl
+
 text += "\n----------------------仓库分布----------------------"
 warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
     xlsx_path, key_column="发货仓库", courier_column="快递"
 )
-print("\n发货仓库分布情况：")
+# print("\n发货仓库分布情况：")
+warehouse_text = ""
 for warehouse, count in warehouse_distribution.items():
     no_track_count = warehouse_no_track[warehouse]
     warehouseswl = round(100 - ((int(no_track_count) / int(count)) * 100))
-    print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{warehouseswl}%")
+    # print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{warehouseswl}%")
     text += f"\n{warehouse}订单总数：{count}，无轨迹数：{no_track_count}，上网率：{warehouseswl}%"
+    # if (position > 0):
+    #     warehouse_text += "\n"
+    warehouse_text += f"\n{warehouse}订单总数：{count}，无轨迹数：{no_track_count}，上网率：{warehouseswl}%"
+data_map[warehouse_condition] = warehouse_text
 
 text += "\n----------------------店铺分布----------------------"
 store_distribution, store_no_track_distribution = count_distribution_and_no_track(
     xlsx_path, key_column="店铺", courier_column="快递"
 )
-print("\n店铺分布及对应的 '无轨迹' 情况：")
+# print("\n店铺分布及对应的 '无轨迹' 情况：")
+store_text = ""
 for store, count in store_distribution.items():
     no_track_count = store_no_track_distribution[store]
     storeswl = round(100 - ((int(no_track_count) / int(count)) * 100))
-    print(f"{store}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{storeswl}%")
+    # print(f"{store}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{storeswl}%")
     text += f"\n{store}订单总数：{count}，无轨迹数：{no_track_count}，上网率：{storeswl}%"
+    store_text += f"\n{store}订单总数：{count}，无轨迹数：{no_track_count}，上网率：{storeswl}%"
+data_map[store_condition] = store_text
 
 text += "\n----------------------sku分布----------------------"
 sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(
     xlsx_path, key_column="sku", courier_column="快递"
 )
-print("\nSKU 分布及对应的 '无轨迹' 情况：")
+# print("\nSKU 分布及对应的 '无轨迹' 情况：")
+sku_text = ""
 for sku, count in sku_distribution.items():
     no_track_count = sku_no_track_distribution[sku]
     skuswl = round(100 - ((int(no_track_count) / int(count)) * 100))
     print(f"{sku}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{skuswl}%")
     text += f"\n{sku}订单总数：{count}，无轨迹数：{no_track_count}，上网率：{skuswl}%"
+    sku_text += f"\n{sku}订单总数：{count}，无轨迹数：{no_track_count}，上网率：{storeswl}%"
+data_map[sku_condition] = sku_text
 
 # 分析时间段
 text += "\n----------------------时间段分布----------------------"
 time_segment_analysis = analyze_time_segments(xlsx_path, time_column="订购时间", courier_column="快递")
-print("\n按时间段统计结果：")
+# print("\n按时间段统计结果：")
+time_segment_text = ""
 for segment_start, stats in time_segment_analysis.items():
     segment_end = segment_start + timedelta(minutes=3)
     total_count = stats["total_count"]
     no_track_count = stats["no_track_count"]
     segmentswl = round(100 - ((int(no_track_count) / int(total_count)) * 100))
-    print(f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}:")
-    print(f"  总数: {total_count} 条, 其中 '无轨迹': {no_track_count} 条，上网率为：{segmentswl}%")
+    # print(f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}:")
+    # print(f"  总数: {total_count} 条, 其中 '无轨迹': {no_track_count} 条，上网率为：{segmentswl}%")
     text += f"\n 时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}：订单总数：{total_count}，无轨迹数：{no_track_count}，上网率：{segmentswl}%"
+    time_segment_text += f"\n 时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}：订单总数：{total_count}，无轨迹数：{no_track_count}，上网率：{segmentswl}%"
+data_map[time_segment_condition] = time_segment_text
 
 print(text)
+# print("====================================================")
+# print(data_map)
 
-# url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal/"
-# # 应用凭证里的 app id 和 app secret
-# post_data = {"app_id": "cli_a71b49e8b4aad013", "app_secret": "7L9WNS6YWwQNVUN3iEtQKgb8BoQSJRzn"}
-# r = requests.post(url, data=post_data)
-# tat = r.json()["tenant_access_token"]  # token
-# print(f"token:{tat}")
-#
-# url = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/BGrnsxMFfhfoumtUDF8cXM8jnGg/values_prepend"
-# header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
-# # 在402cb1这个工作簿内的单元格C3到N8写入内容为helloworld等内容
-# post_data = {"valueRange": {"range": "JZrQj9!B2:B2", "values": [["Hello, World!"]]}}
-# r2 = requests.post(url, data=json.dumps(post_data), headers=header)  # 请求写入
-# print(r2.json())  # 输出来判断写入是否成功
+tat = get_token()
+
+# values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
+url = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/BGrnsxMFfhfoumtUDF8cXM8jnGg/values_prepend"
+header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
+# 在402cb1这个工作簿内的单元格C3到N8写入内容为helloworld等内容
+post_data = {"valueRange": {"range": "JZrQj9!B2:J2", "values": [
+    [
+        data_map[update_time],
+        data_map[order_count],
+        data_map[no_track_number],
+        data_map[track_percent],
+        data_map[no_track_percent],
+
+        data_map[warehouse_condition],
+        data_map[store_condition],
+        data_map[sku_condition],
+        data_map[time_segment_condition],
+    ]
+]}}
+r2 = requests.post(url, data=json.dumps(post_data), headers=header)  # 请求写入
+print(r2.json())  # 输出来判断写入是否成功
