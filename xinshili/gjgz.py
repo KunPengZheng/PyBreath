@@ -306,12 +306,12 @@ elif (interval_time >= 3):
             sum_up_text += "☀️间隔第3天，上网率良好"
 
 data_map[sum_up] = sum_up_text
+text += "\n----------------------总结&建议----------------------"
+text += f"\n{sum_up_text}"
 
+# 数据打印
 # print(data_map)
-
-
 print(text)
-# print("====================================================")
 
 # tat = get_token()
 #
