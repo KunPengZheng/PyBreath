@@ -177,44 +177,55 @@ today = datetime.today()
 # 获取今天是几号
 day_of_month = today.day
 
+text = ""
+text += f"更新时间: {datetime.now()}"
+
 time = int(day_of_month) - int(ck_time)  # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
 print(f"出库日期：{ck_time}，跟踪日期：{day_of_month}，间隔时间：{time}")
 
 total_count, no_track_count = count_no_track(xlsx_path, column_name="快递")
 swl = round(100 - ((int(no_track_count) / int(total_count)) * 100))
 print(f"总条数（除列头）：{total_count}，内容为 '无轨迹' 的总数：{no_track_count}，上网率为：{swl}%")
+text += "\n----------------------概览----------------------"
+text += f"\n订单总数：{total_count}"
+text += f"\n未上网数：{no_track_count}"
+text += f"\n上网率：{swl}%，未上网率：{100 - swl}%"
 
+text += "\n----------------------仓库分布----------------------"
 warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
     xlsx_path, key_column="发货仓库", courier_column="快递"
 )
-
 print("\n发货仓库分布情况：")
 for warehouse, count in warehouse_distribution.items():
     no_track_count = warehouse_no_track[warehouse]
     warehouseswl = round(100 - ((int(no_track_count) / int(count)) * 100))
     print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{warehouseswl}%")
+    text += f"\n{warehouse}订单总数：{count}，无轨迹数：{no_track_count}，上网率：{warehouseswl}%"
 
+text += "\n----------------------店铺分布----------------------"
 store_distribution, store_no_track_distribution = count_distribution_and_no_track(
     xlsx_path, key_column="店铺", courier_column="快递"
 )
-
 print("\n店铺分布及对应的 '无轨迹' 情况：")
 for store, count in store_distribution.items():
     no_track_count = store_no_track_distribution[store]
     storeswl = round(100 - ((int(no_track_count) / int(count)) * 100))
     print(f"{store}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{storeswl}%")
+    text += f"\n{store}订单总数：{count}，无轨迹数：{no_track_count}，上网率：{storeswl}%"
 
+text += "\n----------------------sku分布----------------------"
 sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(
     xlsx_path, key_column="sku", courier_column="快递"
 )
-
 print("\nSKU 分布及对应的 '无轨迹' 情况：")
 for sku, count in sku_distribution.items():
     no_track_count = sku_no_track_distribution[sku]
     skuswl = round(100 - ((int(no_track_count) / int(count)) * 100))
     print(f"{sku}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{skuswl}%")
+    text += f"\n{sku}订单总数：{count}，无轨迹数：{no_track_count}，上网率：{skuswl}%"
 
 # 分析时间段
+text += "\n----------------------时间段分布----------------------"
 time_segment_analysis = analyze_time_segments(xlsx_path, time_column="订购时间", courier_column="快递")
 print("\n按时间段统计结果：")
 for segment_start, stats in time_segment_analysis.items():
@@ -224,3 +235,6 @@ for segment_start, stats in time_segment_analysis.items():
     segmentswl = round(100 - ((int(no_track_count) / int(total_count)) * 100))
     print(f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}:")
     print(f"  总数: {total_count} 条, 其中 '无轨迹': {no_track_count} 条，上网率为：{segmentswl}%")
+    text += f"\n 时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}：订单总数：{total_count}，无轨迹数：{no_track_count}，上网率：{segmentswl}%"
+
+print(text)
