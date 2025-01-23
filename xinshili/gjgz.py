@@ -7,7 +7,7 @@ from collections import Counter, defaultdict
 import requests
 import json
 
-from xinshili.fs_utils import get_token
+from xinshili.fs_utils import get_token, detail_sheet_value
 
 
 def count_no_track(file_path, column_name="快递"):
@@ -153,19 +153,19 @@ def handle_file(input_file):
 
 def extract_number_from_filepath(filepath):
     """
-    从文件路径中提取文件名中的数字 '21'。
+    从文件路径中提取文件名中 '出库时间' 和 '_' 之间的数字。
 
     参数:
     - filepath: str，文件路径
 
     返回:
-    - 提取到的数字，若未找到，返回 None
+    - 提取到的数字（字符串形式），若未找到，返回 None
     """
     # 获取文件名（去掉路径部分）
     filename = os.path.basename(filepath)
 
-    # 使用正则匹配文件名中的两位数字
-    match = re.search(r"出库时间(\d{2})", filename)
+    # 使用正则匹配 '出库时间' 和 '_' 之间的内容
+    match = re.search(r"出库时间(\d+)_", filename)
     if match:
         return match.group(1)
     return None
@@ -226,12 +226,18 @@ warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
 )
 # print("\n发货仓库分布情况：")
 warehouse_text = ""
+lowest_swl = 101  # 初始化为比 100 大的值
+lowest_warehouse = ""  # 保存最低上网率的仓库信息
 for warehouse, count in warehouse_distribution.items():
     no_track_count = warehouse_no_track[warehouse]
     warehouseswl = round(100 - ((int(no_track_count) / int(count)) * 100))
     # print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{warehouseswl}%")
     text += f"\n{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
     warehouse_text += f"\n{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
+    # 判断是否是最低的上网率
+    if warehouseswl < lowest_swl:
+        lowest_swl = warehouseswl
+        lowest_warehouse = f"{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
 data_map[warehouse_condition] = warehouse_text
 
 text += "\n----------------------店铺分布----------------------"
@@ -240,12 +246,18 @@ store_distribution, store_no_track_distribution = count_distribution_and_no_trac
 )
 # print("\n店铺分布及对应的 '无轨迹' 情况：")
 store_text = ""
+lowest_store = ""
+lowest_swl = 101  # 初始化为一个比 100 大的值，用于比较
 for store, count in store_distribution.items():
     no_track_count = store_no_track_distribution[store]
     storeswl = round(100 - ((int(no_track_count) / int(count)) * 100))
     # print(f"{store}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{storeswl}%")
     text += f"\n{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
     store_text += f"\n{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
+    # 判断是否是最低的上网率
+    if storeswl < lowest_swl:
+        lowest_swl = storeswl
+        lowest_store = f"{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
 data_map[store_condition] = store_text
 
 text += "\n----------------------sku分布----------------------"
@@ -254,12 +266,19 @@ sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(
 )
 # print("\nSKU 分布及对应的 '无轨迹' 情况：")
 sku_text = ""
+lowest_sku = ""
+lowest_swl = 101  # 初始化为比 100 大的值
 for sku, count in sku_distribution.items():
     no_track_count = sku_no_track_distribution[sku]
     skuswl = round(100 - ((int(no_track_count) / int(count)) * 100))
     # print(f"{sku}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{skuswl}%")
     text += f"\n{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
     sku_text += f"\n{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
+    # 判断是否是最低的上网率
+    if skuswl < lowest_swl:
+        lowest_swl = skuswl
+        lowest_sku = f"{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
+# 将 sku_text 保存到 data_map
 data_map[sku_condition] = sku_text
 
 # 分析时间段
@@ -267,6 +286,8 @@ text += "\n----------------------时间段分布----------------------"
 time_segment_analysis = analyze_time_segments(xlsx_path, time_column="订购时间", courier_column="快递")
 # print("\n按时间段统计结果：")
 time_segment_text = ""
+lowest_segment = ""  # 保存上网率最低的时间段
+lowest_swl = 101  # 初始化为比 100 大的值
 for segment_start, stats in time_segment_analysis.items():
     segment_end = segment_start + timedelta(minutes=3)
     total_count = stats["total_count"]
@@ -276,13 +297,24 @@ for segment_start, stats in time_segment_analysis.items():
     # print(f"  总数: {total_count} 条, 其中 '无轨迹': {no_track_count} 条，上网率为：{segmentswl}%")
     text += f"\n{segment_start.strftime('%m-%d %H:%M')} - {segment_end.strftime('%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
     time_segment_text += f"\n{segment_start.strftime('%m-%d %H:%M')} - {segment_end.strftime('%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
+    # 判断是否是最低的上网率
+    if segmentswl < lowest_swl:
+        lowest_swl = segmentswl
+        lowest_segment = f"{segment_start.strftime('%m-%d %H:%M')} - {segment_end.strftime('%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
 data_map[time_segment_condition] = time_segment_text
+
+lowest_txt = ""
+lowest_txt += f"\n最低上网率的 仓库：{lowest_warehouse}"
+lowest_txt += f"\n最低上网率的 SKU：{lowest_sku}"
+lowest_txt += f"\n最低上网率的 商店：{lowest_store}"
+lowest_txt += f"\n最低上网率的 时间段：{lowest_segment}"
 
 sum_up_text = ""
 # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
 if (interval_time == 1):
     if (swl < 30):
         sum_up_text += "☁️注意：间隔第1天，上网率未达30%，建议跟进！"
+        sum_up_text += lowest_txt
     else:
         if (swl >= 50):
             sum_up_text += "☀️间隔第1天，上网率优秀"
@@ -291,19 +323,21 @@ if (interval_time == 1):
 elif (interval_time == 2):
     if (swl < 70):
         sum_up_text += "🌧️异常：间隔第2天，上网率未达75%，建议分析数据尝试定位问题！"
+        sum_up_text += lowest_txt
     else:
         if (swl >= 85):
             sum_up_text += "☀️间隔第2天，上网率优秀"
         else:
             sum_up_text += "☀️间隔第2天，上网率良好"
-elif (interval_time >= 3):
+else:
     if (swl < 95):
-        sum_up_text += "❄️⛈️🌀⚠️🚨警报：间隔第3天，上网率未达95%，异常，定位问题后联系仓库反馈问题！"
+        sum_up_text += f"❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率未达95%，异常，定位问题后联系仓库反馈问题！"
+        sum_up_text += lowest_txt
     else:
         if (swl >= 99):
-            sum_up_text += "☀️间隔第3天，上网率优秀"
+            sum_up_text += f"☀️间隔第{interval_time}天，上网率优秀"
         else:
-            sum_up_text += "☀️间隔第3天，上网率良好"
+            sum_up_text += f"☀️间隔第{interval_time}天，上网率良好"
 
 data_map[sum_up] = sum_up_text
 text += "\n----------------------总结&建议----------------------"
@@ -313,25 +347,17 @@ text += f"\n{sum_up_text}"
 # print(data_map)
 print(text)
 
-# tat = get_token()
-#
-# # values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
-# url = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/BGrnsxMFfhfoumtUDF8cXM8jnGg/values_prepend"
-# header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
-# # 在402cb1这个工作簿内的单元格C3到N8写入内容为helloworld等内容
-# post_data = {"valueRange": {"range": "JZrQj9!B2:J2", "values": [
-#     [
-#         data_map[update_time],
-#         data_map[order_count],
-#         data_map[no_track_number],
-#         data_map[track_percent],
-#         data_map[no_track_percent],
-#
-#         data_map[warehouse_condition],
-#         data_map[store_condition],
-#         data_map[sku_condition],
-#         data_map[time_segment_condition],
-#     ]
-# ]}}
-# r2 = requests.post(url, data=json.dumps(post_data), headers=header)  # 请求写入
-# print(r2.json())  # 输出来判断写入是否成功
+# 写入飞书在线文档
+tat = get_token()
+detail_sheet_value(tat, [
+    data_map[update_time],
+    data_map[order_count],
+    data_map[no_track_number],
+    data_map[track_percent],
+    data_map[no_track_percent],
+    data_map[warehouse_condition],
+    data_map[store_condition],
+    data_map[sku_condition],
+    data_map[time_segment_condition],
+    data_map[sum_up],
+], ck_time)
