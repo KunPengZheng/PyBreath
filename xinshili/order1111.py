@@ -8,13 +8,13 @@ warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 def analyze_data(file_path, order_column="Outbound Order No/出库单号",
                  time_column="OutboundTime/出库时间", warehouse_column="Warehouse/仓库"):
     """
-    分析每天的出库记录及仓库占比。
+    分析每天的出库记录及仓库分布。
 
     :param file_path: Excel 文件路径
     :param order_column: 出库单号列名
     :param time_column: 出库时间列名
     :param warehouse_column: 仓库列名
-    :return: 按天的出库记录总数和仓库占比信息
+    :return: 数据对象列表，每个对象包含每天的订单统计信息
     """
     try:
         # 加载 Excel 文件
@@ -34,36 +34,55 @@ def analyze_data(file_path, order_column="Outbound Order No/出库单号",
         # 添加日期字段（仅保留日期部分）
         data['Date'] = data[time_column].dt.date
 
-        # 按日期统计总数
-        daily_counts = data.groupby('Date').size().reset_index(name='Total Records')
+        # 初始化结果列表
+        result_list = []
 
-        # 按日期和仓库统计数量
-        daily_warehouse_counts = data.groupby(['Date', warehouse_column]).size().reset_index(name='Count')
+        # 仓库排序规则
+        warehouse_order = ["美西东谷", "美中休斯敦", "费城"]
 
-        # 计算每日仓库占比
-        results = []
-        for date, group in daily_warehouse_counts.groupby('Date'):
-            total_records = daily_counts.loc[daily_counts['Date'] == date, 'Total Records'].values[0]
-            group['Percentage'] = (group['Count'] / total_records * 100).round(2)
-            results.append(group)
+        # 按日期分组
+        grouped = data.groupby('Date')
 
-        # 合并结果
-        final_results = pd.concat(results).reset_index(drop=True)
-        return daily_counts, final_results
+        for date, group in grouped:
+            total_orders = len(group)  # 当天的订单总数
+
+            # 获取各仓库的订单数
+            warehouse_counts = group[warehouse_column].value_counts().to_dict()
+
+            # 根据指定顺序排序
+            sorted_counts = {w: warehouse_counts.get(w, 0) for w in warehouse_order}
+
+            # 计算占比
+            sorted_ratios = {w: round(sorted_counts[w] / total_orders, 4) if total_orders > 0 else 0
+                             for w in warehouse_order}
+
+            # 创建对象存储数据
+            daily_data = {
+                "date": date,
+                "total_orders": total_orders,
+                "warehouse_counts": sorted_counts,
+                "warehouse_ratios": sorted_ratios,
+            }
+            result_list.append(daily_data)
+
+        return result_list
 
     except Exception as e:
         print(f"发生错误: {e}")
-        return None, None
+        return None
 
 
 # 主程序
 file_path = input("请输入Excel文件的路径：")
 
 # 分析数据
-daily_counts, final_results = analyze_data(file_path)
+result = analyze_data(file_path)
 
-if daily_counts is not None and final_results is not None:
-    print("\n每天的出库记录总数：")
-    print(daily_counts)
-    print("\n每天的仓库占比分析：")
-    print(final_results)
+if result:
+    print("\n每天的订单统计：")
+    for daily_data in result:
+        print(f"日期: {daily_data['date']}")
+        print(f"总订单数: {daily_data['total_orders']}")
+        print(f"仓库订单数: {daily_data['warehouse_counts']}")
+        print(f"仓库占比: {daily_data['warehouse_ratios']}")
+        print("-" * 40)
