@@ -1,4 +1,5 @@
 import requests
+import calendar
 from datetime import datetime
 import os
 import subprocess
@@ -124,3 +125,17 @@ def current_time():
 
 def day_of_month():
     return datetime.today().day
+
+
+def get_days_in_current_month():
+    """
+    获取当前月份的天数。
+    """
+    # 获取当前日期
+    today = datetime.now()
+    year = today.year
+    month = today.month
+
+    # 使用 calendar.monthrange 获取当前月份的天数
+    _, days_in_month = calendar.monthrange(year, month)
+    return days_in_month

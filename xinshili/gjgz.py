@@ -1,13 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 import os
 import re
 from openpyxl import load_workbook
 import pandas as pd
 from collections import Counter, defaultdict
-import requests
-import json
-
-from xinshili.fs_utils import get_token, detail_sheet_value
+from xinshili.fs_utils import get_token, detail_sheet_value, brief_sheet_value
+from xinshili.utils import round2
 
 
 def count_no_track(file_path, column_name="快递"):
@@ -207,7 +205,7 @@ text += f"\n间隔时间：{interval_time}"
 # print(f"出库日期：{ck_time}，跟踪日期：{day_of_month}，间隔时间：{time}")
 
 total_count, no_track_count = count_no_track(xlsx_path, column_name="快递")
-swl = round(100 - ((int(no_track_count) / int(total_count)) * 100))
+swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
 # print(f"总条数（除列头）：{total_count}，内容为 '无轨迹' 的总数：{no_track_count}，上网率为：{swl}%")
 text += "\n----------------------概览----------------------"
 text += f"\n订单总数：{total_count}"
@@ -230,7 +228,7 @@ lowest_swl = 101  # 初始化为比 100 大的值
 lowest_warehouse = ""  # 保存最低上网率的仓库信息
 for warehouse, count in warehouse_distribution.items():
     no_track_count = warehouse_no_track[warehouse]
-    warehouseswl = round(100 - ((int(no_track_count) / int(count)) * 100))
+    warehouseswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
     # print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{warehouseswl}%")
     text += f"\n{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
     warehouse_text += f"\n{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
@@ -250,7 +248,7 @@ lowest_store = ""
 lowest_swl = 101  # 初始化为一个比 100 大的值，用于比较
 for store, count in store_distribution.items():
     no_track_count = store_no_track_distribution[store]
-    storeswl = round(100 - ((int(no_track_count) / int(count)) * 100))
+    storeswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
     # print(f"{store}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{storeswl}%")
     text += f"\n{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
     store_text += f"\n{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
@@ -270,7 +268,7 @@ lowest_sku = ""
 lowest_swl = 101  # 初始化为比 100 大的值
 for sku, count in sku_distribution.items():
     no_track_count = sku_no_track_distribution[sku]
-    skuswl = round(100 - ((int(no_track_count) / int(count)) * 100))
+    skuswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
     # print(f"{sku}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{skuswl}%")
     text += f"\n{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
     sku_text += f"\n{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
@@ -292,7 +290,7 @@ for segment_start, stats in time_segment_analysis.items():
     segment_end = segment_start + timedelta(minutes=3)
     total_count = stats["total_count"]
     no_track_count = stats["no_track_count"]
-    segmentswl = round(100 - ((int(no_track_count) / int(total_count)) * 100))
+    segmentswl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
     # print(f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}:")
     # print(f"  总数: {total_count} 条, 其中 '无轨迹': {no_track_count} 条，上网率为：{segmentswl}%")
     text += f"\n{segment_start.strftime('%m-%d %H:%M')} - {segment_end.strftime('%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
@@ -349,6 +347,7 @@ print(text)
 
 # 写入飞书在线文档
 tat = get_token()
+brief_sheet_value(tat, [swl], ck_time)
 detail_sheet_value(tat, [
     data_map[update_time],
     data_map[order_count],
