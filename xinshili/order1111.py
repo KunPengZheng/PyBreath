@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 def analyze_data(file_path, order_column="Outbound Order No/出库单号",
                  time_column="OutboundTime/出库时间", warehouse_column="Warehouse/仓库"):
     """
-    分析每天的出库记录及仓库分布。
+    分析每天的出库记录及仓库分布，并为每一天计算 position = 日期的 day + 1。
 
     :param file_path: Excel 文件路径
     :param order_column: 出库单号列名
@@ -41,7 +41,7 @@ def analyze_data(file_path, order_column="Outbound Order No/出库单号",
         warehouse_order = ["美西东谷", "美中休斯敦", "费城"]
 
         # 按日期分组
-        grouped = data.groupby('Date')
+        grouped = data.groupby('Date', sort=True)
 
         for date, group in grouped:
             total_orders = len(group)  # 当天的订单总数
@@ -56,8 +56,12 @@ def analyze_data(file_path, order_column="Outbound Order No/出库单号",
             sorted_ratios = {w: round(sorted_counts[w] / total_orders, 4) if total_orders > 0 else 0
                              for w in warehouse_order}
 
+            # 计算 position = 日期的 day + 1
+            position = date.day + 1
+
             # 创建对象存储数据
             daily_data = {
+                "position": position,
                 "date": date,
                 "total_orders": total_orders,
                 "warehouse_counts": sorted_counts,
@@ -81,6 +85,7 @@ result = analyze_data(file_path)
 if result:
     print("\n每天的订单统计：")
     for daily_data in result:
+        print(f"Position: {daily_data['position']}")
         print(f"日期: {daily_data['date']}")
         print(f"总订单数: {daily_data['total_orders']}")
         print(f"仓库订单数: {daily_data['warehouse_counts']}")
