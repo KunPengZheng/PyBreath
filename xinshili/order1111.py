@@ -1,6 +1,8 @@
 import pandas as pd
 import warnings
 
+from xinshili.fs_utils import get_token, order_sheet_value
+
 # 忽略 openpyxl 的样式警告
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
@@ -76,12 +78,9 @@ def analyze_data(file_path, order_column="Outbound Order No/出库单号",
         return None
 
 
-# 主程序
 file_path = input("请输入Excel文件的路径：")
-
-# 分析数据
 result = analyze_data(file_path)
-
+# tat = get_token()
 if result:
     print("\n每天的订单统计：")
     for daily_data in result:
@@ -91,3 +90,14 @@ if result:
         print(f"仓库订单数: {daily_data['warehouse_counts']}")
         print(f"仓库占比: {daily_data['warehouse_ratios']}")
         print("-" * 40)
+        # warehouse_counts_map = daily_data['warehouse_counts']
+        # warehouse_ratios_map = daily_data['warehouse_ratios']
+        # order_sheet_value(tat, [
+        #     daily_data['total_orders'],
+        #     warehouse_counts_map["美西东谷"],
+        #     warehouse_counts_map["美中休斯敦"],
+        #     warehouse_counts_map["费城"],
+        #     warehouse_ratios_map["美西东谷"],
+        #     warehouse_ratios_map["美中休斯敦"],
+        #     warehouse_ratios_map["费城"],
+        # ], daily_data['position'])
