@@ -48,4 +48,3 @@ total_count, warehouse_counts, warehouse_percentages = analyze_warehouse_distrib
     order_column="Outbound Order No/出库单号",
     warehouse_column="Warehouse/仓库"
 )
-
