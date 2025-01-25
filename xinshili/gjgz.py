@@ -185,6 +185,8 @@ time_segment_condition = "time_segment_condition"
 time_segment_condition = "time_segment_condition"
 sum_up = "sum_up"
 
+analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
+
 input_file = input("请输入文件的绝对路径：")
 xlsx_path = handle_file(input_file)
 # 出库时间
@@ -351,7 +353,7 @@ print(text)
 
 # 写入飞书在线文档
 tat = get_token()
-brief_sheet_value(tat, [swl], ck_time)
+brief_sheet_value(tat, [swl], ck_time, analyse_obj)
 detail_sheet_value(tat, [
     data_map[update_time],
     data_map[order_count],
@@ -363,4 +365,4 @@ detail_sheet_value(tat, [
     data_map[sku_condition],
     data_map[time_segment_condition],
     data_map[sum_up],
-], ck_time)
+], ck_time, analyse_obj)
