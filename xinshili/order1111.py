@@ -2,9 +2,17 @@ import pandas as pd
 import warnings
 
 from xinshili.fs_utils import get_token, order_sheet_value
+import pandas as pd
+import warnings
+
+from xinshili.utils import round2
 
 # 忽略 openpyxl 的样式警告
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
+
+mx = "donggu(美西东谷)"
+mz = "baoTX01(美中休斯敦)"
+md = "feicheng(费城)"
 
 
 def analyze_data(file_path, order_column="Outbound Order No/出库单号",
@@ -33,14 +41,18 @@ def analyze_data(file_path, order_column="Outbound Order No/出库单号",
         # 确保出库时间列为日期时间格式
         data[time_column] = pd.to_datetime(data[time_column], errors='coerce')
 
+        # 检查是否存在无法解析的时间值
+        if data[time_column].isna().any():
+            print(f"警告: 出库时间列中存在无法解析的值！这些值将被忽略。")
+
         # 添加日期字段（仅保留日期部分）
         data['Date'] = data[time_column].dt.date
 
         # 初始化结果列表
         result_list = []
 
-        # 仓库排序规则
-        warehouse_order = ["美西东谷", "美中休斯敦", "费城"]
+        # 仓库排序规则，注意⚠️仓库名字发生改变的时候要进行修改！！！！！！
+        warehouse_order = [mx, mz, md]
 
         # 按日期分组
         grouped = data.groupby('Date', sort=True)
@@ -51,12 +63,21 @@ def analyze_data(file_path, order_column="Outbound Order No/出库单号",
             # 获取各仓库的订单数
             warehouse_counts = group[warehouse_column].value_counts().to_dict()
 
+            # 检查当天的仓库计数
+            # print(f"调试: 日期 {date} 的仓库计数 {warehouse_counts}")
+
             # 根据指定顺序排序
             sorted_counts = {w: warehouse_counts.get(w, 0) for w in warehouse_order}
 
-            # 计算占比
-            sorted_ratios = {w: round(sorted_counts[w] / total_orders, 4) if total_orders > 0 else 0
+            # 检查排序后计数
+            # print(f"调试: 日期 {date} 的排序后仓库计数 {sorted_counts}")
+
+            # 计算占比，并乘以100保留两位小数
+            sorted_ratios = {w: round2((sorted_counts[w] / total_orders) * 100) if total_orders > 0 else 0
                              for w in warehouse_order}
+
+            # 检查占比计算
+            # print(f"调试: 日期 {date} 的排序后仓库占比 {sorted_ratios}")
 
             # 计算 position = 日期的 day + 1
             position = date.day + 1
@@ -80,7 +101,7 @@ def analyze_data(file_path, order_column="Outbound Order No/出库单号",
 
 file_path = input("请输入Excel文件的路径：")
 result = analyze_data(file_path)
-# tat = get_token()
+tat = get_token()
 if result:
     print("\n每天的订单统计：")
     for daily_data in result:
@@ -90,14 +111,11 @@ if result:
         print(f"仓库订单数: {daily_data['warehouse_counts']}")
         print(f"仓库占比: {daily_data['warehouse_ratios']}")
         print("-" * 40)
-        # warehouse_counts_map = daily_data['warehouse_counts']
-        # warehouse_ratios_map = daily_data['warehouse_ratios']
-        # order_sheet_value(tat, [
-        #     daily_data['total_orders'],
-        #     warehouse_counts_map["美西东谷"],
-        #     warehouse_counts_map["美中休斯敦"],
-        #     warehouse_counts_map["费城"],
-        #     warehouse_ratios_map["美西东谷"],
-        #     warehouse_ratios_map["美中休斯敦"],
-        #     warehouse_ratios_map["费城"],
-        # ], daily_data['position'])
+        warehouse_counts_map = daily_data['warehouse_counts']
+        warehouse_ratios_map = daily_data['warehouse_ratios']
+        order_sheet_value(tat, [
+            daily_data['total_orders'],
+            str(warehouse_counts_map[mx]) + "（" + str(warehouse_ratios_map[mx]) + "%）",
+            str(warehouse_counts_map[mz]) + "（" + str(warehouse_ratios_map[mz]) + "%）",
+            str(warehouse_counts_map[md]) + "（" + str(warehouse_ratios_map[md]) + "%）",
+        ], daily_data['position'])
