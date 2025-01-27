@@ -19,7 +19,7 @@ def get_usd_to_cny_rate():
     # except Exception as e:
     #     print(f"获取汇率失败：{e}")
     #     return None
-    return 7.36
+    return 7.28
 
 
 def get_yd():
