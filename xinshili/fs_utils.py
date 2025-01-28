@@ -114,7 +114,7 @@ def order_sheet_value(tat, lists, position):
     header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
     # JZrQj9：表格地址中 ?sheet= 后面的部分，表示表的名字
     post_data = {
-        "valueRange": {"range": f"6a545c!B{position}:H{position}", "values": [lists]}}
+        "valueRange": {"range": f"6a545c!B{position}:AL{position}", "values": [lists]}}
     # values_prepend 需要使用post请求方式，values需要使用put请求方式
     r2 = requests.put(url, data=json.dumps(post_data), headers=header)  # 请求写入
     print(r2.json())  # 输出来判断写入是否成功
