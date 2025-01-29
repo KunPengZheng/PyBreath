@@ -12,6 +12,75 @@ zbw轨迹跟踪分析
 """
 
 
+# def extract_and_process_data(filepath, column_name, group_size=35):
+#     """
+#     从 Excel 文件中提取指定列的数据，按组发送请求并统计满足条件的结果。
+#
+#     参数:
+#     - filepath: str，Excel 文件路径
+#     - column_name: str，要提取的列名
+#     - group_size: int，每组的数据大小
+#
+#     返回:
+#     - list，满足条件的结果数据
+#     """
+#     # 读取 Excel 文件
+#     data = pd.read_excel(filepath)
+#
+#     # 检查列是否存在
+#     if column_name not in data.columns:
+#         raise ValueError(f"列 '{column_name}' 不存在于 Excel 文件中")
+#
+#     # 获取指定列数据并去除空值
+#     items = data[column_name].dropna().tolist()
+#
+#     # 按组划分数据
+#     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
+#
+#     # 存储满足条件的结果
+#     tracking_results = []
+#     no_tracking_results = []
+#     unpaid_results = []
+#     not_yet_results = []
+#     pre_ship_results = []
+#     delivered_results = []
+#
+#     text = "The package associated with this tracking number did not have proper postage applied and will not be delivered"
+#     text1 = "Delivered"
+#
+#     # 请求每组数据
+#     for idx, group in enumerate(grouped_items, start=1):
+#         print(f"处理第 {idx} 组，共 {len(group)} 条数据")
+#         track1 = track(group)
+#
+#         for package_id, info in track1['data'].items():
+#             if info.get('err'):
+#                 if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
+#                     no_tracking_results.append(package_id)
+#                     not_yet_results.append(package_id)
+#                 elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
+#                     no_tracking_results.append(package_id)
+#                     pre_ship_results.append(package_id)
+#                 else:
+#                     no_tracking_results.append(package_id)
+#             else:
+#                 if info.get('statusLong') in text:
+#                     unpaid_results.append(package_id)
+#                 if info.get('statusShort') in text1:
+#                     delivered_results.append(package_id)
+#                 tracking_results.append(package_id)
+#
+#         # 随机生成 5 到 10 秒之间的等待时间
+#         wait_time = random.uniform(5, 10)
+#         time.sleep(wait_time)
+#
+#     print(f"没有轨迹数： {len(no_tracking_results)} 条，有轨迹数： {len(tracking_results)} 条")
+#     print(f"\nunpaid数： {len(unpaid_results)} 条")
+#     print(f"\nnot_yet数： {len(not_yet_results)} 条")
+#     print(f"\npre_ship数： {len(pre_ship_results)} 条")
+#     print(f"\ndelivered数： {len(delivered_results)} 条")
+
+
 def count_no_track(file_path, column_name="快递"):
     """统计 '快递' 列中所有行数和内容为 '无轨迹' 的数量"""
     try:
@@ -153,6 +222,31 @@ def handle_file(input_file):
         return input_file
 
 
+def check_and_add_courier_column(file_path, courier_column="Courier/快递"):
+    """
+    检查 Excel 文件是否存在 '快递' 列，如果没有，则在最后一列添加该列。
+
+    :param file_path: Excel 文件路径
+    :param courier_column: 快递列名，默认为 'Courier/快递'
+    :return: None
+    """
+    try:
+        # 加载 Excel 文件
+        data = pd.read_excel(file_path, engine='openpyxl')
+
+        # 判断是否存在 '快递' 列
+        if courier_column not in data.columns:
+            # 如果没有 '快递' 列，则在最后一列添加该列
+            data[courier_column] = ""  # 默认为空值，可以根据需求填充其他默认值
+
+            # 保存修改后的文件
+            data.to_excel(file_path, index=False, engine='openpyxl')
+            print(f"列 '{courier_column}' 已添加到文件中，并保存。")
+        else:
+            print(f"列 '{courier_column}' 已存在，无需添加。")
+
+    except Exception as e:
+        print(f"发生错误: {e}")
 
 
 def extract_number_from_filepath(filepath):
@@ -191,6 +285,7 @@ analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
 
 input_file = input("请输入文件的绝对路径：")
 xlsx_path = handle_file(input_file)
+check_and_add_courier_column(xlsx_path)
 # 出库时间
 ck_time = extract_number_from_filepath(xlsx_path)
 # 获取今天的日期
@@ -354,17 +449,17 @@ text += f"\n{sum_up_text}"
 print(text)
 
 # 写入飞书在线文档
-tat = get_token()
-brief_sheet_value(tat, [swl], ck_time, analyse_obj)
-detail_sheet_value(tat, [
-    data_map[update_time],
-    data_map[order_count],
-    data_map[no_track_number],
-    data_map[track_percent],
-    data_map[no_track_percent],
-    data_map[warehouse_condition],
-    data_map[store_condition],
-    data_map[sku_condition],
-    data_map[time_segment_condition],
-    data_map[sum_up],
-], ck_time, analyse_obj)
+# tat = get_token()
+# brief_sheet_value(tat, [swl], ck_time, analyse_obj)
+# detail_sheet_value(tat, [
+#     data_map[update_time],
+#     data_map[order_count],
+#     data_map[no_track_number],
+#     data_map[track_percent],
+#     data_map[no_track_percent],
+#     data_map[warehouse_condition],
+#     data_map[store_condition],
+#     data_map[sku_condition],
+#     data_map[time_segment_condition],
+#     data_map[sum_up],
+# ], ck_time, analyse_obj)
