@@ -24,7 +24,7 @@ def extract_and_process_data(filepath, column_name, group_size=35):
     - group_size: int，每组的数据大小
 
     返回:
-    - list，满足条件的结果数据
+    - dict，包含每个跟踪号及其对应分类的结果数据
     """
     # 读取 Excel 文件
     data = pd.read_excel(filepath)
@@ -39,13 +39,15 @@ def extract_and_process_data(filepath, column_name, group_size=35):
     # 按组划分数据
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
 
-    # 存储满足条件的结果
-    tracking_results = []
-    no_tracking_results = []
-    unpaid_results = []
-    not_yet_results = []
-    pre_ship_results = []
-    delivered_results = []
+    # 存储结果的 map（字典）
+    results_map = {
+        "tracking_results": {},
+        "no_tracking_results": {},
+        "unpaid_results": {},
+        "not_yet_results": {},
+        "pre_ship_results": {},
+        "delivered_results": {}
+    }
 
     text = "The package associated with this tracking number did not have proper postage applied and will not be delivered"
     text1 = "Delivered"
@@ -56,28 +58,33 @@ def extract_and_process_data(filepath, column_name, group_size=35):
         track1 = track(group)
 
         for package_id, info in track1['data'].items():
+            # 判断错误类型并分类
             if info.get('err'):
                 if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
-                    not_yet_results.append(package_id)
+                    results_map["not_yet_results"][package_id] = "not_yet"
                 elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
-                    pre_ship_results.append(package_id)
-                no_tracking_results.append(package_id)
+                    results_map["pre_ship_results"][package_id] = "pre_ship"
+                results_map["no_tracking_results"][package_id] = "no_tracking"
             else:
-                if info.get('statusLong') in text:
-                    unpaid_results.append(package_id)
-                if info.get('statusShort') in text1:
-                    delivered_results.append(package_id)
-                tracking_results.append(package_id)
+                if text in info.get('statusLong'):
+                    results_map["unpaid_results"][package_id] = "unpaid"
+                if text1 in info.get('statusShort'):
+                    results_map["delivered_results"][package_id] = "delivered"
+                results_map["tracking_results"][package_id] = "tracking"
 
         # 随机生成 5 到 10 秒之间的等待时间
         wait_time = random.uniform(5, 10)
         time.sleep(wait_time)
 
-    print(f"没有轨迹数： {len(no_tracking_results)} 条，有轨迹数： {len(tracking_results)} 条")
-    print(f"\nunpaid数： {len(unpaid_results)} 条")
-    print(f"\nnot_yet数： {len(not_yet_results)} 条")
-    print(f"\npre_ship数： {len(pre_ship_results)} 条")
-    print(f"\ndelivered数： {len(delivered_results)} 条")
+    # 输出结果统计
+    print(
+        f"没有轨迹数： {len(results_map['no_tracking_results'])} 条，有轨迹数： {len(results_map['tracking_results'])} 条")
+    print(f"\nunpaid数： {len(results_map['unpaid_results'])} 条")
+    print(f"\nnot_yet数： {len(results_map['not_yet_results'])} 条")
+    print(f"\npre_ship数： {len(results_map['pre_ship_results'])} 条")
+    print(f"\ndelivered数： {len(results_map['delivered_results'])} 条")
+
+    return results_map
 
 
 def filter_courier_rows(file_path, courier_column="Courier/快递"):
@@ -315,7 +322,15 @@ input_file = input("请输入文件的绝对路径：")
 xlsx_path = handle_file(input_file)
 check_and_add_courier_column(xlsx_path)
 filtered_data = filter_courier_rows(xlsx_path)
-extract_and_process_data(input_file, "Tracking No./物流跟踪号", 35)
+results = extract_and_process_data(input_file, "Tracking No./物流跟踪号", 35)
+
+# 输出示例
+if results:
+    print("\n结果展示:")
+    for category, tracking_map in results.items():
+        print(f"\n{category}:")
+        for tracking_number, status in tracking_map.items():
+            print(f"{tracking_number}: {status}")
 
 # # 出库时间
 # ck_time = extract_number_from_filepath(xlsx_path)
