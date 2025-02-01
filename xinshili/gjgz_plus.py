@@ -214,21 +214,27 @@ def count_distribution_and_no_track(file_path, key_column, courier_column):
         return Counter(), Counter()
 
 
-def analyze_time_segments(file_path, time_column, courier_column):
+def analyze_time_segments(file_path, time_column="订购时间", courier_column="快递"):
     """
     按时间段（每3分钟为一段，忽略秒进行判断）统计总数和 "无轨迹" 的数量。
     输出时包括秒显示。
     """
     try:
+        # 加载 Excel 文件
         workbook = load_workbook(file_path)
         sheet = workbook.active
+
+        # 获取表头
         headers = [cell.value for cell in sheet[1]]
         if time_column not in headers or courier_column not in headers:
             raise ValueError(f"列名 '{time_column}' 或 '{courier_column}' 不存在！")
 
+        # 获取列索引
         time_index = headers.index(time_column) + 1
         courier_index = headers.index(courier_column) + 1
-        pattern = re.compile(r"not_yet|pre_ship", re.IGNORECASE)
+
+        # 正则表达式匹配 "无轨迹"
+        pattern = re.compile(r"^\s*无轨迹\s*$", re.IGNORECASE)
 
         # 读取并解析数据
         data = []
@@ -237,11 +243,8 @@ def analyze_time_segments(file_path, time_column, courier_column):
             courier_status = row[courier_index - 1]
             if order_time is not None and isinstance(order_time, str):
                 try:
-                    dt = datetime.strptime(order_time, '%Y-%m-%d %H:%M:%S')
-                    print(f"解析后的 datetime 对象: {dt}")
-                    # 将 datetime 对象格式化为目标字符串
-                    order_time = dt.strftime('%y-%m-%d %H:%M')
-                    print(f"格式化后的时间字符串: {order_time}")
+                    # 解析时间格式为 "2025-01-22 23:11:43"
+                    order_time = datetime.strptime(order_time, "%Y-%m-%d %H:%M:%S")
                     order_time_without_seconds = order_time.replace(second=0)
                     data.append((order_time, order_time_without_seconds, courier_status))
                 except ValueError:
@@ -268,8 +271,7 @@ def analyze_time_segments(file_path, time_column, courier_column):
         for segment_start, entries in time_segments.items():
             total_count = len(entries)
             no_track_count = sum(
-                1 for _, courier_status in entries if
-                courier_status is not None and pattern.search(str(courier_status)))
+                1 for _, courier_status in entries if courier_status is not None and pattern.match(str(courier_status)))
             segment_statistics[segment_start] = {
                 "total_count": total_count,
                 "no_track_count": no_track_count,
