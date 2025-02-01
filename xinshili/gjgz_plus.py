@@ -353,6 +353,49 @@ def extract_number_from_filepath(filepath):
     return None
 
 
+def get_days_difference(file_path, column_name="OutboundTime/出库时间"):
+    """
+    获取 xlsx 文件中指定列的第一条数据的日期，并计算与当前日期的差值。
+    """
+    try:
+        # 加载 Excel 文件
+        workbook = load_workbook(file_path)
+        sheet = workbook.active
+
+        # 获取表头
+        headers = [cell.value for cell in sheet[1]]
+        if column_name not in headers:
+            raise ValueError(f"列名 '{column_name}' 不存在！")
+
+        # 获取列索引
+        column_index = headers.index(column_name) + 1
+
+        # 获取第一条数据
+        first_row_value = sheet.cell(row=2, column=column_index).value  # 假设数据从第二行开始
+        if not first_row_value:
+            raise ValueError(f"'{column_name}' 列的第一条数据为空！")
+
+        # 解析日期
+        outbound_time = datetime.strptime(first_row_value, "%Y-%m-%d %H:%M:%S")
+        outbound_day = outbound_time.day  # 获取出库日期的日
+        print(f"出库日期的日: {outbound_day}")
+
+        # 获取当前日期
+        current_time = datetime.now()
+        current_day = current_time.day  # 获取当前日期的日
+        print(f"当前日期的日: {current_day}")
+
+        # 计算日期差
+        date_difference = (current_time - outbound_time).days
+        print(f"相差的天数: {date_difference}")
+
+        return outbound_day, current_day, date_difference
+
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return None, None, None
+
+
 update_time = "update_time"
 order_count = "order_count"
 no_track_number = "no_track_number"
@@ -367,11 +410,11 @@ sum_up = "sum_up"
 
 analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
 
-input_file = input("请输入文件的绝对路径：")
-xlsx_path = handle_file(input_file)
+xlsx_path = input("请输入文件的绝对路径：")
+# xlsx_path = handle_file(input_file)
 check_and_add_courier_column(xlsx_path)
 filtered_data = filter_courier_rows(xlsx_path)
-results = extract_and_process_data(input_file, "Tracking No./物流跟踪号", 35)
+results = extract_and_process_data(xlsx_path, "Tracking No./物流跟踪号", 35)
 
 # 输出示例
 # if results:
@@ -382,11 +425,18 @@ results = extract_and_process_data(input_file, "Tracking No./物流跟踪号", 3
 #             print(f"{tracking_number}: {status}")
 
 # 出库时间
-ck_time = extract_number_from_filepath(xlsx_path)
-# 获取今天的日期
-today = datetime.today()
-# 获取今天是几号
-day_of_month = today.day
+# ck_time = extract_number_from_filepath(xlsx_path)
+# # 获取今天的日期
+# today = datetime.today()
+# # 获取今天是几号
+# day_of_month = today.day
+
+ck_time, day_of_month, interval_time = get_days_difference(xlsx_path)
+# print(f"出库日期的日: {outbound_day}")
+# print(f"当前日期的日: {current_day}")
+# print(f"相差的天数: {date_difference}")
+
+
 # 数据map
 data_map = {}
 
@@ -396,7 +446,7 @@ text += "\n----------------------时间----------------------"
 text += f"\n更新时间: {current_time}"
 data_map[update_time] = current_time
 
-interval_time = int(day_of_month) - int(ck_time)
+# interval_time = int(day_of_month) - int(ck_time)
 text += f"\n出库日期：{ck_time}"
 text += f"\n跟踪日期：{day_of_month}"
 text += f"\n间隔时间：{interval_time}"
