@@ -68,11 +68,8 @@ def extract_and_process_data(filepath, column_name, group_size=35):
 
     # 不规则的快递单号不需要跟踪
     for tracking_number in data['Tracking No./物流跟踪号']:
-        # 检查是否不是纯数字
-        if not str(tracking_number).isdigit():
-            # print(f"Dsdsdsdsd:{tracking_number}")
+        if not str(tracking_number).isdigit() or not str(tracking_number).startswith('9'):
             results_map["irregular_order_number_results"][tracking_number] = "irregular_no_tracking"
-            # results_map["no_tracking_results"][tracking_number] = "no_tracking"
     update_courier_status_for_results2222(filepath, results_map)
 
     data[column_name] = data[column_name].fillna('')
