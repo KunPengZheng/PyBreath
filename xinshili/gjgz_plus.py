@@ -465,7 +465,7 @@ update_time = "update_time"
 order_count = "order_count"
 no_track_number = "no_track_number"
 track_percent = "track_percent"
-delivered_count = "delivered_count"
+delivered_counts = "delivered_counts"
 delivered_percent = "delivered_percent"
 no_track_percent = "no_track_percent"
 warehouse_condition = "warehouse_condition"
@@ -539,6 +539,8 @@ data_map[order_count] = total_count
 data_map[no_track_number] = no_track_count
 data_map[track_percent] = swl
 data_map[no_track_percent] = 100 - swl
+data_map[delivered_counts] = delivered_count
+data_map[delivered_percent] = qsl
 
 text += "\n----------------------仓库分布----------------------"
 warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
@@ -698,7 +700,7 @@ brief_sheet_value(tat, [swl], ck_time, analyse_obj)
 detail_sheet_value(tat, [
     data_map[update_time],
     data_map[order_count],
-    data_map[delivered_count],
+    data_map[delivered_counts],
     data_map[delivered_percent],
     data_map[no_track_number],
     data_map[track_percent],
