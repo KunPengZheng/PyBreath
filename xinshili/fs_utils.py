@@ -64,9 +64,9 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
     map_sheet_ck_time = str(int(ck_time) + 1)
     post_data = None
     if analyse_obj == "zbw":
-        post_data = {"valueRange": {"range": f"JZrQj9!B{map_sheet_ck_time}:K{map_sheet_ck_time}", "values": [lists]}}
+        post_data = {"valueRange": {"range": f"JZrQj9!B{map_sheet_ck_time}:M{map_sheet_ck_time}", "values": [lists]}}
     elif analyse_obj == "sanrio":
-        post_data = {"valueRange": {"range": f"wGMg6A!B{map_sheet_ck_time}:K{map_sheet_ck_time}", "values": [lists]}}
+        post_data = {"valueRange": {"range": f"wGMg6A!B{map_sheet_ck_time}:M{map_sheet_ck_time}", "values": [lists]}}
     else:
         raise ValueError(f"{analyse_obj} 未定义")
     # values_prepend 需要使用post请求方式，values需要使用put请求方式
