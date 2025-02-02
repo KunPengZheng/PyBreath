@@ -65,17 +65,19 @@ def extract_and_process_data(filepath, column_name, group_size=35):
     text2 = "Out for Delivery"
     text3 = "Your item was returned to the sender"
 
+    # 不规则的快递单号不需要跟踪
     for tracking_number in data['Tracking No./物流跟踪号']:
         # 检查是否不是纯数字
         if not str(tracking_number).isdigit():
-            print(f"Dsdsdsdsd:{tracking_number}")
+            # print(f"Dsdsdsdsd:{tracking_number}")
             results_map["irregular_order_number_results"][tracking_number] = "irregular_no_tracking"
-            results_map["no_tracking_results"][tracking_number] = "no_tracking"
+            # results_map["no_tracking_results"][tracking_number] = "no_tracking"
     update_courier_status_for_results2222(filepath, results_map)
 
     data[column_name] = data[column_name].fillna('')
 
-    filtered_data = data[data[column_name].apply(lambda x: str(x).strip().lower() in ['', 'not_yet', 'pre_ship'])]
+    filtered_data = data[
+        data[column_name].apply(lambda x: str(x).strip().lower() in ['', 'not_yet', 'pre_ship', 'no_tracking'])]
 
     # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
     items = filtered_data['Tracking No./物流跟踪号'].tolist()
@@ -95,29 +97,31 @@ def extract_and_process_data(filepath, column_name, group_size=35):
                     results_map["not_yet_results"][package_id] = "not_yet"
                 elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
                     results_map["pre_ship_results"][package_id] = "pre_ship"
-                results_map["no_tracking_results"][package_id] = "no_tracking"
+                else:
+                    results_map["no_tracking_results"][package_id] = "no_tracking"
             else:
                 if text in info.get('statusLong'):
                     results_map["unpaid_results"][package_id] = "unpaid"
-                if text1 in info.get('statusShort'):
+                elif text1 in info.get('statusShort'):
                     results_map["delivered_results"][package_id] = "delivered"
-                if text2 in info.get('statusShort'):
-                    results_map["out_of_delivery_results"][package_id] = "out_of_delivery"
-                if text3 in info.get('statusLong'):
-                    results_map["returned_to_sender_results"][package_id] = "returned_to_sender"
-                results_map["tracking_results"][package_id] = "tracking"
+                else:
+                    results_map["tracking_results"][package_id] = "tracking"
+                # if text2 in info.get('statusShort'):
+                #     results_map["out_of_delivery_results"][package_id] = "out_of_delivery"
+                # if text3 in info.get('statusLong'):
+                #     results_map["returned_to_sender_results"][package_id] = "returned_to_sender"
 
         # 随机生成 5 到 10 秒之间的等待时间
         # wait_time = random.uniform(1, 2)
         # time.sleep(wait_time)
 
     # 输出结果统计
-    print(
-        f"没有轨迹数： {len(results_map['no_tracking_results'])} 条，有轨迹数： {len(results_map['tracking_results'])} 条")
-    print(f"\nunpaid数： {len(results_map['unpaid_results'])} 条")
-    print(f"\nnot_yet数： {len(results_map['not_yet_results'])} 条")
-    print(f"\npre_ship数： {len(results_map['pre_ship_results'])} 条")
-    print(f"\ndelivered数： {len(results_map['delivered_results'])} 条")
+    # print(
+    #     f"没有轨迹数： {len(results_map['no_tracking_results'])} 条，有轨迹数： {len(results_map['tracking_results'])} 条")
+    # print(f"\nunpaid数： {len(results_map['unpaid_results'])} 条")
+    # print(f"\nnot_yet数： {len(results_map['not_yet_results'])} 条")
+    # print(f"\npre_ship数： {len(results_map['pre_ship_results'])} 条")
+    # print(f"\ndelivered数： {len(results_map['delivered_results'])} 条")
 
     return results_map
 
@@ -171,7 +175,7 @@ def update_courier_status_for_results(filepath, results_map):
                 sheet.cell(row=row, column=courier_col, value=status)
                 break  # 找到后退出循环，避免重复更新同一行
 
-    for tracking_no, status in results_map["out_of_delivery_results"].items():
+    for tracking_no, status in results_map["no_tracking_results"].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
             # 获取当前行的物流跟踪号
             current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
@@ -180,7 +184,7 @@ def update_courier_status_for_results(filepath, results_map):
                 sheet.cell(row=row, column=courier_col, value=status)
                 break  # 找到后退出循环，避免重复更新同一行
 
-    for tracking_no, status in results_map["returned_to_sender_results"].items():
+    for tracking_no, status in results_map["tracking_results"].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
             # 获取当前行的物流跟踪号
             current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
@@ -225,7 +229,7 @@ def count_no_track(file_path, column_name):
         if column_name not in headers:
             raise ValueError(f"列名 '{column_name}' 不存在！")
         column_index = headers.index(column_name) + 1
-        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking", re.IGNORECASE)
+        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking|no_tracking", re.IGNORECASE)
         total_count = 0
         no_track_count = 0
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
@@ -256,7 +260,7 @@ def count_distribution_and_no_track(file_path, key_column, courier_column):
             raise ValueError(f"列名 '{key_column}' 或 '{courier_column}' 不存在！")
         key_index = headers.index(key_column) + 1
         courier_index = headers.index(courier_column) + 1
-        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking", re.IGNORECASE)
+        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking|no_tracking", re.IGNORECASE)
         key_counter = Counter()
         key_no_track_counter = Counter()
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
@@ -292,7 +296,7 @@ def analyze_time_segments(file_path, time_column, courier_column):
         courier_index = headers.index(courier_column) + 1
 
         # 正则表达式匹配 "无轨迹"
-        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking", re.IGNORECASE)
+        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking|no_tracking", re.IGNORECASE)
 
         # 读取并解析数据
         data = []
