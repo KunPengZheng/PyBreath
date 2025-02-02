@@ -18,17 +18,6 @@ zbw轨迹跟踪分析
 
 
 def extract_and_process_data(filepath, column_name, group_size=35):
-    """
-    从 Excel 文件中提取指定列的数据，按组发送请求并统计满足条件的结果。
-
-    参数:
-    - filepath: str，Excel 文件路径
-    - column_name: str，要提取的列名
-    - group_size: int，每组的数据大小
-
-    返回:
-    - dict，包含每个跟踪号及其对应分类的结果数据
-    """
     # 读取 Excel 文件
     data = pd.read_excel(filepath)
 
@@ -36,8 +25,12 @@ def extract_and_process_data(filepath, column_name, group_size=35):
     if column_name not in data.columns:
         raise ValueError(f"列 '{column_name}' 不存在于 Excel 文件中")
 
-    # 获取指定列数据并去除空值
-    items = data[column_name].dropna().tolist()
+    data[column_name] = data[column_name].fillna('')
+
+    filtered_data = data[data[column_name].apply(lambda x: str(x).strip().lower() in ['', 'not_yet', 'pre_ship'])]
+
+    # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
+    items = filtered_data['Tracking No./物流跟踪号'].tolist()
 
     # 按组划分数据
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
@@ -49,11 +42,13 @@ def extract_and_process_data(filepath, column_name, group_size=35):
         "unpaid_results": {},
         "not_yet_results": {},
         "pre_ship_results": {},
-        "delivered_results": {}
+        "delivered_results": {},
+        "out_of_delivery_results": {}
     }
 
     text = "The package associated with this tracking number did not have proper postage applied and will not be delivered"
     text1 = "Delivered"
+    text2 = "Out for Delivery"
 
     # 请求每组数据
     for idx, group in enumerate(grouped_items, start=1):
@@ -73,6 +68,8 @@ def extract_and_process_data(filepath, column_name, group_size=35):
                     results_map["unpaid_results"][package_id] = "unpaid"
                 if text1 in info.get('statusShort'):
                     results_map["delivered_results"][package_id] = "delivered"
+                if text2 in info.get('statusShort'):
+                    results_map["out_of_delivery_results"][package_id] = "out_of_delivery"
                 results_map["tracking_results"][package_id] = "tracking"
 
         # 随机生成 5 到 10 秒之间的等待时间
@@ -87,24 +84,69 @@ def extract_and_process_data(filepath, column_name, group_size=35):
     print(f"\npre_ship数： {len(results_map['pre_ship_results'])} 条")
     print(f"\ndelivered数： {len(results_map['delivered_results'])} 条")
 
-    # 使用 openpyxl 更新 Excel 文件中的 'Courier/快递' 列
+    return results_map
+
+
+# 遍历 not_yet_results 和 pre_ship_results 中的所有物流跟踪号，匹配并更新 Courier/快递 列
+def update_courier_status_for_results(filepath, results_map):
     wb = openpyxl.load_workbook(filepath)
     sheet = wb.active  # 默认使用活动工作表
 
+    data = pd.read_excel(filepath)
     # 获取 'Tracking No./物流跟踪号' 列和 'Courier/快递' 列的索引
     tracking_no_col = data.columns.get_loc('Tracking No./物流跟踪号') + 1  # openpyxl索引从1开始
     courier_col = data.columns.get_loc('Courier/快递') + 1  # openpyxl索引从1开始
 
-    # 遍历所有的 Tracking No./物流跟踪号，更新 Courier/快递 列
-    for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
-        tracking_no = sheet.cell(row=row, column=tracking_no_col).value
-        courier_status = update_courier_status(tracking_no, results_map)
-        sheet.cell(row=row, column=courier_col, value=courier_status)
+    # 遍历 not_yet_results 字典
+    for tracking_no, status in results_map["not_yet_results"].items():
+        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
+            # 获取当前行的物流跟踪号
+            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
+            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
+            if current_tracking_no == tracking_no:
+                sheet.cell(row=row, column=courier_col, value=status)
+                break  # 找到后退出循环，避免重复更新同一行
+
+    # 遍历 pre_ship_results 字典
+    for tracking_no, status in results_map["pre_ship_results"].items():
+        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
+            # 获取当前行的物流跟踪号
+            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
+            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
+            if current_tracking_no == tracking_no:
+                sheet.cell(row=row, column=courier_col, value=status)
+                break  # 找到后退出循环，避免重复更新同一行
+
+        # 遍历 pre_ship_results 字典
+    for tracking_no, status in results_map["unpaid_results"].items():
+        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
+            # 获取当前行的物流跟踪号
+            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
+            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
+            if current_tracking_no == tracking_no:
+                sheet.cell(row=row, column=courier_col, value=status)
+                break  # 找到后退出循环，避免重复更新同一行
+
+    for tracking_no, status in results_map["delivered_results"].items():
+        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
+            # 获取当前行的物流跟踪号
+            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
+            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
+            if current_tracking_no == tracking_no:
+                sheet.cell(row=row, column=courier_col, value=status)
+                break  # 找到后退出循环，避免重复更新同一行
+
+    for tracking_no, status in results_map["out_of_delivery_results"].items():
+        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
+            # 获取当前行的物流跟踪号
+            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
+            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
+            if current_tracking_no == tracking_no:
+                sheet.cell(row=row, column=courier_col, value=status)
+                break  # 找到后退出循环，避免重复更新同一行
 
     # 保存更新后的文件
     wb.save(filepath)
-
-    return results_map
 
 
 def update_courier_status(tracking_no, results_map):
@@ -156,6 +198,29 @@ def filter_courier_rows(file_path, courier_column="Courier/快递"):
     except Exception as e:
         print(f"发生错误: {e}")
         return None
+
+
+def count_delivered(file_path, column_name):
+    try:
+        workbook = load_workbook(file_path)
+        sheet = workbook.active
+        headers = [cell.value for cell in sheet[1]]
+        if column_name not in headers:
+            raise ValueError(f"列名 '{column_name}' 不存在！")
+        column_index = headers.index(column_name) + 1
+        pattern = re.compile(r"delivered", re.IGNORECASE)
+        total_count = 0
+        no_track_count = 0
+        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
+            cell_value = row[column_index - 1]
+            if cell_value is not None:
+                total_count += 1
+                if pattern.search(str(cell_value)):
+                    no_track_count += 1
+        return total_count, no_track_count
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return 0, 0
 
 
 def count_no_track(file_path, column_name):
@@ -378,16 +443,16 @@ def get_days_difference(file_path, column_name="OutboundTime/出库时间"):
         # 解析日期
         outbound_time = datetime.strptime(first_row_value, "%Y-%m-%d %H:%M:%S")
         outbound_day = outbound_time.day  # 获取出库日期的日
-        print(f"出库日期的日: {outbound_day}")
+        # print(f"出库日期的日: {outbound_day}")
 
         # 获取当前日期
         current_time = datetime.now()
         current_day = current_time.day  # 获取当前日期的日
-        print(f"当前日期的日: {current_day}")
+        # print(f"当前日期的日: {current_day}")
 
         # 计算日期差
         date_difference = (current_time - outbound_time).days
-        print(f"相差的天数: {date_difference}")
+        # print(f"相差的天数: {date_difference}")
 
         return outbound_day, current_day, date_difference
 
@@ -400,11 +465,12 @@ update_time = "update_time"
 order_count = "order_count"
 no_track_number = "no_track_number"
 track_percent = "track_percent"
+delivered_count = "delivered_count"
+delivered_percent = "delivered_percent"
 no_track_percent = "no_track_percent"
 warehouse_condition = "warehouse_condition"
 store_condition = "store_condition"
 sku_condition = "sku_condition"
-time_segment_condition = "time_segment_condition"
 time_segment_condition = "time_segment_condition"
 sum_up = "sum_up"
 
@@ -413,8 +479,12 @@ analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
 xlsx_path = input("请输入文件的绝对路径：")
 # xlsx_path = handle_file(input_file)
 check_and_add_courier_column(xlsx_path)
-filtered_data = filter_courier_rows(xlsx_path)
-results = extract_and_process_data(xlsx_path, "Tracking No./物流跟踪号", 35)
+# filtered_data = filter_courier_rows(xlsx_path)
+results = extract_and_process_data(xlsx_path, "Courier/快递", 35)
+update_courier_status_for_results(xlsx_path, results)
+
+# 牵手率
+# delivered_results_map_len = len(results["delivered_results"])
 
 # 输出示例
 # if results:
@@ -452,10 +522,15 @@ text += f"\n跟踪日期：{day_of_month}"
 text += f"\n间隔时间：{interval_time}"
 
 total_count, no_track_count = count_no_track(xlsx_path, column_name="Courier/快递")
+total_count2, delivered_count = count_delivered(xlsx_path, column_name="Courier/快递")
+
+qsl = round2((int(delivered_count) / int(total_count)) * 100)
 swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
 # print(f"总条数（除列头）：{total_count}，内容为 '无轨迹' 的总数：{no_track_count}，上网率为：{swl}%")
 text += "\n----------------------概览----------------------"
 text += f"\n订单总数：{total_count}"
+text += f"\n签收数：{delivered_count}"
+text += f"\n签收率：{qsl}%"
 text += f"\n未上网数：{no_track_count}"
 text += f"\n上网率：{swl}%"
 text += f"\n未上网率：{100 - swl}%"
@@ -544,7 +619,7 @@ for segment_start, stats in time_segment_analysis.items():
     # print(f"  总数: {total_count} 条, 其中 '无轨迹': {no_track_count} 条，上网率为：{segmentswl}%")
 
     # segment_start = datetime.strptime(segment_start, '%Y-%m-%d %H:%M:%S').strftime(segment_start, '%y-%m-%d %H:%M')
-    print(f"dsdsd:{segment_start},{segment_end}")
+    # print(f"dsdsd:{segment_start},{segment_end}")
 
     text += f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
     time_segment_text += f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
@@ -564,31 +639,61 @@ sum_up_text = ""
 # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
 if (interval_time == 1):
     if (swl < 30):
-        sum_up_text += "☁️注意：间隔第1天，上网率未达30%，建议跟进！"
+        sum_up_text += f"☁️注意：间隔第1天，上网率为{swl}，未达30%，建议跟进！"
         sum_up_text += lowest_txt
     else:
         if (swl >= 50):
-            sum_up_text += "☀️间隔第1天，上网率优秀"
+            sum_up_text += f"☀️间隔第1天，上网率为{swl}，上网率优秀"
         else:
-            sum_up_text += "☀️间隔第1天，上网率良好"
+            sum_up_text += f"☀️间隔第1天，上网率为{swl}，上网率良好"
 elif (interval_time == 2):
     if (swl < 70):
-        sum_up_text += "🌧️异常：间隔第2天，上网率未达75%，建议分析数据尝试定位问题！"
+        sum_up_text += f"🌧️异常：间隔第2天，上网率为{swl}，未达75%，建议分析数据尝试定位问题！"
         sum_up_text += lowest_txt
     else:
         if (swl >= 85):
-            sum_up_text += "☀️间隔第2天，上网率优秀"
+            sum_up_text += f"☀️间隔第2天，上网率为{swl}，上网率优秀"
         else:
-            sum_up_text += "☀️间隔第2天，上网率良好"
+            sum_up_text += f"☀️间隔第2天，上网率为{swl}，上网率良好"
 else:
     if (swl < 95):
-        sum_up_text += f"❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率未达95%，异常，定位问题后联系仓库反馈问题！"
+        sum_up_text += f"❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率为{swl}，未达95%，分析数据反馈问题！"
         sum_up_text += lowest_txt
     else:
         if (swl >= 99):
-            sum_up_text += f"☀️间隔第{interval_time}天，上网率优秀"
+            sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}，上网率优秀"
         else:
-            sum_up_text += f"☀️间隔第{interval_time}天，上网率良好"
+            sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}，上网率良好"
+
+if (interval_time >= 1 and interval_time <= 3):
+    if (qsl == 0):
+        sum_up_text += f"\n☁️注意：间隔第3天，签收率为0%，不正常！"
+        sum_up_text += lowest_txt
+    else:
+        if (qsl >= 15):
+            sum_up_text += f"\n☀️间隔第3天，签收率优秀"
+        else:
+            sum_up_text += f"\n☀️间隔第3天，签收率良好"
+elif (interval_time <= 5):
+    if (qsl < 50):
+        sum_up_text += f"\n🌧️异常：间隔第5天，签收率未达50%，不正常！"
+        sum_up_text += lowest_txt
+    else:
+        if (qsl >= 70):
+            sum_up_text += f"\n☀️间隔第5天，签收率优秀"
+        else:
+            sum_up_text += f"\n☀️间隔第5天，签收率良好"
+elif (interval_time <= 7):
+    if (qsl < 90):
+        sum_up_text += f"\n🌧️异常：间隔第7天，签收率未达90%，不正常！"
+        sum_up_text += lowest_txt
+    else:
+        if (qsl >= 95):
+            sum_up_text += f"\n️间隔第7天，签收率优秀"
+        else:
+            sum_up_text += f"\n☀️间隔第7天，签收率良好"
+else:
+    sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为：{qsl}%"
 
 data_map[sum_up] = sum_up_text
 text += "\n----------------------总结&建议----------------------"
@@ -599,17 +704,19 @@ text += f"\n{sum_up_text}"
 print(text)
 
 # 写入飞书在线文档
-# tat = get_token()
-# brief_sheet_value(tat, [swl], ck_time, analyse_obj)
-# detail_sheet_value(tat, [
-#     data_map[update_time],
-#     data_map[order_count],
-#     data_map[no_track_number],
-#     data_map[track_percent],
-#     data_map[no_track_percent],
-#     data_map[warehouse_condition],
-#     data_map[store_condition],
-#     data_map[sku_condition],
-#     data_map[time_segment_condition],
-#     data_map[sum_up],
-# ], ck_time, analyse_obj)
+tat = get_token()
+brief_sheet_value(tat, [swl], ck_time, analyse_obj)
+detail_sheet_value(tat, [
+    data_map[update_time],
+    data_map[order_count],
+    data_map[delivered_count],
+    data_map[delivered_percent],
+    data_map[no_track_number],
+    data_map[track_percent],
+    data_map[no_track_percent],
+    data_map[warehouse_condition],
+    data_map[store_condition],
+    data_map[sku_condition],
+    data_map[time_segment_condition],
+    data_map[sum_up],
+], ck_time, analyse_obj)
