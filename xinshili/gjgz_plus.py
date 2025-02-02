@@ -73,7 +73,7 @@ def extract_and_process_data(filepath, column_name, group_size=35):
                 results_map["tracking_results"][package_id] = "tracking"
 
         # 随机生成 5 到 10 秒之间的等待时间
-        wait_time = random.uniform(5, 10)
+        wait_time = random.uniform(2, 5)
         time.sleep(wait_time)
 
     # 输出结果统计
