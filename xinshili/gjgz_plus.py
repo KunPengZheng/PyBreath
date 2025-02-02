@@ -626,19 +626,19 @@ text += f"\n{sum_up_text}"
 print(text)
 
 # 写入飞书在线文档
-# tat = get_token()
-# brief_sheet_value(tat, [swl], ck_time, analyse_obj)
-# detail_sheet_value(tat, [
-#     data_map[update_time],
-#     data_map[order_count],
-#     data_map[delivered_counts],
-#     data_map[delivered_percent],
-#     data_map[no_track_number],
-#     data_map[track_percent],
-#     data_map[no_track_percent],
-#     data_map[warehouse_condition],
-#     data_map[store_condition],
-#     data_map[sku_condition],
-#     data_map[time_segment_condition],
-#     data_map[sum_up],
-# ], ck_time, analyse_obj)
+tat = get_token()
+brief_sheet_value(tat, [swl], ck_time, analyse_obj)
+detail_sheet_value(tat, [
+    data_map[update_time],
+    data_map[order_count],
+    data_map[delivered_counts],
+    data_map[delivered_percent],
+    data_map[no_track_number],
+    data_map[track_percent],
+    data_map[no_track_percent],
+    data_map[warehouse_condition],
+    data_map[store_condition],
+    data_map[sku_condition],
+    data_map[time_segment_condition],
+    data_map[sum_up],
+], ck_time, analyse_obj)
