@@ -523,9 +523,6 @@ for segment_start, stats in time_segment_analysis.items():
     # print(f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}:")
     # print(f"  总数: {total_count} 条, 其中 '无轨迹': {no_track_count} 条，上网率为：{segmentswl}%")
 
-    # segment_start = datetime.strptime(segment_start, '%Y-%m-%d %H:%M:%S').strftime(segment_start, '%y-%m-%d %H:%M')
-    # print(f"dsdsd:{segment_start},{segment_end}")
-
     text += f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
     time_segment_text += f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
     # 判断是否是最低的上网率
