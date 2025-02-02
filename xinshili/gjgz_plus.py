@@ -56,12 +56,14 @@ def extract_and_process_data(filepath, column_name, group_size=35):
         "pre_ship_results": {},
         "delivered_results": {},
         "out_of_delivery_results": {},
-        "irregular_order_number_results": {}
+        "irregular_order_number_results": {},
+        "returned_to_sender_results": {}
     }
 
     text = "The package associated with this tracking number did not have proper postage applied and will not be delivered"
     text1 = "Delivered"
     text2 = "Out for Delivery"
+    text3 = "Your item was returned to the sender"
 
     for tracking_number in data['Tracking No./物流跟踪号']:
         # 检查是否不是纯数字
@@ -101,6 +103,8 @@ def extract_and_process_data(filepath, column_name, group_size=35):
                     results_map["delivered_results"][package_id] = "delivered"
                 if text2 in info.get('statusShort'):
                     results_map["out_of_delivery_results"][package_id] = "out_of_delivery"
+                if text3 in info.get('statusLong'):
+                    results_map["returned_to_sender_results"][package_id] = "returned_to_sender"
                 results_map["tracking_results"][package_id] = "tracking"
 
         # 随机生成 5 到 10 秒之间的等待时间
@@ -176,30 +180,17 @@ def update_courier_status_for_results(filepath, results_map):
                 sheet.cell(row=row, column=courier_col, value=status)
                 break  # 找到后退出循环，避免重复更新同一行
 
+    for tracking_no, status in results_map["returned_to_sender_results"].items():
+        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
+            # 获取当前行的物流跟踪号
+            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
+            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
+            if current_tracking_no == tracking_no:
+                sheet.cell(row=row, column=courier_col, value=status)
+                break  # 找到后退出循环，避免重复更新同一行
+
     # 保存更新后的文件
     wb.save(filepath)
-
-
-def update_courier_status(tracking_no, results_map):
-    # print(f"正在处理跟踪号: {tracking_no}")  # 查看正在处理的跟踪号
-    if tracking_no in results_map["unpaid_results"]:
-        # print(f"{tracking_no} 是 'unpaid'")  # 调试信息
-        return "unpaid"
-    elif tracking_no in results_map["not_yet_results"]:
-        # print(f"{tracking_no} 是 'not_yet'")  # 调试信息
-        return "not_yet"
-    elif tracking_no in results_map["pre_ship_results"]:
-        # print(f"{tracking_no} 是 'pre_ship'")  # 调试信息
-        return "pre_ship"
-    elif tracking_no in results_map["delivered_results"]:
-        # print(f"{tracking_no} 是 'delivered'")  # 调试信息
-        return "delivered"
-    elif tracking_no in results_map["tracking_results"]:
-        # print(f"{tracking_no} 是 'tracking'")  # 调试信息
-        return "tracking"
-    else:
-        # print(f"{tracking_no} 是 'no_tracking'")  # 调试信息
-        return "no_tracking"
 
 
 def count_delivered(file_path, column_name):
