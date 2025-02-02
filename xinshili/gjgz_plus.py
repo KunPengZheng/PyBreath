@@ -25,6 +25,22 @@ def extract_and_process_data(filepath, column_name, group_size=35):
     if column_name not in data.columns:
         raise ValueError(f"列 '{column_name}' 不存在于 Excel 文件中")
 
+    # 存储结果的 map（字典）
+    results_map = {
+        "tracking_results": {},
+        "no_tracking_results": {},
+        "unpaid_results": {},
+        "not_yet_results": {},
+        "pre_ship_results": {},
+        "delivered_results": {},
+        "out_of_delivery_results": {},
+        "irregular_order_number_results": {}
+    }
+
+    text = "The package associated with this tracking number did not have proper postage applied and will not be delivered"
+    text1 = "Delivered"
+    text2 = "Out for Delivery"
+
     data[column_name] = data[column_name].fillna('')
 
     filtered_data = data[data[column_name].apply(lambda x: str(x).strip().lower() in ['', 'not_yet', 'pre_ship'])]
@@ -34,21 +50,6 @@ def extract_and_process_data(filepath, column_name, group_size=35):
 
     # 按组划分数据
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
-
-    # 存储结果的 map（字典）
-    results_map = {
-        "tracking_results": {},
-        "no_tracking_results": {},
-        "unpaid_results": {},
-        "not_yet_results": {},
-        "pre_ship_results": {},
-        "delivered_results": {},
-        "out_of_delivery_results": {}
-    }
-
-    text = "The package associated with this tracking number did not have proper postage applied and will not be delivered"
-    text1 = "Delivered"
-    text2 = "Out for Delivery"
 
     # 请求每组数据
     for idx, group in enumerate(grouped_items, start=1):
