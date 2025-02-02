@@ -171,35 +171,6 @@ def update_courier_status(tracking_no, results_map):
         return "no_tracking"
 
 
-def filter_courier_rows(file_path, courier_column="Courier/快递"):
-    """
-    筛选出快递列为空、内容为 "not_yet" 或内容为 "pre_ship" 的行。
-
-    :param file_path: Excel 文件路径
-    :param courier_column: 快递列名，默认为 'Courier/快递'
-    :return: 筛选后的数据框
-    """
-    try:
-        # 加载 Excel 文件
-        data = pd.read_excel(file_path, engine='openpyxl')
-
-        # 检查是否存在 '快递' 列
-        if courier_column not in data.columns:
-            print(f"列 '{courier_column}' 不存在！")
-            return None
-
-        # 使用括号确保每个条件都能被正确评估
-        filtered_data = data[(data[courier_column].isna()) |  # 快递列为空
-                             (data[courier_column] == "not_yet") |  # 快递列内容为 "not_yet"
-                             (data[courier_column] == "pre_ship")]  # 快递列内容为 "pre_ship"
-
-        return filtered_data
-
-    except Exception as e:
-        print(f"发生错误: {e}")
-        return None
-
-
 def count_delivered(file_path, column_name):
     try:
         workbook = load_workbook(file_path)
@@ -299,7 +270,7 @@ def analyze_time_segments(file_path, time_column="订购时间", courier_column=
         courier_index = headers.index(courier_column) + 1
 
         # 正则表达式匹配 "无轨迹"
-        pattern = re.compile(r"^\s*无轨迹\s*$", re.IGNORECASE)
+        pattern = re.compile(r"not_yet|pre_ship", re.IGNORECASE)
 
         # 读取并解析数据
         data = []
@@ -350,27 +321,6 @@ def analyze_time_segments(file_path, time_column="订购时间", courier_column=
         return {}
 
 
-def handle_file(input_file):
-    file_extension = os.path.splitext(input_file)[1].lower()
-    file_dir = os.path.dirname(input_file)
-    file_name = os.path.splitext(os.path.basename(input_file))[0]
-    if file_extension == '.csv':
-        xlsx_file_path = os.path.join(file_dir, f"{file_name}.xlsx")
-        try:
-            data = pd.read_csv(input_file, encoding='utf-8')
-            data.to_excel(xlsx_file_path, index=False)
-            print(f"已将 CSV 文件转换为 XLSX 文件：{xlsx_file_path}")
-            os.remove(input_file)
-            print(f"已删除原始 CSV 文件：{input_file}")
-            return xlsx_file_path
-        except Exception as e:
-            print(f"处理 CSV 文件时发生错误：{e}")
-            return None
-    else:
-        print("文件不是 CSV 格式，执行其他逻辑")
-        return input_file
-
-
 def check_and_add_courier_column(file_path, courier_column="Courier/快递"):
     """
     检查 Excel 文件是否存在 '快递' 列，如果没有，则在最后一列添加该列。
@@ -396,26 +346,6 @@ def check_and_add_courier_column(file_path, courier_column="Courier/快递"):
 
     except Exception as e:
         print(f"发生错误: {e}")
-
-
-def extract_number_from_filepath(filepath):
-    """
-    从文件路径中提取文件名中 '出库时间' 和 '_' 之间的数字。
-
-    参数:
-    - filepath: str，文件路径
-
-    返回:
-    - 提取到的数字（字符串形式），若未找到，返回 None
-    """
-    # 获取文件名（去掉路径部分）
-    filename = os.path.basename(filepath)
-
-    # 使用正则匹配 '出库时间' 和 '_' 之间的内容
-    match = re.search(r"出库时间(\d+)_", filename)
-    if match:
-        return match.group(1)
-    return None
 
 
 def get_days_difference(file_path, column_name="OutboundTime/出库时间"):
@@ -475,37 +405,11 @@ time_segment_condition = "time_segment_condition"
 sum_up = "sum_up"
 
 analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
-
 xlsx_path = input("请输入文件的绝对路径：")
-# xlsx_path = handle_file(input_file)
 check_and_add_courier_column(xlsx_path)
-# filtered_data = filter_courier_rows(xlsx_path)
 results = extract_and_process_data(xlsx_path, "Courier/快递", 35)
 update_courier_status_for_results(xlsx_path, results)
-
-# 牵手率
-# delivered_results_map_len = len(results["delivered_results"])
-
-# 输出示例
-# if results:
-#     print("\n结果展示:")
-#     for category, tracking_map in results.items():
-#         print(f"\n{category}:")
-#         for tracking_number, status in tracking_map.items():
-#             print(f"{tracking_number}: {status}")
-
-# 出库时间
-# ck_time = extract_number_from_filepath(xlsx_path)
-# # 获取今天的日期
-# today = datetime.today()
-# # 获取今天是几号
-# day_of_month = today.day
-
 ck_time, day_of_month, interval_time = get_days_difference(xlsx_path)
-# print(f"出库日期的日: {outbound_day}")
-# print(f"当前日期的日: {current_day}")
-# print(f"相差的天数: {date_difference}")
-
 
 # 数据map
 data_map = {}
@@ -516,7 +420,6 @@ text += "\n----------------------时间----------------------"
 text += f"\n更新时间: {current_time}"
 data_map[update_time] = current_time
 
-# interval_time = int(day_of_month) - int(ck_time)
 text += f"\n出库日期：{ck_time}"
 text += f"\n跟踪日期：{day_of_month}"
 text += f"\n间隔时间：{interval_time}"
