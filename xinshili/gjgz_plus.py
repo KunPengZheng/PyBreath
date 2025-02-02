@@ -39,7 +39,7 @@ def update_courier_status_for_results2222(filepath, results_map):
     wb.save(filepath)
 
 
-def extract_and_process_data(filepath, column_name, group_size=35):
+def extract_and_process_data(filepath, column_name, group_size):
     # 读取 Excel 文件
     data = pd.read_excel(filepath)
 
@@ -458,7 +458,7 @@ sum_up = "sum_up"
 analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
 xlsx_path = input("请输入文件的绝对路径：")
 check_and_add_courier_column(xlsx_path)
-results = extract_and_process_data(xlsx_path, "Courier/快递", 35)
+results = extract_and_process_data(xlsx_path, "Courier/快递", 100)
 update_courier_status_for_results(xlsx_path, results)
 ck_time, day_of_month, interval_time = get_days_difference(xlsx_path)
 
