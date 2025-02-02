@@ -634,12 +634,12 @@ if (interval_time == 3):
         sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
 elif (interval_time == 5):
     if (qsl < 50):
-        sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为0%，异常状态！"
+        sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
     else:
         sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
 elif (interval_time == 7):
     if (qsl < 90):
-        sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为0%，异常状态！"
+        sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
     else:
         sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
 else:
