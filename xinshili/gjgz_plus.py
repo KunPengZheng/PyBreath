@@ -144,7 +144,7 @@ def update_courier_status_for_results(filepath, results_map):
             # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
             if current_tracking_no == tracking_no:
                 sheet.cell(row=row, column=courier_col, value=status)
-                break  # 找到后退出循环，避免重复更新同一行
+                # break  # 找到后退出循环，避免重复更新同一行
 
     # 遍历 pre_ship_results 字典
     for tracking_no, status in results_map["pre_ship_results"].items():
@@ -164,7 +164,7 @@ def update_courier_status_for_results(filepath, results_map):
             # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
             if current_tracking_no == tracking_no:
                 sheet.cell(row=row, column=courier_col, value=status)
-                break  # 找到后退出循环，避免重复更新同一行
+                # break  # 找到后退出循环，避免重复更新同一行
 
     for tracking_no, status in results_map["delivered_results"].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
@@ -173,7 +173,7 @@ def update_courier_status_for_results(filepath, results_map):
             # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
             if current_tracking_no == tracking_no:
                 sheet.cell(row=row, column=courier_col, value=status)
-                break  # 找到后退出循环，避免重复更新同一行
+                # break  # 找到后退出循环，避免重复更新同一行
 
     for tracking_no, status in results_map["no_tracking_results"].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
@@ -182,7 +182,7 @@ def update_courier_status_for_results(filepath, results_map):
             # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
             if current_tracking_no == tracking_no:
                 sheet.cell(row=row, column=courier_col, value=status)
-                break  # 找到后退出循环，避免重复更新同一行
+                # break  # 找到后退出循环，避免重复更新同一行
 
     for tracking_no, status in results_map["tracking_results"].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
@@ -191,7 +191,7 @@ def update_courier_status_for_results(filepath, results_map):
             # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
             if current_tracking_no == tracking_no:
                 sheet.cell(row=row, column=courier_col, value=status)
-                break  # 找到后退出循环，避免重复更新同一行
+                # break  # 找到后退出循环，避免重复更新同一行
 
     # 保存更新后的文件
     wb.save(filepath)
@@ -415,6 +415,33 @@ def get_days_difference(file_path, column_name="OutboundTime/出库时间"):
     except Exception as e:
         print(f"发生错误: {e}")
         return None, None, None
+
+
+def remove_duplicates_by_column(input_file, column_name):
+    """
+    删除指定列中重复的行，仅保留第一条，并覆盖源文件。
+
+    参数：
+    - input_file: str，输入文件路径
+    - column_name: str，要检查重复的列名
+    """
+    try:
+        # 读取 Excel 文件
+        df = pd.read_excel(input_file)
+
+        # 检查列名是否存在
+        if column_name not in df.columns:
+            raise ValueError(f"列 '{column_name}' 不存在于输入文件中！")
+
+        # 删除指定列的重复项，仅保留第一条
+        df_deduplicated = df.drop_duplicates(subset=[column_name], keep='first')
+
+        # 将去重后的内容保存回源文件
+        df_deduplicated.to_excel(input_file, index=False)
+        print(f"源文件已更新：{input_file}")
+
+    except Exception as e:
+        print(f"处理文件时发生错误：{e}")
 
 
 update_time = "update_time"
