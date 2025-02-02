@@ -17,6 +17,28 @@ zbw轨迹跟踪分析
 """
 
 
+def update_courier_status_for_results2222(filepath, results_map):
+    wb = openpyxl.load_workbook(filepath)
+    sheet = wb.active  # 默认使用活动工作表
+
+    data = pd.read_excel(filepath)
+    # 获取 'Tracking No./物流跟踪号' 列和 'Courier/快递' 列的索引
+    tracking_no_col = data.columns.get_loc('Tracking No./物流跟踪号') + 1  # openpyxl索引从1开始
+    courier_col = data.columns.get_loc('Courier/快递') + 1  # openpyxl索引从1开始
+
+    for tracking_no, status in results_map["irregular_order_number_results"].items():
+        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
+            # 获取当前行的物流跟踪号
+            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
+            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
+            if current_tracking_no == tracking_no:
+                sheet.cell(row=row, column=courier_col, value=status)
+                break  # 找到后退出循环，避免重复更新同一行
+
+    # 保存更新后的文件
+    wb.save(filepath)
+
+
 def extract_and_process_data(filepath, column_name, group_size=35):
     # 读取 Excel 文件
     data = pd.read_excel(filepath)
@@ -40,6 +62,14 @@ def extract_and_process_data(filepath, column_name, group_size=35):
     text = "The package associated with this tracking number did not have proper postage applied and will not be delivered"
     text1 = "Delivered"
     text2 = "Out for Delivery"
+
+    for tracking_number in data['Tracking No./物流跟踪号']:
+        # 检查是否不是纯数字
+        if not str(tracking_number).isdigit():
+            print(f"Dsdsdsdsd:{tracking_number}")
+            results_map["irregular_order_number_results"][tracking_number] = "irregular_no_tracking"
+            results_map["no_tracking_results"][tracking_number] = "no_tracking"
+    update_courier_status_for_results2222(filepath, results_map)
 
     data[column_name] = data[column_name].fillna('')
 
@@ -204,7 +234,7 @@ def count_no_track(file_path, column_name):
         if column_name not in headers:
             raise ValueError(f"列名 '{column_name}' 不存在！")
         column_index = headers.index(column_name) + 1
-        pattern = re.compile(r"not_yet|pre_ship", re.IGNORECASE)
+        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking", re.IGNORECASE)
         total_count = 0
         no_track_count = 0
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
@@ -235,7 +265,7 @@ def count_distribution_and_no_track(file_path, key_column, courier_column):
             raise ValueError(f"列名 '{key_column}' 或 '{courier_column}' 不存在！")
         key_index = headers.index(key_column) + 1
         courier_index = headers.index(courier_column) + 1
-        pattern = re.compile(r"not_yet|pre_ship", re.IGNORECASE)
+        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking", re.IGNORECASE)
         key_counter = Counter()
         key_no_track_counter = Counter()
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
@@ -271,7 +301,7 @@ def analyze_time_segments(file_path, time_column, courier_column):
         courier_index = headers.index(courier_column) + 1
 
         # 正则表达式匹配 "无轨迹"
-        pattern = re.compile(r"not_yet|pre_ship", re.IGNORECASE)
+        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking", re.IGNORECASE)
 
         # 读取并解析数据
         data = []
@@ -596,19 +626,19 @@ text += f"\n{sum_up_text}"
 print(text)
 
 # 写入飞书在线文档
-tat = get_token()
-brief_sheet_value(tat, [swl], ck_time, analyse_obj)
-detail_sheet_value(tat, [
-    data_map[update_time],
-    data_map[order_count],
-    data_map[delivered_counts],
-    data_map[delivered_percent],
-    data_map[no_track_number],
-    data_map[track_percent],
-    data_map[no_track_percent],
-    data_map[warehouse_condition],
-    data_map[store_condition],
-    data_map[sku_condition],
-    data_map[time_segment_condition],
-    data_map[sum_up],
-], ck_time, analyse_obj)
+# tat = get_token()
+# brief_sheet_value(tat, [swl], ck_time, analyse_obj)
+# detail_sheet_value(tat, [
+#     data_map[update_time],
+#     data_map[order_count],
+#     data_map[delivered_counts],
+#     data_map[delivered_percent],
+#     data_map[no_track_number],
+#     data_map[track_percent],
+#     data_map[no_track_percent],
+#     data_map[warehouse_condition],
+#     data_map[store_condition],
+#     data_map[sku_condition],
+#     data_map[time_segment_condition],
+#     data_map[sum_up],
+# ], ck_time, analyse_obj)
