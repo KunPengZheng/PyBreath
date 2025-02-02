@@ -250,7 +250,7 @@ def count_distribution_and_no_track(file_path, key_column, courier_column):
         return Counter(), Counter()
 
 
-def analyze_time_segments(file_path, time_column="订购时间", courier_column="快递"):
+def analyze_time_segments(file_path, time_column, courier_column):
     """
     按时间段（每3分钟为一段，忽略秒进行判断）统计总数和 "无轨迹" 的数量。
     输出时包括秒显示。
