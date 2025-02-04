@@ -45,7 +45,7 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
 
     header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
 
-    row_nums = str(get_row_for_specific_date(ck_time))
+    row_nums = get_row_for_specific_date(ck_time)
 
     if analyse_obj == ClientConstants.zbw:
         post_data = {"valueRange": {"range": f"JZrQj9!B{row_nums}:M{row_nums}", "values": [lists]}}
@@ -59,7 +59,10 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
     print(r2.json())  # 输出来判断写入是否成功
 
 
-def brief_sheet_value(tat, lists, ck_time, analyse_obj):
+def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
+    """
+    简概表
+    """
     if analyse_obj == ClientConstants.zbw:
         url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.sanrio:
@@ -69,13 +72,8 @@ def brief_sheet_value(tat, lists, ck_time, analyse_obj):
 
     header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
 
-    # result = map_numbers_to_excel_columns(1, get_days_in_current_month())
-    # today = result[day_of_month()]  #
-    # # 因为首行是行头，所以表格中的出库时间所在行为：出库时间+1
-    # map_sheet_ck_time = str(int(ck_time) + 1)
-
-    column_nums = get_column_for_specific_date("获取跟踪时间是颠三倒四")  ############
-    row_nums = str(get_row_for_specific_date(ck_time))
+    column_nums = get_column_for_specific_date(gz_time)
+    row_nums = get_row_for_specific_date(ck_time)
 
     if analyse_obj == ClientConstants.zbw:
         post_data = {
