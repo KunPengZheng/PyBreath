@@ -70,7 +70,7 @@ class Pattern:
     delivered = r"delivered"
 
 
-def update_courier_status_for_results(filepath, maps):
+def update_courier_status(filepath, maps):
     wb = openpyxl.load_workbook(filepath)
     sheet = wb.active  # 默认使用活动工作表
 
@@ -117,7 +117,7 @@ def extract_and_process_data(filepath, column_name, group_size):
         if not str(tracking_number).isdigit() or not str(tracking_number).startswith('9'):
             results_map[CourierStateMapKey.irregular_order_number_results][
                 tracking_number] = CourierStateMapValue.irregular_no_tracking
-    update_courier_status_for_results(filepath, results_map[CourierStateMapKey.irregular_order_number_results])
+    update_courier_status(filepath, results_map[CourierStateMapKey.irregular_order_number_results])
 
     # 将无内容的单元格赋值""空字符串。
     data[column_name] = data[column_name].fillna('')
@@ -376,12 +376,12 @@ results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
 # print(f"\npre_ship数： {len(results[CourierStateMapKey.pre_ship_results])} 条")
 # print(f"\ndelivered数： {len(results[CourierStateMapKey.delivered_results])} 条")
 
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.not_yet_results])
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.pre_ship_results])
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.unpaid_results])
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.delivered_results])
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.no_tracking_results])
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.tracking_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.not_yet_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.pre_ship_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.unpaid_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.delivered_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.no_tracking_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.tracking_results])
 
 ck_time = get_days_difference(xlsx_path)
 gz_time = getYmd()

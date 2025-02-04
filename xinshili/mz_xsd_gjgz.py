@@ -2,7 +2,7 @@ import openpyxl
 import pandas as pd
 
 from xinshili.gjgz_plus111 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
-    update_courier_status_for_results
+    update_courier_status
 
 
 def remove_duplicates_by_column(input_file, column_name):
@@ -90,12 +90,12 @@ delete_rows_based_on_conditions(xlsx_path)
 check_and_add_courier_column(xlsx_path)
 results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
 
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.not_yet_results])
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.pre_ship_results])
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.unpaid_results])
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.delivered_results])
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.no_tracking_results])
-update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.tracking_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.not_yet_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.pre_ship_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.unpaid_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.delivered_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.no_tracking_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.tracking_results])
 
 delete_rows_not_tracking(xlsx_path)
 
