@@ -455,8 +455,7 @@ print(f"相差 {interval_time} 天")
 # column_nums = get_column_for_specific_date(ymd)
 # row_nums = get_row_for_specific_date(outbound_time)
 # print(f"column_nums: {column_nums} ,row_nums:{row_nums} ")
-
-raise ValueError("除数不能为零")  # 测试断开
+# raise ValueError("除数不能为零")  # 测试断开
 
 # 数据map
 data_map = {}
