@@ -60,12 +60,6 @@ def extract_and_process_data(filepath, column_name, group_size):
         "returned_to_sender_results": {}
     }
 
-    text = "The package associated with this tracking number did not have proper postage applied and will not be delivered"
-    text1 = "Delivered"
-    text1_1 = "Delivered to Agent"
-    text2 = "Out for Delivery"
-    text3 = "Your item was returned to the sender"
-
     # 不规则的快递单号不需要跟踪
     for tracking_number in data['Tracking No./物流跟踪号']:
         if not str(tracking_number).isdigit() or not str(tracking_number).startswith('9'):
@@ -98,7 +92,8 @@ def extract_and_process_data(filepath, column_name, group_size):
                 else:
                     results_map["no_tracking_results"][package_id] = "no_tracking"
             else:
-                if text in info.get('statusLong'):
+                if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
+                        info.get('statusLong'):
                     results_map["unpaid_results"][package_id] = "unpaid"
                 elif "Delivered" in info.get('statusCategory'):
                     results_map["delivered_results"][package_id] = "delivered"
