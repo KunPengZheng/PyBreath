@@ -38,6 +38,16 @@ class CourierStateMapKey:
     returned_to_sender_results = "returned_to_sender_results"
 
 
+class CourierStateMapValue:
+    irregular_no_tracking = 'irregular_no_tracking'
+    not_yet = 'not_yet'
+    pre_ship = "pre_ship"
+    no_tracking = "no_tracking"
+    unpaid = "unpaid"
+    delivered = "delivered"
+    tracking = "tracking"
+
+
 @dataclass(frozen=True)
 class CellKey:
     update_time = "update_time"
@@ -98,13 +108,18 @@ def extract_and_process_data(filepath, column_name, group_size):
     # 不规则的快递单号不需要跟踪
     for tracking_number in data[RowName.Tracking_No]:
         if not str(tracking_number).isdigit() or not str(tracking_number).startswith('9'):
-            results_map[CourierStateMapKey.irregular_order_number_results][tracking_number] = "irregular_no_tracking"
+            results_map[CourierStateMapKey.irregular_order_number_results][
+                tracking_number] = CourierStateMapValue.irregular_no_tracking
     update_courier_status_for_results(filepath, results_map[CourierStateMapKey.irregular_order_number_results])
 
     data[column_name] = data[column_name].fillna('')
 
     filtered_data = data[
-        data[column_name].apply(lambda x: str(x).strip().lower() in ['', 'not_yet', 'pre_ship', 'no_tracking'])]
+        data[column_name].apply(
+            lambda x: str(x).strip().lower() in ['',
+                                                 CourierStateMapValue.not_yet,
+                                                 CourierStateMapValue.pre_ship,
+                                                 CourierStateMapValue.no_tracking])]
 
     # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
     items = filtered_data[RowName.Tracking_No].tolist()
@@ -121,21 +136,21 @@ def extract_and_process_data(filepath, column_name, group_size):
             # 判断错误类型并分类
             if info.get('err'):
                 if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
-                    results_map[CourierStateMapKey.not_yet_results][package_id] = "not_yet"
+                    results_map[CourierStateMapKey.not_yet_results][package_id] = CourierStateMapValue.not_yet
                 elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
-                    results_map[CourierStateMapKey.pre_ship_results][package_id] = "pre_ship"
+                    results_map[CourierStateMapKey.pre_ship_results][package_id] = CourierStateMapValue.pre_ship
                 else:
-                    results_map[CourierStateMapKey.no_tracking_results][package_id] = "no_tracking"
+                    results_map[CourierStateMapKey.no_tracking_results][package_id] = CourierStateMapValue.no_tracking
             else:
                 if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
                         info.get('statusLong'):
-                    results_map[CourierStateMapKey.unpaid_results][package_id] = "unpaid"
+                    results_map[CourierStateMapKey.unpaid_results][package_id] = CourierStateMapValue.unpaid
                 elif "Delivered" in info.get('statusCategory'):
-                    results_map[CourierStateMapKey.delivered_results][package_id] = "delivered"
+                    results_map[CourierStateMapKey.delivered_results][package_id] = CourierStateMapValue.delivered
                 elif "Delivered to Agent" in info.get('statusCategory'):
-                    results_map[CourierStateMapKey.delivered_results][package_id] = "delivered"
+                    results_map[CourierStateMapKey.delivered_results][package_id] = CourierStateMapValue.delivered
                 else:
-                    results_map[CourierStateMapKey.tracking_results][package_id] = "tracking"
+                    results_map[CourierStateMapKey.tracking_results][package_id] = CourierStateMapValue.tracking
 
     # 输出结果统计
     # print(
