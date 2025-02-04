@@ -1,22 +1,30 @@
 import requests
 import json
 import pandas as pd
+from dataclasses import dataclass
 
 from xinshili.utils import get_days_in_current_month, day_of_month
 
-app_id = "cli_a71b49e8b4aad013"
-app_secret = "7L9WNS6YWwQNVUN3iEtQKgb8BoQSJRzn"
-spreadsheets_base_url = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/"
-# 表格的写入方式：values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
-values_spreadsheets_write_way = "/values"
-zbw = "zbw"
-sanrio = "sanrio"
+
+@dataclass(frozen=True)
+class FsConstants:
+    app_id = "cli_a71b49e8b4aad013"
+    app_secret = "7L9WNS6YWwQNVUN3iEtQKgb8BoQSJRzn"
+    spreadsheets_base_url = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/"
+    # 表格的写入方式：values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
+    values_spreadsheets_write_way = "/values"
+
+
+@dataclass(frozen=True)
+class ClientConstants:
+    zbw = "zbw"
+    sanrio = "sanrio"
 
 
 def get_token():
     url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal/"
     # 应用凭证里的 app id 和 app secret
-    post_data = {"app_id": app_id, "app_secret": app_secret}
+    post_data = {"app_id": FsConstants.app_id, "app_secret": FsConstants.app_secret}
     r = requests.post(url, data=post_data)
     tat = r.json()["tenant_access_token"]  # token
     print(f"token:{tat}")
@@ -27,12 +35,11 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
     """
     详细表
     """
-
-    if analyse_obj == zbw:
+    if analyse_obj == ClientConstants.zbw:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
-        url = f"{spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{values_spreadsheets_write_way}"
-    elif analyse_obj == sanrio:
-        url = f"{spreadsheets_base_url}TZQ8s1r1GhihRstNl5kco7xlnsf{values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
+    elif analyse_obj == ClientConstants.sanrio:
+        url = f"{FsConstants.spreadsheets_base_url}TZQ8s1r1GhihRstNl5kco7xlnsf{FsConstants.values_spreadsheets_write_way}"
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -41,9 +48,9 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
     # 因为首行是行头，所以表格中的出库时间所在行为：出库时间+1
     map_sheet_ck_time = str(int(ck_time) + 1)
 
-    if analyse_obj == zbw:
+    if analyse_obj == ClientConstants.zbw:
         post_data = {"valueRange": {"range": f"JZrQj9!B{map_sheet_ck_time}:M{map_sheet_ck_time}", "values": [lists]}}
-    elif analyse_obj == sanrio:
+    elif analyse_obj == ClientConstants.sanrio:
         post_data = {"valueRange": {"range": f"wGMg6A!B{map_sheet_ck_time}:M{map_sheet_ck_time}", "values": [lists]}}
     else:
         raise ValueError(f"{analyse_obj} 未定义")
@@ -57,10 +64,10 @@ def brief_sheet_value(tat, lists, ck_time, analyse_obj):
     # values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
     # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，表示该文档
     url = ""
-    if analyse_obj == zbw:
-        url = f"{spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{values_spreadsheets_write_way}"
-    elif analyse_obj == sanrio:
-        url = f"{spreadsheets_base_url}TZQ8s1r1GhihRstNl5kco7xlnsf{values_spreadsheets_write_way}"
+    if analyse_obj == ClientConstants.zbw:
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
+    elif analyse_obj == ClientConstants.sanrio:
+        url = f"{FsConstants.spreadsheets_base_url}TZQ8s1r1GhihRstNl5kco7xlnsf{FsConstants.values_spreadsheets_write_way}"
     else:
         raise ValueError(f"{analyse_obj} 未定义")
     header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
@@ -70,10 +77,10 @@ def brief_sheet_value(tat, lists, ck_time, analyse_obj):
     map_sheet_ck_time = str(int(ck_time) + 1)
     # JZrQj9：表格地址中 ?sheet= 后面的部分，表示表的名字
     post_data = None
-    if analyse_obj == zbw:
+    if analyse_obj == ClientConstants.zbw:
         post_data = {
             "valueRange": {"range": f"fa00e1!{today}{map_sheet_ck_time}:{today}{map_sheet_ck_time}", "values": [lists]}}
-    elif analyse_obj == sanrio:
+    elif analyse_obj == ClientConstants.sanrio:
         post_data = {
             "valueRange": {"range": f"48d357!{today}{map_sheet_ck_time}:{today}{map_sheet_ck_time}", "values": [lists]}}
     else:
@@ -89,7 +96,7 @@ def order_sheet_value(tat, lists, position):
     """
     # values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
     # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，表示该文档
-    url = f"{spreadsheets_base_url}QeR8sB3Pkhieswtac5kcTxHkngc{values_spreadsheets_write_way}"
+    url = f"{FsConstants.spreadsheets_base_url}QeR8sB3Pkhieswtac5kcTxHkngc{FsConstants.values_spreadsheets_write_way}"
     header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
     # JZrQj9：表格地址中 ?sheet= 后面的部分，表示表的名字
     post_data = {
