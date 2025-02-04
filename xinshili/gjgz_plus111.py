@@ -22,6 +22,7 @@ zbw轨迹跟踪分析
 class RowName:
     Tracking_No = 'Tracking No./物流跟踪号'
     Courier = 'Courier/快递'
+    OutboundTime = "OutboundTime/出库时间"
 
 
 @dataclass(frozen=True)
@@ -249,7 +250,7 @@ def count_no_track(file_path, column_name):
         return 0, 0
 
 
-def count_distribution_and_no_track(file_path, key_column, courier_column):
+def count_distribution_and_no_track(file_path, key_column, courier_column=RowName.Courier):
     """
     通用函数，统计指定列的分布情况及其对应 "无轨迹" 的数量。
     :param file_path: Excel 文件路径
@@ -352,7 +353,7 @@ def analyze_time_segments(file_path, time_column, courier_column):
         return {}
 
 
-def check_and_add_courier_column(file_path, courier_column="Courier/快递"):
+def check_and_add_courier_column(file_path, courier_column=RowName.Courier):
     """
     检查 Excel 文件是否存在 '快递' 列，如果没有，则在最后一列添加该列。
 
@@ -376,52 +377,28 @@ def check_and_add_courier_column(file_path, courier_column="Courier/快递"):
         print(f"发生错误: {e}")
 
 
-def get_days_difference(file_path, column_name="OutboundTime/出库时间"):
-    """
-    获取 xlsx 文件中指定列的第一条数据的日期，并计算与当前日期的差值。
-    """
+def get_days_difference(file_path, column_name=RowName.OutboundTime):
     try:
-        # 加载 Excel 文件
         workbook = load_workbook(file_path)
         sheet = workbook.active
-
         # 获取表头
         headers = [cell.value for cell in sheet[1]]
         if column_name not in headers:
             raise ValueError(f"列名 '{column_name}' 不存在！")
-
         # 获取列索引
         column_index = headers.index(column_name) + 1
-
         # 获取第一条数据
         first_row_value = sheet.cell(row=2, column=column_index).value  # 假设数据从第二行开始
         if not first_row_value:
             raise ValueError(f"'{column_name}' 列的第一条数据为空！")
-
         # 解析日期
         outbound_time = datetime.strptime(first_row_value, "%Y-%m-%d %H:%M:%S")
-
         # 格式化为 "%Y/%m/%d" 格式
         formatted_date = outbound_time.strftime("%Y/%m/%d")
-
-        # outbound_day = outbound_time.day  # 获取出库日期的日
-        # print(f"出库日期的日: {outbound_day}")
-
-        # 获取当前日期
-        # current_time = datetime.now()
-        # current_day = current_time.day  # 获取当前日期的日
-        # print(f"当前日期的日: {current_day}")
-
-        # 计算日期差
-        # date_difference = (current_time - outbound_time).days
-        # print(f"相差的天数: {date_difference}")
-
-        # return outbound_day, current_day, date_difference
         return formatted_date
-
     except Exception as e:
         print(f"发生错误: {e}")
-        return None, None, None
+        return None
 
 
 def remove_duplicates_by_column(input_file, output_file, column_name):
@@ -435,16 +412,12 @@ def remove_duplicates_by_column(input_file, output_file, column_name):
     try:
         # 读取 Excel 文件
         df = pd.read_excel(input_file)
-
         # 检查列名是否存在
         if column_name not in df.columns:
             raise ValueError(f"列 '{column_name}' 不存在于输入文件中！")
-
         # 删除指定列的重复项，仅保留第一条
         df_deduplicated = df.drop_duplicates(subset=[column_name], keep='first')
-
         df_deduplicated.to_excel(output_file, index=False)
-
     except Exception as e:
         print(f"处理文件时发生错误：{e}")
 
@@ -492,7 +465,7 @@ text = ""
 
 text += "\n----------------------sku分布----------------------"
 sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(
-    xlsx_path, key_column="SKU", courier_column="Courier/快递"
+    xlsx_path, key_column="SKU"
 )
 # print("\nSKU 分布及对应的 '无轨迹' 情况：")
 sku_text = ""
@@ -547,7 +520,7 @@ data_map[delivered_percent] = qsl
 
 text += "\n----------------------仓库分布----------------------"
 warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
-    output_file, key_column="Warehouse/仓库", courier_column="Courier/快递"
+    output_file, key_column="Warehouse/仓库"
 )
 # print("\n发货仓库分布情况：")
 warehouse_text = ""
@@ -567,7 +540,7 @@ data_map[warehouse_condition] = warehouse_text
 
 text += "\n----------------------店铺分布----------------------"
 store_distribution, store_no_track_distribution = count_distribution_and_no_track(
-    output_file, key_column="Client/客户", courier_column="Courier/快递"
+    output_file, key_column="Client/客户"
 )
 # print("\n店铺分布及对应的 '无轨迹' 情况：")
 store_text = ""
