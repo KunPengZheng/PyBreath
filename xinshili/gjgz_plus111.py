@@ -107,19 +107,21 @@ def extract_and_process_data(filepath, column_name, group_size):
 
     # 不规则的快递单号不需要跟踪
     for tracking_number in data[RowName.Tracking_No]:
+        # 不是纯数字 或者 不是9开头 的都为不规则 快递单号
         if not str(tracking_number).isdigit() or not str(tracking_number).startswith('9'):
             results_map[CourierStateMapKey.irregular_order_number_results][
                 tracking_number] = CourierStateMapValue.irregular_no_tracking
     update_courier_status_for_results(filepath, results_map[CourierStateMapKey.irregular_order_number_results])
 
+    # 将无内容的单元格赋值""空字符串。
     data[column_name] = data[column_name].fillna('')
 
-    filtered_data = data[
-        data[column_name].apply(
-            lambda x: str(x).strip().lower() in ['',
-                                                 CourierStateMapValue.not_yet,
-                                                 CourierStateMapValue.pre_ship,
-                                                 CourierStateMapValue.no_tracking])]
+    # 获取指定内容的数据
+    filtered_data = data[data[column_name].apply(
+        lambda x: str(x).strip().lower() in ['',
+                                             CourierStateMapValue.not_yet,
+                                             CourierStateMapValue.pre_ship,
+                                             CourierStateMapValue.no_tracking])]
 
     # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
     items = filtered_data[RowName.Tracking_No].tolist()
@@ -155,7 +157,7 @@ def extract_and_process_data(filepath, column_name, group_size):
     return results_map
 
 
-def count_delivered(file_path, column_name):
+def count_delivered(file_path, column_name, patternStr):
     try:
         workbook = load_workbook(file_path)
         sheet = workbook.active
@@ -163,31 +165,7 @@ def count_delivered(file_path, column_name):
         if column_name not in headers:
             raise ValueError(f"列名 '{column_name}' 不存在！")
         column_index = headers.index(column_name) + 1
-        pattern = re.compile(r"delivered", re.IGNORECASE)
-        total_count = 0
-        no_track_count = 0
-        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
-            cell_value = row[column_index - 1]
-            if cell_value is not None:
-                total_count += 1
-                if pattern.search(str(cell_value)):
-                    no_track_count += 1
-        return total_count, no_track_count
-    except Exception as e:
-        print(f"发生错误: {e}")
-        return 0, 0
-
-
-def count_no_track(file_path, column_name):
-    """统计 '快递' 列中所有行数和内容为 '无轨迹' 的数量"""
-    try:
-        workbook = load_workbook(file_path)
-        sheet = workbook.active
-        headers = [cell.value for cell in sheet[1]]
-        if column_name not in headers:
-            raise ValueError(f"列名 '{column_name}' 不存在！")
-        column_index = headers.index(column_name) + 1
-        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking|no_tracking", re.IGNORECASE)
+        pattern = re.compile(patternStr, re.IGNORECASE)
         total_count = 0
         no_track_count = 0
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
@@ -438,8 +416,9 @@ text += f"\n出库日期：{ck_time}"
 text += f"\n跟踪日期：{gz_time}"
 text += f"\n间隔时间：{interval_time}"
 
-total_count, no_track_count = count_no_track(output_file, RowName.Courier)
-total_count2, delivered_count = count_delivered(output_file, RowName.Courier)
+total_count, no_track_count = count_delivered(output_file, RowName.Courier,
+                                              r"not_yet|pre_ship|irregular_no_tracking|no_tracking")
+total_count2, delivered_count = count_delivered(output_file, RowName.Courier, r"delivered")
 
 qsl = round2((int(delivered_count) / int(total_count)) * 100)
 swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
