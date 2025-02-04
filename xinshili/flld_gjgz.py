@@ -6,7 +6,7 @@ from xinshili.usps_utils import track
 from xinshili.utils import get_file_dir, get_filename_without_extension
 
 
-def extract_and_process_data(filepath, column_name, group_size=35):
+def extract_and_process_data(filepath, column_name, group_size=100):
     """
     从 Excel 文件中提取指定列的数据，按组发送请求并统计满足条件的结果。
 
@@ -50,32 +50,37 @@ def extract_and_process_data(filepath, column_name, group_size=35):
         for package_id, info in track1['data'].items():
             if info.get('err'):
                 if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
-                    no_tracking_results.append(package_id)
                     not_yet_results.append(package_id)
                 elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
-                    no_tracking_results.append(package_id)
                     pre_ship_results.append(package_id)
                 else:
                     no_tracking_results.append(package_id)
             else:
                 if info.get('statusLong') in text:
                     unpaid_results.append(package_id)
-                if info.get('statusShort') in text1:
+                elif "Delivered" in info.get('statusCategory'):
                     delivered_results.append(package_id)
-                tracking_results.append(package_id)
+                elif "Delivered to Agent" in info.get('statusCategory'):
+                    delivered_results.append(package_id)
+                else:
+                    tracking_results.append(package_id)
 
         # 随机生成 5 到 10 秒之间的等待时间
-        wait_time = random.uniform(5, 10)
-        time.sleep(wait_time)
+        # wait_time = random.uniform(5, 10)
+        # time.sleep(wait_time)
 
-    print(f"没有轨迹数： {len(no_tracking_results)} 条，有轨迹数： {len(tracking_results)} 条")
+    no_tracking_count = len(not_yet_results) + len(pre_ship_results) + len(no_tracking_results)
+    tracking_count = len(unpaid_results) + len(delivered_results) + len(tracking_results)
+
     print(f"\nunpaid数： {len(unpaid_results)} 条")
     print(f"\nnot_yet数： {len(not_yet_results)} 条")
     print(f"\npre_ship数： {len(pre_ship_results)} 条")
     print(f"\ndelivered数： {len(delivered_results)} 条")
 
+    print(f"没有轨迹数： {no_tracking_count} 条，有轨迹数： {tracking_count} 条")
+
     output_file = get_file_dir(input_file) + "/" + get_filename_without_extension(
-        input_file) + "_有轨迹" + f"{len(tracking_results)}单" + ".xlsx"
+        input_file) + "_有轨迹" + f"{tracking_count}单" + ".xlsx"
 
     # 从原始数据中删除无轨迹的行
     filtered_data = data[~data[column_name].isin(no_tracking_results)]
@@ -88,6 +93,6 @@ def extract_and_process_data(filepath, column_name, group_size=35):
 # file_path = "/Users/zkp/Desktop/B&Y/轨迹统计/佛罗里达/佛罗里达117单回传.xlsx"  # 替换为你的输入文件路径
 input_file = input("请输入源表文件的绝对路径：")
 try:
-    extract_and_process_data(input_file, "跟踪号", 35)
+    extract_and_process_data(input_file, "跟踪号")
 except Exception as e:
     print("错误:", e)
