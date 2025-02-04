@@ -407,26 +407,25 @@ text += "\n----------------------sku分布----------------------"
 sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(
     xlsx_path, key_column="SKU"
 )
-# print("\nSKU 分布及对应的 '无轨迹' 情况：")
 sku_text = ""
 lowest_sku = ""
 lowest_swl = 101  # 初始化为比 100 大的值
 for sku, count in sku_distribution.items():
     no_track_count = sku_no_track_distribution[sku]
     skuswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
-    # print(f"{sku}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{skuswl}%")
-    text += f"\n{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
-    sku_text += f"\n{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
+    strs = f"\n{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
+    text += strs
+    sku_text += strs
     # 判断是否是最低的上网率
     if skuswl < lowest_swl:
         lowest_swl = skuswl
-        lowest_sku = f"{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
+        lowest_sku = strs
 # 将 sku_text 保存到 data_map
 data_map[CellKey.sku_condition] = sku_text
 
 output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
 # 需要去重复
-remove_duplicates_by_column(xlsx_path, output_file, "Tracking No./物流跟踪号")
+remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
 
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 text += "\n----------------------时间----------------------"
@@ -437,12 +436,11 @@ text += f"\n出库日期：{ck_time}"
 text += f"\n跟踪日期：{gz_time}"
 text += f"\n间隔时间：{interval_time}"
 
-total_count, no_track_count = count_no_track(output_file, column_name="Courier/快递")
-total_count2, delivered_count = count_delivered(output_file, column_name="Courier/快递")
+total_count, no_track_count = count_no_track(output_file, RowName.Courier)
+total_count2, delivered_count = count_delivered(output_file, RowName.Courier)
 
 qsl = round2((int(delivered_count) / int(total_count)) * 100)
 swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-# print(f"总条数（除列头）：{total_count}，内容为 '无轨迹' 的总数：{no_track_count}，上网率为：{swl}%")
 text += "\n----------------------概览----------------------"
 text += f"\n订单总数：{total_count}"
 text += f"\n签收数：{delivered_count}"
@@ -469,13 +467,13 @@ lowest_warehouse = ""  # 保存最低上网率的仓库信息
 for warehouse, count in warehouse_distribution.items():
     no_track_count = warehouse_no_track[warehouse]
     warehouseswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
-    # print(f"{warehouse}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{warehouseswl}%")
-    text += f"\n{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
-    warehouse_text += f"\n{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
+    strs = f"\n{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
+    text += strs
+    warehouse_text += strs
     # 判断是否是最低的上网率
     if warehouseswl < lowest_swl:
         lowest_swl = warehouseswl
-        lowest_warehouse = f"{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
+        lowest_warehouse = strs
 data_map[CellKey.warehouse_condition] = warehouse_text
 
 text += "\n----------------------店铺分布----------------------"
@@ -489,13 +487,13 @@ lowest_swl = 101  # 初始化为一个比 100 大的值，用于比较
 for store, count in store_distribution.items():
     no_track_count = store_no_track_distribution[store]
     storeswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
-    # print(f"{store}: 总数 {count} 条，其中 '无轨迹' {no_track_count} 条，上网率为：{storeswl}%")
-    text += f"\n{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
-    store_text += f"\n{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
+    strs = f"\n{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
+    text += strs
+    store_text += strs
     # 判断是否是最低的上网率
     if storeswl < lowest_swl:
         lowest_swl = storeswl
-        lowest_store = f"{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
+        lowest_store = strs
 data_map[CellKey.store_condition] = store_text
 
 # 分析时间段
@@ -512,15 +510,13 @@ for segment_start, stats in time_segment_analysis.items():
     total_count = stats["total_count"]
     no_track_count = stats["no_track_count"]
     segmentswl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-    # print(f"时间段 {segment_start.strftime('%m-%d %H:%M:%S')} - {segment_end.strftime('%m-%d %H:%M:%S')}:")
-    # print(f"  总数: {total_count} 条, 其中 '无轨迹': {no_track_count} 条，上网率为：{segmentswl}%")
-
-    text += f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
-    time_segment_text += f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
+    strs = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
+    text += strs
+    time_segment_text += strs
     # 判断是否是最低的上网率
     if segmentswl < lowest_swl:
         lowest_swl = segmentswl
-        lowest_segment = f"{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
+        lowest_segment = strs
 data_map[CellKey.time_segment_condition] = time_segment_text
 
 lowest_txt = ""
