@@ -24,6 +24,19 @@ class RowName:
     Courier = 'Courier/快递'
 
 
+@dataclass(frozen=True)
+class CourierStateMapKey:
+    tracking_results = 'tracking_results'
+    no_tracking_results = 'no_tracking_results'
+    unpaid_results = "unpaid_results"
+    not_yet_results = "not_yet_results"
+    pre_ship_results = "pre_ship_results"
+    delivered_results = "delivered_results"
+    out_of_delivery_results = "out_of_delivery_results"
+    irregular_order_number_results = "irregular_order_number_results"
+    returned_to_sender_results = "returned_to_sender_results"
+
+
 def update_courier_status_for_results2222(filepath, results_map):
     wb = openpyxl.load_workbook(filepath)
     sheet = wb.active  # 默认使用活动工作表
@@ -54,15 +67,15 @@ def extract_and_process_data(filepath, column_name, group_size):
 
     # 存储结果的 map（字典）
     results_map = {
-        "tracking_results": {},
-        "no_tracking_results": {},
-        "unpaid_results": {},
-        "not_yet_results": {},
-        "pre_ship_results": {},
-        "delivered_results": {},
-        "out_of_delivery_results": {},
-        "irregular_order_number_results": {},
-        "returned_to_sender_results": {}
+        CourierStateMapKey.tracking_results: {},
+        CourierStateMapKey.no_tracking_results: {},
+        CourierStateMapKey.unpaid_results: {},
+        CourierStateMapKey.not_yet_results: {},
+        CourierStateMapKey.pre_ship_results: {},
+        CourierStateMapKey.delivered_results: {},
+        CourierStateMapKey.out_of_delivery_results: {},
+        CourierStateMapKey.irregular_order_number_results: {},
+        CourierStateMapKey.returned_to_sender_results: {}
     }
 
     # 不规则的快递单号不需要跟踪
@@ -91,21 +104,21 @@ def extract_and_process_data(filepath, column_name, group_size):
             # 判断错误类型并分类
             if info.get('err'):
                 if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
-                    results_map["not_yet_results"][package_id] = "not_yet"
+                    results_map[CourierStateMapKey.not_yet_results][package_id] = "not_yet"
                 elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
-                    results_map["pre_ship_results"][package_id] = "pre_ship"
+                    results_map[CourierStateMapKey.pre_ship_results][package_id] = "pre_ship"
                 else:
-                    results_map["no_tracking_results"][package_id] = "no_tracking"
+                    results_map[CourierStateMapKey.no_tracking_results][package_id] = "no_tracking"
             else:
                 if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
                         info.get('statusLong'):
-                    results_map["unpaid_results"][package_id] = "unpaid"
+                    results_map[CourierStateMapKey.unpaid_results][package_id] = "unpaid"
                 elif "Delivered" in info.get('statusCategory'):
-                    results_map["delivered_results"][package_id] = "delivered"
+                    results_map[CourierStateMapKey.delivered_results][package_id] = "delivered"
                 elif "Delivered to Agent" in info.get('statusCategory'):
-                    results_map["delivered_results"][package_id] = "delivered"
+                    results_map[CourierStateMapKey.delivered_results][package_id] = "delivered"
                 else:
-                    results_map["tracking_results"][package_id] = "tracking"
+                    results_map[CourierStateMapKey.tracking_results][package_id] = "tracking"
 
     # 输出结果统计
     # print(
@@ -129,7 +142,7 @@ def update_courier_status_for_results(filepath, results_map):
     courier_col = data.columns.get_loc(RowName.Courier) + 1  # openpyxl索引从1开始
 
     # 遍历 not_yet_results 字典
-    for tracking_no, status in results_map["not_yet_results"].items():
+    for tracking_no, status in results_map[CourierStateMapKey.not_yet_results].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
             # 获取当前行的物流跟踪号
             current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
@@ -139,7 +152,7 @@ def update_courier_status_for_results(filepath, results_map):
                 # break  # 找到后退出循环，避免重复更新同一行
 
     # 遍历 pre_ship_results 字典
-    for tracking_no, status in results_map["pre_ship_results"].items():
+    for tracking_no, status in results_map[CourierStateMapKey.pre_ship_results].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
             # 获取当前行的物流跟踪号
             current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
@@ -149,7 +162,7 @@ def update_courier_status_for_results(filepath, results_map):
                 break  # 找到后退出循环，避免重复更新同一行
 
         # 遍历 pre_ship_results 字典
-    for tracking_no, status in results_map["unpaid_results"].items():
+    for tracking_no, status in results_map[CourierStateMapKey.unpaid_results].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
             # 获取当前行的物流跟踪号
             current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
@@ -158,7 +171,7 @@ def update_courier_status_for_results(filepath, results_map):
                 sheet.cell(row=row, column=courier_col, value=status)
                 # break  # 找到后退出循环，避免重复更新同一行
 
-    for tracking_no, status in results_map["delivered_results"].items():
+    for tracking_no, status in results_map[CourierStateMapKey.delivered_results].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
             # 获取当前行的物流跟踪号
             current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
@@ -167,7 +180,7 @@ def update_courier_status_for_results(filepath, results_map):
                 sheet.cell(row=row, column=courier_col, value=status)
                 # break  # 找到后退出循环，避免重复更新同一行
 
-    for tracking_no, status in results_map["no_tracking_results"].items():
+    for tracking_no, status in results_map[CourierStateMapKey.no_tracking_results].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
             # 获取当前行的物流跟踪号
             current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
@@ -176,7 +189,7 @@ def update_courier_status_for_results(filepath, results_map):
                 sheet.cell(row=row, column=courier_col, value=status)
                 # break  # 找到后退出循环，避免重复更新同一行
 
-    for tracking_no, status in results_map["tracking_results"].items():
+    for tracking_no, status in results_map[CourierStateMapKey.tracking_results].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
             # 获取当前行的物流跟踪号
             current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
