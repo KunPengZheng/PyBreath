@@ -93,6 +93,7 @@ def extract_and_process_data(filepath, column_name, group_size=100):
 # file_path = "/Users/zkp/Desktop/B&Y/轨迹统计/佛罗里达/佛罗里达117单回传.xlsx"  # 替换为你的输入文件路径
 input_file = input("请输入源表文件的绝对路径：")
 try:
-    extract_and_process_data(input_file, "跟踪号")
+    # extract_and_process_data(input_file, "跟踪号")
+    extract_and_process_data(input_file, "运单号")
 except Exception as e:
     print("错误:", e)
