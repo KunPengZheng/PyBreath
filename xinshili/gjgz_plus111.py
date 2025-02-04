@@ -54,7 +54,7 @@ class CellKey:
     sum_up = "sum_up"
 
 
-def update_courier_status_for_results2222(filepath, results_map):
+def update_courier_status_for_results(filepath, maps):
     wb = openpyxl.load_workbook(filepath)
     sheet = wb.active  # 默认使用活动工作表
 
@@ -63,7 +63,7 @@ def update_courier_status_for_results2222(filepath, results_map):
     tracking_no_col = data.columns.get_loc(RowName.Tracking_No) + 1  # openpyxl索引从1开始
     courier_col = data.columns.get_loc(RowName.Courier) + 1  # openpyxl索引从1开始
 
-    for tracking_no, status in results_map["irregular_order_number_results"].items():
+    for tracking_no, status in maps.items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
             # 获取当前行的物流跟踪号
             current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
@@ -98,8 +98,8 @@ def extract_and_process_data(filepath, column_name, group_size):
     # 不规则的快递单号不需要跟踪
     for tracking_number in data[RowName.Tracking_No]:
         if not str(tracking_number).isdigit() or not str(tracking_number).startswith('9'):
-            results_map["irregular_order_number_results"][tracking_number] = "irregular_no_tracking"
-    update_courier_status_for_results2222(filepath, results_map)
+            results_map[CourierStateMapKey.irregular_order_number_results][tracking_number] = "irregular_no_tracking"
+    update_courier_status_for_results(filepath, results_map[CourierStateMapKey.irregular_order_number_results])
 
     data[column_name] = data[column_name].fillna('')
 
@@ -146,77 +146,6 @@ def extract_and_process_data(filepath, column_name, group_size):
     # print(f"\ndelivered数： {len(results_map['delivered_results'])} 条")
 
     return results_map
-
-
-# 遍历 not_yet_results 和 pre_ship_results 中的所有物流跟踪号，匹配并更新 Courier/快递 列
-def update_courier_status_for_results(filepath, results_map):
-    wb = openpyxl.load_workbook(filepath)
-    sheet = wb.active  # 默认使用活动工作表
-
-    data = pd.read_excel(filepath)
-    # 获取 'Tracking No./物流跟踪号' 列和 'Courier/快递' 列的索引
-    tracking_no_col = data.columns.get_loc(RowName.Tracking_No) + 1  # openpyxl索引从1开始
-    courier_col = data.columns.get_loc(RowName.Courier) + 1  # openpyxl索引从1开始
-
-    # 遍历 not_yet_results 字典
-    for tracking_no, status in results_map[CourierStateMapKey.not_yet_results].items():
-        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
-            # 获取当前行的物流跟踪号
-            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
-            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
-            if current_tracking_no == tracking_no:
-                sheet.cell(row=row, column=courier_col, value=status)
-                # break  # 找到后退出循环，避免重复更新同一行
-
-    # 遍历 pre_ship_results 字典
-    for tracking_no, status in results_map[CourierStateMapKey.pre_ship_results].items():
-        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
-            # 获取当前行的物流跟踪号
-            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
-            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
-            if current_tracking_no == tracking_no:
-                sheet.cell(row=row, column=courier_col, value=status)
-                break  # 找到后退出循环，避免重复更新同一行
-
-        # 遍历 pre_ship_results 字典
-    for tracking_no, status in results_map[CourierStateMapKey.unpaid_results].items():
-        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
-            # 获取当前行的物流跟踪号
-            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
-            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
-            if current_tracking_no == tracking_no:
-                sheet.cell(row=row, column=courier_col, value=status)
-                # break  # 找到后退出循环，避免重复更新同一行
-
-    for tracking_no, status in results_map[CourierStateMapKey.delivered_results].items():
-        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
-            # 获取当前行的物流跟踪号
-            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
-            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
-            if current_tracking_no == tracking_no:
-                sheet.cell(row=row, column=courier_col, value=status)
-                # break  # 找到后退出循环，避免重复更新同一行
-
-    for tracking_no, status in results_map[CourierStateMapKey.no_tracking_results].items():
-        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
-            # 获取当前行的物流跟踪号
-            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
-            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
-            if current_tracking_no == tracking_no:
-                sheet.cell(row=row, column=courier_col, value=status)
-                # break  # 找到后退出循环，避免重复更新同一行
-
-    for tracking_no, status in results_map[CourierStateMapKey.tracking_results].items():
-        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
-            # 获取当前行的物流跟踪号
-            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
-            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
-            if current_tracking_no == tracking_no:
-                sheet.cell(row=row, column=courier_col, value=status)
-                # break  # 找到后退出循环，避免重复更新同一行
-
-    # 保存更新后的文件
-    wb.save(filepath)
 
 
 def count_delivered(file_path, column_name):
@@ -438,12 +367,17 @@ def remove_duplicates_by_column(input_file, output_file, column_name):
         print(f"处理文件时发生错误：{e}")
 
 
-
 analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
 xlsx_path = input("请输入文件的绝对路径：")
 check_and_add_courier_column(xlsx_path)
 results = extract_and_process_data(xlsx_path, "Courier/快递", 100)
-update_courier_status_for_results(xlsx_path, results)
+
+update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.not_yet_results])
+update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.pre_ship_results])
+update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.unpaid_results])
+update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.delivered_results])
+update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.no_tracking_results])
+update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.tracking_results])
 
 ck_time = get_days_difference(xlsx_path)
 print(f"出库时间log：{ck_time}")
