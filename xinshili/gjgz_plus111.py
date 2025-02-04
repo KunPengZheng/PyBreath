@@ -385,7 +385,7 @@ def remove_duplicates_by_column(input_file, output_file, column_name):
 analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
 xlsx_path = input("请输入文件的绝对路径：")
 check_and_add_courier_column(xlsx_path)
-results = extract_and_process_data(xlsx_path, "Courier/快递", 100)
+results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
 
 update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.not_yet_results])
 update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.pre_ship_results])
@@ -395,20 +395,8 @@ update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.no_track
 update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.tracking_results])
 
 ck_time = get_days_difference(xlsx_path)
-print(f"出库时间log：{ck_time}")
 gz_time = getYmd()
-print(f"跟踪时间log：{gz_time}")
-
-date1 = datetime.strptime(gz_time, "%Y/%m/%d")
-date2 = datetime.strptime(ck_time, "%Y/%m/%d")
-
-interval_time = (date1 - date2).days
-print(f"相差 {interval_time} 天")
-
-# column_nums = get_column_for_specific_date(ymd)
-# row_nums = get_row_for_specific_date(outbound_time)
-# print(f"column_nums: {column_nums} ,row_nums:{row_nums} ")
-# raise ValueError("除数不能为零")  # 测试断开
+interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
 
 # 数据map
 data_map = {}
