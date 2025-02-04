@@ -139,3 +139,12 @@ def get_days_in_current_month():
     # 使用 calendar.monthrange 获取当前月份的天数
     _, days_in_month = calendar.monthrange(year, month)
     return days_in_month
+
+
+def getYmd():
+    # 获取今天的日期
+    today = datetime.today()
+    # 格式化为 "%Y/%m/%d" 格式
+    formatted_today = today.strftime("%Y/%m/%d")
+    # print(formatted_today)
+    return formatted_today
