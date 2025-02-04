@@ -152,14 +152,6 @@ def extract_and_process_data(filepath, column_name, group_size):
                 else:
                     results_map[CourierStateMapKey.tracking_results][package_id] = CourierStateMapValue.tracking
 
-    # 输出结果统计
-    # print(
-    #     f"没有轨迹数： {len(results_map['no_tracking_results'])} 条，有轨迹数： {len(results_map['tracking_results'])} 条")
-    # print(f"\nunpaid数： {len(results_map['unpaid_results'])} 条")
-    # print(f"\nnot_yet数： {len(results_map['not_yet_results'])} 条")
-    # print(f"\npre_ship数： {len(results_map['pre_ship_results'])} 条")
-    # print(f"\ndelivered数： {len(results_map['delivered_results'])} 条")
-
     return results_map
 
 
@@ -386,6 +378,16 @@ analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
 xlsx_path = input("请输入文件的绝对路径：")
 check_and_add_courier_column(xlsx_path)
 results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
+
+# no_tracking_count = len(results[CourierStateMapKey.not_yet_results]) + len(
+#     results[CourierStateMapKey.pre_ship_results]) + len(results[CourierStateMapKey.no_tracking_results])
+# tracking_count = len(results[CourierStateMapKey.unpaid_results]) + len(
+#     results[CourierStateMapKey.delivered_results]) + len(results[CourierStateMapKey.tracking_results])
+# print(f"没有轨迹数： {no_tracking_count} 条，有轨迹数： {tracking_count} 条")
+# print(f"\nunpaid数： {len(results[CourierStateMapKey.unpaid_results])} 条")
+# print(f"\nnot_yet数： {len(results[CourierStateMapKey.not_yet_results])} 条")
+# print(f"\npre_ship数： {len(results[CourierStateMapKey.pre_ship_results])} 条")
+# print(f"\ndelivered数： {len(results[CourierStateMapKey.delivered_results])} 条")
 
 update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.not_yet_results])
 update_courier_status_for_results(xlsx_path, results[CourierStateMapKey.pre_ship_results])
