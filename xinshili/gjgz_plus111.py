@@ -7,7 +7,7 @@ import pandas as pd
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 
-from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value
+from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants
 from xinshili.usps_utils import track
 from xinshili.utils import round2, getYmd
 import random
@@ -306,9 +306,9 @@ def check_and_add_courier_column(file_path, courier_column=RowName.Courier):
             data[courier_column] = ""  # 默认为空值，可以根据需求填充其他默认值
             # 保存修改后的文件
             data.to_excel(file_path, index=False, engine='openpyxl')
-            print(f"列 '{courier_column}' 已添加到文件中，并保存。")
-        else:
-            print(f"列 '{courier_column}' 已存在，无需添加。")
+        #     print(f"列 '{courier_column}' 已添加到文件中，并保存。")
+        # else:
+        #     print(f"列 '{courier_column}' 已存在，无需添加。")
     except Exception as e:
         print(f"发生错误: {e}")
 
@@ -359,6 +359,9 @@ def remove_duplicates_by_column(input_file, output_file, column_name):
 
 
 analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
+if analyse_obj != ClientConstants.zbw and analyse_obj != ClientConstants.sanrio:
+    raise ValueError(f"{analyse_obj} 未定义")
+
 xlsx_path = input("请输入文件的绝对路径：")
 check_and_add_courier_column(xlsx_path)
 results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
