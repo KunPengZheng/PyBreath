@@ -27,15 +27,13 @@ class RowName:
 
 @dataclass(frozen=True)
 class CourierStateMapKey:
-    tracking_results = 'tracking_results'
-    no_tracking_results = 'no_tracking_results'
-    unpaid_results = "unpaid_results"
-    not_yet_results = "not_yet_results"
-    pre_ship_results = "pre_ship_results"
-    delivered_results = "delivered_results"
-    out_of_delivery_results = "out_of_delivery_results"
-    irregular_order_number_results = "irregular_order_number_results"
-    returned_to_sender_results = "returned_to_sender_results"
+    tracking_map = 'tracking_map'
+    no_tracking_map = 'no_tracking_map'
+    unpaid_map = "unpaid_map"
+    not_yet_map = "not_yet_map"
+    pre_ship_map = "pre_ship_map"
+    delivered_map = "delivered_map"
+    irregular_number_map = "irregular_number_map"
 
 
 class CourierStateMapValue:
@@ -100,24 +98,22 @@ def extract_and_process_data(filepath, column_name, group_size):
 
     # 存储结果的 map（字典）
     results_map = {
-        CourierStateMapKey.tracking_results: {},
-        CourierStateMapKey.no_tracking_results: {},
-        CourierStateMapKey.unpaid_results: {},
-        CourierStateMapKey.not_yet_results: {},
-        CourierStateMapKey.pre_ship_results: {},
-        CourierStateMapKey.delivered_results: {},
-        CourierStateMapKey.out_of_delivery_results: {},
-        CourierStateMapKey.irregular_order_number_results: {},
-        CourierStateMapKey.returned_to_sender_results: {}
+        CourierStateMapKey.tracking_map: {},
+        CourierStateMapKey.no_tracking_map: {},
+        CourierStateMapKey.unpaid_map: {},
+        CourierStateMapKey.not_yet_map: {},
+        CourierStateMapKey.pre_ship_map: {},
+        CourierStateMapKey.delivered_map: {},
+        CourierStateMapKey.irregular_number_map: {},
     }
 
     # 不规则的快递单号不需要跟踪
     for tracking_number in data[RowName.Tracking_No]:
         # 不是纯数字 或者 不是9开头 的都为不规则 快递单号
         if not str(tracking_number).isdigit() or not str(tracking_number).startswith('9'):
-            results_map[CourierStateMapKey.irregular_order_number_results][
+            results_map[CourierStateMapKey.irregular_number_map][
                 tracking_number] = CourierStateMapValue.irregular_no_tracking
-    update_courier_status(filepath, results_map[CourierStateMapKey.irregular_order_number_results])
+    update_courier_status(filepath, results_map[CourierStateMapKey.irregular_number_map])
 
     # 将无内容的单元格赋值""空字符串。
     data[column_name] = data[column_name].fillna('')
@@ -144,21 +140,21 @@ def extract_and_process_data(filepath, column_name, group_size):
             # 判断错误类型并分类
             if info.get('err'):
                 if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
-                    results_map[CourierStateMapKey.not_yet_results][package_id] = CourierStateMapValue.not_yet
+                    results_map[CourierStateMapKey.not_yet_map][package_id] = CourierStateMapValue.not_yet
                 elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
-                    results_map[CourierStateMapKey.pre_ship_results][package_id] = CourierStateMapValue.pre_ship
+                    results_map[CourierStateMapKey.pre_ship_map][package_id] = CourierStateMapValue.pre_ship
                 else:
-                    results_map[CourierStateMapKey.no_tracking_results][package_id] = CourierStateMapValue.no_tracking
+                    results_map[CourierStateMapKey.no_tracking_map][package_id] = CourierStateMapValue.no_tracking
             else:
                 if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
                         info.get('statusLong'):
-                    results_map[CourierStateMapKey.unpaid_results][package_id] = CourierStateMapValue.unpaid
+                    results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
                 elif "Delivered" in info.get('statusCategory'):
-                    results_map[CourierStateMapKey.delivered_results][package_id] = CourierStateMapValue.delivered
+                    results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
                 elif "Delivered to Agent" in info.get('statusCategory'):
-                    results_map[CourierStateMapKey.delivered_results][package_id] = CourierStateMapValue.delivered
+                    results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
                 else:
-                    results_map[CourierStateMapKey.tracking_results][package_id] = CourierStateMapValue.tracking
+                    results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
 
     return results_map
 
@@ -376,12 +372,12 @@ results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
 # print(f"\npre_ship数： {len(results[CourierStateMapKey.pre_ship_results])} 条")
 # print(f"\ndelivered数： {len(results[CourierStateMapKey.delivered_results])} 条")
 
-update_courier_status(xlsx_path, results[CourierStateMapKey.not_yet_results])
-update_courier_status(xlsx_path, results[CourierStateMapKey.pre_ship_results])
-update_courier_status(xlsx_path, results[CourierStateMapKey.unpaid_results])
-update_courier_status(xlsx_path, results[CourierStateMapKey.delivered_results])
-update_courier_status(xlsx_path, results[CourierStateMapKey.no_tracking_results])
-update_courier_status(xlsx_path, results[CourierStateMapKey.tracking_results])
+update_courier_status(xlsx_path, results[CourierStateMapKey.not_yet_map])
+update_courier_status(xlsx_path, results[CourierStateMapKey.pre_ship_map])
+update_courier_status(xlsx_path, results[CourierStateMapKey.unpaid_map])
+update_courier_status(xlsx_path, results[CourierStateMapKey.delivered_map])
+update_courier_status(xlsx_path, results[CourierStateMapKey.no_tracking_map])
+update_courier_status(xlsx_path, results[CourierStateMapKey.tracking_map])
 
 ck_time = get_days_difference(xlsx_path)
 gz_time = getYmd()
