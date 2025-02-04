@@ -64,6 +64,12 @@ class CellKey:
     sum_up = "sum_up"
 
 
+@dataclass(frozen=True)
+class Pattern:
+    no_track = r"not_yet|pre_ship|irregular_no_tracking|no_tracking"
+    delivered = r"delivered"
+
+
 def update_courier_status_for_results(filepath, maps):
     wb = openpyxl.load_workbook(filepath)
     sheet = wb.active  # 默认使用活动工作表
@@ -196,7 +202,7 @@ def count_distribution_and_no_track(file_path, key_column, courier_column=RowNam
             raise ValueError(f"列名 '{key_column}' 或 '{courier_column}' 不存在！")
         key_index = headers.index(key_column) + 1
         courier_index = headers.index(courier_column) + 1
-        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking|no_tracking", re.IGNORECASE)
+        pattern = re.compile(Pattern.no_track, re.IGNORECASE)
         key_counter = Counter()
         key_no_track_counter = Counter()
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
@@ -232,7 +238,7 @@ def analyze_time_segments(file_path, time_column, courier_column):
         courier_index = headers.index(courier_column) + 1
 
         # 正则表达式匹配 "无轨迹"
-        pattern = re.compile(r"not_yet|pre_ship|irregular_no_tracking|no_tracking", re.IGNORECASE)
+        pattern = re.compile(Pattern.no_track, re.IGNORECASE)
 
         # 读取并解析数据
         data = []
@@ -416,9 +422,8 @@ text += f"\n出库日期：{ck_time}"
 text += f"\n跟踪日期：{gz_time}"
 text += f"\n间隔时间：{interval_time}"
 
-total_count, no_track_count = count_delivered(output_file, RowName.Courier,
-                                              r"not_yet|pre_ship|irregular_no_tracking|no_tracking")
-total_count2, delivered_count = count_delivered(output_file, RowName.Courier, r"delivered")
+total_count, no_track_count = count_delivered(output_file, RowName.Courier, Pattern.no_track)
+total_count2, delivered_count = count_delivered(output_file, RowName.Courier, Pattern.delivered)
 
 qsl = round2((int(delivered_count) / int(total_count)) * 100)
 swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
