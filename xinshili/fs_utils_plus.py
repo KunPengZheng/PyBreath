@@ -3,8 +3,6 @@ import json
 import pandas as pd
 from dataclasses import dataclass
 
-from xinshili.utils import get_days_in_current_month, day_of_month
-
 
 @dataclass(frozen=True)
 class FsConstants:
