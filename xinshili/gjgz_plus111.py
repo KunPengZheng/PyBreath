@@ -5,6 +5,7 @@ from openpyxl import load_workbook
 import openpyxl
 import pandas as pd
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value
 from xinshili.usps_utils import track
@@ -17,14 +18,20 @@ zbw轨迹跟踪分析
 """
 
 
+@dataclass(frozen=True)
+class RowName:
+    Tracking_No = 'Tracking No./物流跟踪号'
+    Courier = 'Courier/快递'
+
+
 def update_courier_status_for_results2222(filepath, results_map):
     wb = openpyxl.load_workbook(filepath)
     sheet = wb.active  # 默认使用活动工作表
 
     data = pd.read_excel(filepath)
     # 获取 'Tracking No./物流跟踪号' 列和 'Courier/快递' 列的索引
-    tracking_no_col = data.columns.get_loc('Tracking No./物流跟踪号') + 1  # openpyxl索引从1开始
-    courier_col = data.columns.get_loc('Courier/快递') + 1  # openpyxl索引从1开始
+    tracking_no_col = data.columns.get_loc(RowName.Tracking_No) + 1  # openpyxl索引从1开始
+    courier_col = data.columns.get_loc(RowName.Courier) + 1  # openpyxl索引从1开始
 
     for tracking_no, status in results_map["irregular_order_number_results"].items():
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
@@ -40,10 +47,8 @@ def update_courier_status_for_results2222(filepath, results_map):
 
 
 def extract_and_process_data(filepath, column_name, group_size):
-    # 读取 Excel 文件
     data = pd.read_excel(filepath)
 
-    # 检查列是否存在
     if column_name not in data.columns:
         raise ValueError(f"列 '{column_name}' 不存在于 Excel 文件中")
 
@@ -61,7 +66,7 @@ def extract_and_process_data(filepath, column_name, group_size):
     }
 
     # 不规则的快递单号不需要跟踪
-    for tracking_number in data['Tracking No./物流跟踪号']:
+    for tracking_number in data[RowName.Tracking_No]:
         if not str(tracking_number).isdigit() or not str(tracking_number).startswith('9'):
             results_map["irregular_order_number_results"][tracking_number] = "irregular_no_tracking"
     update_courier_status_for_results2222(filepath, results_map)
@@ -72,7 +77,7 @@ def extract_and_process_data(filepath, column_name, group_size):
         data[column_name].apply(lambda x: str(x).strip().lower() in ['', 'not_yet', 'pre_ship', 'no_tracking'])]
 
     # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
-    items = filtered_data['Tracking No./物流跟踪号'].tolist()
+    items = filtered_data[RowName.Tracking_No].tolist()
 
     # 按组划分数据
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
@@ -101,14 +106,6 @@ def extract_and_process_data(filepath, column_name, group_size):
                     results_map["delivered_results"][package_id] = "delivered"
                 else:
                     results_map["tracking_results"][package_id] = "tracking"
-                # if text2 in info.get('statusShort'):
-                #     results_map["out_of_delivery_results"][package_id] = "out_of_delivery"
-                # if text3 in info.get('statusLong'):
-                #     results_map["returned_to_sender_results"][package_id] = "returned_to_sender"
-
-        # 随机生成 5 到 10 秒之间的等待时间
-        # wait_time = random.uniform(1, 2)
-        # time.sleep(wait_time)
 
     # 输出结果统计
     # print(
@@ -128,8 +125,8 @@ def update_courier_status_for_results(filepath, results_map):
 
     data = pd.read_excel(filepath)
     # 获取 'Tracking No./物流跟踪号' 列和 'Courier/快递' 列的索引
-    tracking_no_col = data.columns.get_loc('Tracking No./物流跟踪号') + 1  # openpyxl索引从1开始
-    courier_col = data.columns.get_loc('Courier/快递') + 1  # openpyxl索引从1开始
+    tracking_no_col = data.columns.get_loc(RowName.Tracking_No) + 1  # openpyxl索引从1开始
+    courier_col = data.columns.get_loc(RowName.Courier) + 1  # openpyxl索引从1开始
 
     # 遍历 not_yet_results 字典
     for tracking_no, status in results_map["not_yet_results"].items():
@@ -353,18 +350,15 @@ def check_and_add_courier_column(file_path, courier_column="Courier/快递"):
     try:
         # 加载 Excel 文件
         data = pd.read_excel(file_path, engine='openpyxl')
-
         # 判断是否存在 '快递' 列
         if courier_column not in data.columns:
             # 如果没有 '快递' 列，则在最后一列添加该列
             data[courier_column] = ""  # 默认为空值，可以根据需求填充其他默认值
-
             # 保存修改后的文件
             data.to_excel(file_path, index=False, engine='openpyxl')
             print(f"列 '{courier_column}' 已添加到文件中，并保存。")
         else:
             print(f"列 '{courier_column}' 已存在，无需添加。")
-
     except Exception as e:
         print(f"发生错误: {e}")
 
@@ -476,7 +470,7 @@ print(f"相差 {interval_time} 天")
 # row_nums = get_row_for_specific_date(outbound_time)
 # print(f"column_nums: {column_nums} ,row_nums:{row_nums} ")
 
-# raise ValueError("除数不能为零")
+raise ValueError("除数不能为零")  # 测试断开
 
 # 数据map
 data_map = {}
