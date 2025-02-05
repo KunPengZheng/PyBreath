@@ -10,8 +10,6 @@ from dataclasses import dataclass
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants
 from xinshili.usps_utils import track
 from xinshili.utils import round2, getYmd
-import random
-import time
 
 """
 zbw轨迹跟踪分析
@@ -123,6 +121,7 @@ def extract_and_process_data(filepath, column_name, group_size):
         lambda x: str(x).strip().lower() in ['',
                                              CourierStateMapValue.not_yet,
                                              CourierStateMapValue.pre_ship,
+                                             CourierStateMapValue.tracking,
                                              CourierStateMapValue.no_tracking])]
 
     # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
