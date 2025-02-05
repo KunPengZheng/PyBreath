@@ -65,6 +65,7 @@ def extract_text_from_pdf(folder_path):
             # 判断 findall 列表不为空并且 findall[0] 存在，表示匹配到了。如果没匹配到的不会以名单号重命名
             if findall and findall[0]:
                 os.rename(absolute_path, os.path.dirname(absolute_path) + "/" + findall[0] + ".pdf")
+                # 记录单号
                 nums.append(findall[0])
         save_waybill_numbers_to_excel(nums, folder_path)
 
