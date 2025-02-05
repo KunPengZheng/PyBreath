@@ -40,7 +40,6 @@ def extract_and_process_data(filepath, column_name, group_size=100):
     delivered_results = []
 
     text = "The package associated with this tracking number did not have proper postage applied and will not be delivered"
-    text1 = "Delivered"
 
     # 请求每组数据
     for idx, group in enumerate(grouped_items, start=1):
