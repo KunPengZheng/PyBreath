@@ -567,19 +567,19 @@ text += f"\n{sum_up_text}"
 print(text)
 
 # 写入飞书在线文档
-# tat = get_token()
-# brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
-# detail_sheet_value(tat, [
-#     data_map[CellKey.update_time],
-#     data_map[CellKey.order_count],
-#     data_map[CellKey.delivered_counts],
-#     data_map[CellKey.delivered_percent],
-#     data_map[CellKey.no_track_number],
-#     data_map[CellKey.track_percent],
-#     data_map[CellKey.no_track_percent],
-#     data_map[CellKey.warehouse_condition],
-#     data_map[CellKey.store_condition],
-#     data_map[CellKey.sku_condition],
-#     data_map[CellKey.time_segment_condition],
-#     data_map[CellKey.sum_up],
-# ], ck_time, analyse_obj)
+tat = get_token()
+brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
+detail_sheet_value(tat, [
+    data_map[CellKey.update_time],
+    data_map[CellKey.order_count],
+    data_map[CellKey.delivered_counts],
+    data_map[CellKey.delivered_percent],
+    data_map[CellKey.no_track_number],
+    data_map[CellKey.track_percent],
+    data_map[CellKey.no_track_percent],
+    data_map[CellKey.warehouse_condition],
+    data_map[CellKey.store_condition],
+    data_map[CellKey.sku_condition],
+    data_map[CellKey.time_segment_condition],
+    data_map[CellKey.sum_up],
+], ck_time, analyse_obj)
