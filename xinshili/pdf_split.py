@@ -69,6 +69,33 @@ def extract_text_from_pdf(folder_path):
                 nums.append(findall[0])
         save_waybill_numbers_to_excel(nums, folder_path)
 
+
+def extract_text_from_pdf_not_sku(folder_path):
+    """
+    裁剪pdf
+    :param folder_path: pdf的文件路径
+    """
+    for root, dirs, files in os.walk(folder_path):  # 遍历文件夹
+        nums = []  # 扫描到的名单号
+        for file in files:
+            absolute_path = os.path.join(root, file)  # 拼接绝对路径
+            doc = fitz.open(absolute_path)
+            text = ""
+            for page in doc:
+                text += page.get_text().replace(" ", "")  # 提取文本内容
+                print(f"{absolute_path}  文件扫描到的内容：")
+                print(text)
+            findall = re.findall(r'\b\d{22,34}\b', text)
+            print(f"{absolute_path} 文件正则匹配到的面单号：{findall}")
+            print()
+            if '*' not in text:  # 筛选没有 *（一般指面单上指没带sku）
+                # 判断 findall 列表不为空并且 findall[0] 存在，表示匹配到了。如果没匹配到的不会以名单号重命名
+                if findall and findall[0]:
+                    os.rename(absolute_path, os.path.dirname(absolute_path) + "/" + findall[0] + ".pdf")
+                    # 记录单号
+                    nums.append(findall[0])
+        save_waybill_numbers_to_excel(nums, folder_path)
+
 #
 # # 示例使用
 # input_pdf = input("请输入源表文件的绝对路径：")
