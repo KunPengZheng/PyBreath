@@ -353,233 +353,238 @@ def remove_duplicates_by_column(input_file, output_file, column_name):
         print(f"处理文件时发生错误：{e}")
 
 
-analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
-if analyse_obj != ClientConstants.zbw and analyse_obj != ClientConstants.sanrio:
-    raise ValueError(f"{analyse_obj} 未定义")
+def go():
+    analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
+    if analyse_obj != ClientConstants.zbw and analyse_obj != ClientConstants.sanrio:
+        raise ValueError(f"{analyse_obj} 未定义")
 
-xlsx_path = input("请输入文件的绝对路径：")
-check_and_add_courier_column(xlsx_path)
-results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
+    xlsx_path = input("请输入文件的绝对路径：")
+    check_and_add_courier_column(xlsx_path)
+    results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
 
-# no_tracking_count = len(results[CourierStateMapKey.not_yet_results]) + len(
-#     results[CourierStateMapKey.pre_ship_results]) + len(results[CourierStateMapKey.no_tracking_results])
-# tracking_count = len(results[CourierStateMapKey.unpaid_results]) + len(
-#     results[CourierStateMapKey.delivered_results]) + len(results[CourierStateMapKey.tracking_results])
-# print(f"没有轨迹数： {no_tracking_count} 条，有轨迹数： {tracking_count} 条")
-# print(f"\nunpaid数： {len(results[CourierStateMapKey.unpaid_results])} 条")
-# print(f"\nnot_yet数： {len(results[CourierStateMapKey.not_yet_results])} 条")
-# print(f"\npre_ship数： {len(results[CourierStateMapKey.pre_ship_results])} 条")
-# print(f"\ndelivered数： {len(results[CourierStateMapKey.delivered_results])} 条")
+    # no_tracking_count = len(results[CourierStateMapKey.not_yet_results]) + len(
+    #     results[CourierStateMapKey.pre_ship_results]) + len(results[CourierStateMapKey.no_tracking_results])
+    # tracking_count = len(results[CourierStateMapKey.unpaid_results]) + len(
+    #     results[CourierStateMapKey.delivered_results]) + len(results[CourierStateMapKey.tracking_results])
+    # print(f"没有轨迹数： {no_tracking_count} 条，有轨迹数： {tracking_count} 条")
+    # print(f"\nunpaid数： {len(results[CourierStateMapKey.unpaid_results])} 条")
+    # print(f"\nnot_yet数： {len(results[CourierStateMapKey.not_yet_results])} 条")
+    # print(f"\npre_ship数： {len(results[CourierStateMapKey.pre_ship_results])} 条")
+    # print(f"\ndelivered数： {len(results[CourierStateMapKey.delivered_results])} 条")
 
-update_courier_status(xlsx_path, results[CourierStateMapKey.not_yet_map])
-update_courier_status(xlsx_path, results[CourierStateMapKey.pre_ship_map])
-update_courier_status(xlsx_path, results[CourierStateMapKey.unpaid_map])
-update_courier_status(xlsx_path, results[CourierStateMapKey.delivered_map])
-update_courier_status(xlsx_path, results[CourierStateMapKey.no_tracking_map])
-update_courier_status(xlsx_path, results[CourierStateMapKey.tracking_map])
+    update_courier_status(xlsx_path, results[CourierStateMapKey.not_yet_map])
+    update_courier_status(xlsx_path, results[CourierStateMapKey.pre_ship_map])
+    update_courier_status(xlsx_path, results[CourierStateMapKey.unpaid_map])
+    update_courier_status(xlsx_path, results[CourierStateMapKey.delivered_map])
+    update_courier_status(xlsx_path, results[CourierStateMapKey.no_tracking_map])
+    update_courier_status(xlsx_path, results[CourierStateMapKey.tracking_map])
 
-ck_time = get_days_difference(xlsx_path)
-gz_time = getYmd()
-interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
+    ck_time = get_days_difference(xlsx_path)
+    gz_time = getYmd()
+    interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
 
-# 数据map
-data_map = {}
+    # 数据map
+    data_map = {}
 
-text = ""
+    text = ""
 
-text += "\n----------------------sku分布----------------------"
-sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(
-    xlsx_path, key_column="SKU"
-)
-sku_text = ""
-lowest_sku = ""
-lowest_swl = 101  # 初始化为比 100 大的值
-for sku, count in sku_distribution.items():
-    no_track_count = sku_no_track_distribution[sku]
-    skuswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
-    strs = f"\n{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
-    text += strs
-    sku_text += strs
-    # 判断是否是最低的上网率
-    if skuswl < lowest_swl:
-        lowest_swl = skuswl
-        lowest_sku = strs
-# 将 sku_text 保存到 data_map
-data_map[CellKey.sku_condition] = sku_text
+    text += "\n----------------------sku分布----------------------"
+    sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(
+        xlsx_path, key_column="SKU"
+    )
+    sku_text = ""
+    lowest_sku = ""
+    lowest_swl = 101  # 初始化为比 100 大的值
+    for sku, count in sku_distribution.items():
+        no_track_count = sku_no_track_distribution[sku]
+        skuswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
+        strs = f"\n{sku}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{skuswl}%"
+        text += strs
+        sku_text += strs
+        # 判断是否是最低的上网率
+        if skuswl < lowest_swl:
+            lowest_swl = skuswl
+            lowest_sku = strs
+    # 将 sku_text 保存到 data_map
+    data_map[CellKey.sku_condition] = sku_text
 
-output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
-# 需要去重复
-remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
+    output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
+    # 需要去重复
+    remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
 
-current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-text += "\n----------------------时间----------------------"
-text += f"\n更新时间: {current_time}"
-data_map[CellKey.update_time] = current_time
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    text += "\n----------------------时间----------------------"
+    text += f"\n更新时间: {current_time}"
+    data_map[CellKey.update_time] = current_time
 
-text += f"\n出库日期：{ck_time}"
-text += f"\n跟踪日期：{gz_time}"
-text += f"\n间隔时间：{interval_time}"
+    text += f"\n出库日期：{ck_time}"
+    text += f"\n跟踪日期：{gz_time}"
+    text += f"\n间隔时间：{interval_time}"
 
-total_count, no_track_count = count_delivered(output_file, RowName.Courier, Pattern.no_track)
-total_count2, delivered_count = count_delivered(output_file, RowName.Courier, Pattern.delivered)
+    total_count, no_track_count = count_delivered(output_file, RowName.Courier, Pattern.no_track)
+    total_count2, delivered_count = count_delivered(output_file, RowName.Courier, Pattern.delivered)
 
-qsl = round2((int(delivered_count) / int(total_count)) * 100)
-swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-text += "\n----------------------概览----------------------"
-text += f"\n订单总数：{total_count}"
-text += f"\n签收数：{delivered_count}"
-text += f"\n签收率：{qsl}%"
-text += f"\n未上网数：{no_track_count}"
-text += f"\n上网率：{swl}%"
-text += f"\n未上网率：{100 - swl}%"
+    qsl = round2((int(delivered_count) / int(total_count)) * 100)
+    swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+    text += "\n----------------------概览----------------------"
+    text += f"\n订单总数：{total_count}"
+    text += f"\n签收数：{delivered_count}"
+    text += f"\n签收率：{qsl}%"
+    text += f"\n未上网数：{no_track_count}"
+    text += f"\n上网率：{swl}%"
+    text += f"\n未上网率：{100 - swl}%"
 
-data_map[CellKey.order_count] = total_count
-data_map[CellKey.no_track_number] = no_track_count
-data_map[CellKey.track_percent] = swl
-data_map[CellKey.no_track_percent] = 100 - swl
-data_map[CellKey.delivered_counts] = delivered_count
-data_map[CellKey.delivered_percent] = qsl
+    data_map[CellKey.order_count] = total_count
+    data_map[CellKey.no_track_number] = no_track_count
+    data_map[CellKey.track_percent] = swl
+    data_map[CellKey.no_track_percent] = 100 - swl
+    data_map[CellKey.delivered_counts] = delivered_count
+    data_map[CellKey.delivered_percent] = qsl
 
-text += "\n----------------------仓库分布----------------------"
-warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
-    output_file, key_column="Warehouse/仓库"
-)
-# print("\n发货仓库分布情况：")
-warehouse_text = ""
-lowest_swl = 101  # 初始化为比 100 大的值
-lowest_warehouse = ""  # 保存最低上网率的仓库信息
-for warehouse, count in warehouse_distribution.items():
-    no_track_count = warehouse_no_track[warehouse]
-    warehouseswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
-    strs = f"\n{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
-    text += strs
-    warehouse_text += strs
-    # 判断是否是最低的上网率
-    if warehouseswl < lowest_swl:
-        lowest_swl = warehouseswl
-        lowest_warehouse = strs
-data_map[CellKey.warehouse_condition] = warehouse_text
+    text += "\n----------------------仓库分布----------------------"
+    warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
+        output_file, key_column="Warehouse/仓库"
+    )
+    # print("\n发货仓库分布情况：")
+    warehouse_text = ""
+    lowest_swl = 101  # 初始化为比 100 大的值
+    lowest_warehouse = ""  # 保存最低上网率的仓库信息
+    for warehouse, count in warehouse_distribution.items():
+        no_track_count = warehouse_no_track[warehouse]
+        warehouseswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
+        strs = f"\n{warehouse}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{warehouseswl}%"
+        text += strs
+        warehouse_text += strs
+        # 判断是否是最低的上网率
+        if warehouseswl < lowest_swl:
+            lowest_swl = warehouseswl
+            lowest_warehouse = strs
+    data_map[CellKey.warehouse_condition] = warehouse_text
 
-text += "\n----------------------店铺分布----------------------"
-store_distribution, store_no_track_distribution = count_distribution_and_no_track(
-    output_file, key_column="Client/客户"
-)
-# print("\n店铺分布及对应的 '无轨迹' 情况：")
-store_text = ""
-lowest_store = ""
-lowest_swl = 101  # 初始化为一个比 100 大的值，用于比较
-for store, count in store_distribution.items():
-    no_track_count = store_no_track_distribution[store]
-    storeswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
-    strs = f"\n{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
-    text += strs
-    store_text += strs
-    # 判断是否是最低的上网率
-    if storeswl < lowest_swl:
-        lowest_swl = storeswl
-        lowest_store = strs
-data_map[CellKey.store_condition] = store_text
+    text += "\n----------------------店铺分布----------------------"
+    store_distribution, store_no_track_distribution = count_distribution_and_no_track(
+        output_file, key_column="Client/客户"
+    )
+    # print("\n店铺分布及对应的 '无轨迹' 情况：")
+    store_text = ""
+    lowest_store = ""
+    lowest_swl = 101  # 初始化为一个比 100 大的值，用于比较
+    for store, count in store_distribution.items():
+        no_track_count = store_no_track_distribution[store]
+        storeswl = round2(100 - ((int(no_track_count) / int(count)) * 100))
+        strs = f"\n{store}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{storeswl}%"
+        text += strs
+        store_text += strs
+        # 判断是否是最低的上网率
+        if storeswl < lowest_swl:
+            lowest_swl = storeswl
+            lowest_store = strs
+    data_map[CellKey.store_condition] = store_text
 
-# 分析时间段
-text += "\n----------------------时间段分布----------------------"
-time_segment_analysis = analyze_time_segments(
-    output_file, time_column="Creation time/创建时间", courier_column="Courier/快递"
-)
-# print("\n按时间段统计结果：")
-time_segment_text = ""
-lowest_segment = ""  # 保存上网率最低的时间段
-lowest_swl = 101  # 初始化为比 100 大的值
-for segment_start, stats in time_segment_analysis.items():
-    segment_end = segment_start + timedelta(minutes=3)
-    total_count = stats["total_count"]
-    no_track_count = stats["no_track_count"]
-    segmentswl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-    strs = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
-    text += strs
-    time_segment_text += strs
-    # 判断是否是最低的上网率
-    if segmentswl < lowest_swl:
-        lowest_swl = segmentswl
-        lowest_segment = strs
-data_map[CellKey.time_segment_condition] = time_segment_text
+    # 分析时间段
+    text += "\n----------------------时间段分布----------------------"
+    time_segment_analysis = analyze_time_segments(
+        output_file, time_column="Creation time/创建时间", courier_column="Courier/快递"
+    )
+    # print("\n按时间段统计结果：")
+    time_segment_text = ""
+    lowest_segment = ""  # 保存上网率最低的时间段
+    lowest_swl = 101  # 初始化为比 100 大的值
+    for segment_start, stats in time_segment_analysis.items():
+        segment_end = segment_start + timedelta(minutes=3)
+        total_count = stats["total_count"]
+        no_track_count = stats["no_track_count"]
+        segmentswl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+        strs = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
+        text += strs
+        time_segment_text += strs
+        # 判断是否是最低的上网率
+        if segmentswl < lowest_swl:
+            lowest_swl = segmentswl
+            lowest_segment = strs
+    data_map[CellKey.time_segment_condition] = time_segment_text
 
-lowest_txt = ""
-lowest_txt += f"\n最低上网率的 仓库：{lowest_warehouse}"
-lowest_txt += f"\n最低上网率的 SKU：{lowest_sku}"
-lowest_txt += f"\n最低上网率的 商店：{lowest_store}"
-lowest_txt += f"\n最低上网率的 时间段：{lowest_segment}"
+    lowest_txt = ""
+    lowest_txt += f"\n最低上网率的 仓库：{lowest_warehouse}"
+    lowest_txt += f"\n最低上网率的 SKU：{lowest_sku}"
+    lowest_txt += f"\n最低上网率的 商店：{lowest_store}"
+    lowest_txt += f"\n最低上网率的 时间段：{lowest_segment}"
 
-sum_up_text = ""
-# 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
-if (interval_time == 1):
-    if (swl < 30):
-        sum_up_text += f"☁️注意：间隔第1天，上网率为{swl}，未达30%，建议跟进！"
-        sum_up_text += lowest_txt
-    else:
-        if (swl >= 50):
-            sum_up_text += f"☀️间隔第1天，上网率为{swl}，上网率优秀"
+    sum_up_text = ""
+    # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
+    if (interval_time == 1):
+        if (swl < 30):
+            sum_up_text += f"☁️注意：间隔第1天，上网率为{swl}，未达30%，建议跟进！"
+            sum_up_text += lowest_txt
         else:
-            sum_up_text += f"☀️间隔第1天，上网率为{swl}，上网率良好"
-elif (interval_time == 2):
-    if (swl < 70):
-        sum_up_text += f"🌧️异常：间隔第2天，上网率为{swl}，未达75%，建议分析数据尝试定位问题！"
-        sum_up_text += lowest_txt
-    else:
-        if (swl >= 85):
-            sum_up_text += f"☀️间隔第2天，上网率为{swl}，上网率优秀"
+            if (swl >= 50):
+                sum_up_text += f"☀️间隔第1天，上网率为{swl}，上网率优秀"
+            else:
+                sum_up_text += f"☀️间隔第1天，上网率为{swl}，上网率良好"
+    elif (interval_time == 2):
+        if (swl < 70):
+            sum_up_text += f"🌧️异常：间隔第2天，上网率为{swl}，未达75%，建议分析数据尝试定位问题！"
+            sum_up_text += lowest_txt
         else:
-            sum_up_text += f"☀️间隔第2天，上网率为{swl}，上网率良好"
-else:
-    if (swl < 95):
-        sum_up_text += f"❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率为{swl}，未达95%，分析数据反馈问题！"
-        sum_up_text += lowest_txt
+            if (swl >= 85):
+                sum_up_text += f"☀️间隔第2天，上网率为{swl}，上网率优秀"
+            else:
+                sum_up_text += f"☀️间隔第2天，上网率为{swl}，上网率良好"
     else:
-        if (swl >= 99):
-            sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}，上网率优秀"
+        if (swl < 95):
+            sum_up_text += f"❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率为{swl}，未达95%，分析数据反馈问题！"
+            sum_up_text += lowest_txt
         else:
-            sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}，上网率良好"
+            if (swl >= 99):
+                sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}，上网率优秀"
+            else:
+                sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}，上网率良好"
 
-# 要持续监控一个星期才行，从出库开始计算，三天内没有签收的不正常，五天内签收没达到50%也不正常，7天内没到90也不正常
-if (interval_time == 3):
-    if (qsl == 0):
-        sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为0%，异常状态！"
+    # 要持续监控一个星期才行，从出库开始计算，三天内没有签收的不正常，五天内签收没达到50%也不正常，7天内没到90也不正常
+    if (interval_time == 3):
+        if (qsl == 0):
+            sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为0%，异常状态！"
+        else:
+            sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+    elif (interval_time == 5):
+        if (qsl < 50):
+            sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
+        else:
+            sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+    elif (interval_time == 7):
+        if (qsl < 90):
+            sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
+        else:
+            sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
     else:
         sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
-elif (interval_time == 5):
-    if (qsl < 50):
-        sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
-    else:
-        sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
-elif (interval_time == 7):
-    if (qsl < 90):
-        sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
-    else:
-        sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
-else:
-    sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
 
-data_map[CellKey.sum_up] = sum_up_text
-text += "\n----------------------总结&建议----------------------"
-text += f"\n{sum_up_text}"
+    data_map[CellKey.sum_up] = sum_up_text
+    text += "\n----------------------总结&建议----------------------"
+    text += f"\n{sum_up_text}"
 
-# 数据打印
-# print(data_map)
-print(text)
+    # 数据打印
+    # print(data_map)
+    print(text)
 
-# 写入飞书在线文档
-tat = get_token()
-brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
-detail_sheet_value(tat, [
-    data_map[CellKey.update_time],
-    data_map[CellKey.order_count],
-    data_map[CellKey.delivered_counts],
-    data_map[CellKey.delivered_percent],
-    data_map[CellKey.no_track_number],
-    data_map[CellKey.track_percent],
-    data_map[CellKey.no_track_percent],
-    data_map[CellKey.warehouse_condition],
-    data_map[CellKey.store_condition],
-    data_map[CellKey.sku_condition],
-    data_map[CellKey.time_segment_condition],
-    data_map[CellKey.sum_up],
-], ck_time, analyse_obj)
+    # 写入飞书在线文档
+    tat = get_token()
+    brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
+    detail_sheet_value(tat, [
+        data_map[CellKey.update_time],
+        data_map[CellKey.order_count],
+        data_map[CellKey.delivered_counts],
+        data_map[CellKey.delivered_percent],
+        data_map[CellKey.no_track_number],
+        data_map[CellKey.track_percent],
+        data_map[CellKey.no_track_percent],
+        data_map[CellKey.warehouse_condition],
+        data_map[CellKey.store_condition],
+        data_map[CellKey.sku_condition],
+        data_map[CellKey.time_segment_condition],
+        data_map[CellKey.sum_up],
+    ], ck_time, analyse_obj)
+
+
+if __name__ == '__main__':
+    go()
