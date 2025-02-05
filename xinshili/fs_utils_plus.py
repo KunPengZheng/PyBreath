@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import requests
 import json
 import pandas as pd
@@ -12,6 +14,16 @@ class FsConstants:
     spreadsheets_base_url = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/"
     # 表格的写入方式：values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
     values_spreadsheets_write_way = "/values"
+
+
+FsOrderSheetMap = {
+    "2025/01": "6a545c",
+    "2025/02": "wO42PC",
+    "2025/03": "K8DNxT",
+    "2025/04": "EF1w2u",
+    "2025/05": "lWkIyw",
+    "2025/06": "MXzip0",
+}
 
 
 @dataclass(frozen=True)
@@ -87,22 +99,22 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
     print(r2.json())  # 输出来判断写入是否成功
 
 
-def order_sheet_value(tat, lists, position):
-    """
-
-    ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！需要修改，不同月份需要对应不同的表格地址
-
-    写入数据到 飞书 2025订单数据分析（以出库时间为筛选条件） 表的 1月sheet
-    """
-    # values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
-    # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，表示该文档
+def order_sheet_value(tat, lists, position, ck_time):
     url = f"{FsConstants.spreadsheets_base_url}QeR8sB3Pkhieswtac5kcTxHkngc{FsConstants.values_spreadsheets_write_way}"
+
     header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
-    # JZrQj9：表格地址中 ?sheet= 后面的部分，表示表的名字
-    post_data = {
-        "valueRange": {"range": f"6a545c!B{position}:AL{position}", "values": [lists]}}
-    # values_prepend 需要使用post请求方式，values需要使用put请求方式
+
+    # 格式化为 "%Y/%m/%d" 格式
+    formatted_date = ck_time.strftime("%Y/%m")
+    value = FsOrderSheetMap.get(formatted_date)
+
+    if value is None:
+        raise ValueError(f"map不存在key:{formatted_date}")
+
+    post_data = {"valueRange": {"range": f"{value}!B{position}:AL{position}", "values": [lists]}}
+
     r2 = requests.put(url, data=json.dumps(post_data), headers=header)  # 请求写入
+
     print(r2.json())  # 输出来判断写入是否成功
 
 

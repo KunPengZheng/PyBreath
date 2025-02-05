@@ -1,6 +1,7 @@
 import pandas as pd
 import warnings
-from xinshili.fs_utils import get_token, order_sheet_value
+
+from xinshili.fs_utils_plus import order_sheet_value, get_token
 from xinshili.utils import round2
 
 # 忽略 openpyxl 的样式警告
@@ -208,4 +209,4 @@ if result:
             str(client_counts_map[client_RSN30031]) + "（" + str(client_ratios_map[client_RSN30031]) + "%）",
             str(client_counts_map[client_RSN30032]) + "（" + str(client_ratios_map[client_RSN30032]) + "%）",
             str(client_counts_map[client_RSN30033]) + "（" + str(client_ratios_map[client_RSN30033]) + "%）",
-        ], daily_data['position'])
+        ], daily_data['position'], daily_data['date'])
