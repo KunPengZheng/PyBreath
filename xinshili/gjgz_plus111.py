@@ -161,7 +161,10 @@ def extract_and_process_data(filepath, column_name, group_size):
     return results_map
 
 
-def count_delivered(file_path, column_name, patternStr):
+def count_pattern_state(file_path, column_name, patternStr):
+    """
+    统计指定列指定内容的数量
+    """
     try:
         workbook = load_workbook(file_path)
         sheet = workbook.active
@@ -440,8 +443,8 @@ def go():
     text += f"\n跟踪日期：{gz_time}"
     text += f"\n间隔时间：{interval_time}"
 
-    total_count, no_track_count = count_delivered(output_file, RowName.Courier, Pattern.no_track)
-    total_count2, delivered_count = count_delivered(output_file, RowName.Courier, Pattern.delivered)
+    total_count, no_track_count = count_pattern_state(output_file, RowName.Courier, Pattern.no_track)
+    total_count2, delivered_count = count_pattern_state(output_file, RowName.Courier, Pattern.delivered)
 
     qsl = round2((int(delivered_count) / int(total_count)) * 100)
     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
