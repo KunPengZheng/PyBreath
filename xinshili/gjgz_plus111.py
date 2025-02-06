@@ -524,18 +524,23 @@ def go():
             sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}，上网率优秀"
 
     # 要持续监控一个星期才行，从出库开始计算，三天内没有签收的不正常，五天内签收没达到50%也不正常，7天内没到90也不正常
-    if (interval_time == 3):
-        if (qsl == 0):
+    if (interval_time >= 1 and interval_time <= 3):
+        if (interval_time >= 2 and qsl == 0):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为0%，异常状态！"
         else:
             sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
-    elif (interval_time == 5):
-        if (qsl < 50):
+    elif (interval_time > 3 and interval_time <= 5):
+        if (qsl <= 35):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
         else:
             sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
-    elif (interval_time == 7):
-        if (qsl < 90):
+    elif (interval_time > 5 and interval_time <= 7):
+        if (qsl <= 80):
+            sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
+        else:
+            sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+    elif (interval_time > 7 and interval_time <= 9):
+        if (qsl <= 95):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
         else:
             sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
