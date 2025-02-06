@@ -100,6 +100,11 @@ def calculate_rmb_prices(file_path):
 
         last_row = get_last_row_num(sheet, 'H')
         h_values = get_range_row_value(sheet, 'H', 2, last_row)
+
+        # 检查 h_values 是否是一个可迭代对象，如果是单个值则转换为列表
+        if isinstance(h_values, float):
+            h_values = [h_values]  # 将其包装成一个单元素列表
+
         h_total = utils.round2(sum(value for value in h_values if utils.isinstanceNums(value)))
         set_cell_value(sheet, "L", "1", f"总计:¥ {h_total} 元")
         total_rows = sheet.range(f"{'A'}{sheet.cells.last_cell.row}").end('up').row
