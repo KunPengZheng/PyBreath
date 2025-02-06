@@ -415,10 +415,6 @@ def go():
     update_courier_status(xlsx_path, results[CourierStateMapKey.no_tracking_map])
     update_courier_status(xlsx_path, results[CourierStateMapKey.tracking_map])
 
-    ck_time = get_days_difference(xlsx_path)
-    gz_time = getYmd()
-    interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
-
     # 数据map
     data_map = {}
 
@@ -432,41 +428,43 @@ def go():
     text += sku_text
 
     output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
-    # 需要去重复
+    # 同一单会有多个sku，多个sku会生成多行数据，分析sku的时候不能去重，其它的需要去重
     remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
 
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ck_time = get_days_difference(xlsx_path)
+    gz_time = getYmd()
+    interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
     text += "\n----------------------时间----------------------"
     text += f"\n更新时间: {current_time}"
     data_map[CellKey.update_time] = current_time
-
     text += f"\n出库日期：{ck_time}"
     text += f"\n跟踪日期：{gz_time}"
     text += f"\n间隔时间：{interval_time}"
 
     total_count, no_track_count = count_pattern_state(output_file, RowName.Courier, Pattern.no_track)
     total_count2, delivered_count = count_pattern_state(output_file, RowName.Courier, Pattern.delivered)
-
-    qsl = round2((int(delivered_count) / int(total_count)) * 100)
     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+    wswl = 100 - swl
+    qsl = round2((int(delivered_count) / int(total_count)) * 100)
     text += "\n----------------------概览----------------------"
     text += f"\n订单总数：{total_count}"
     text += f"\n签收数：{delivered_count}"
     text += f"\n签收率：{qsl}%"
     text += f"\n未上网数：{no_track_count}"
     text += f"\n上网率：{swl}%"
-    text += f"\n未上网率：{100 - swl}%"
+    text += f"\n未上网率：{wswl}%"
 
     data_map[CellKey.order_count] = total_count
-    data_map[CellKey.no_track_number] = no_track_count
-    data_map[CellKey.track_percent] = swl
-    data_map[CellKey.no_track_percent] = 100 - swl
     data_map[CellKey.delivered_counts] = delivered_count
     data_map[CellKey.delivered_percent] = qsl
+    data_map[CellKey.no_track_number] = no_track_count
+    data_map[CellKey.track_percent] = swl
+    data_map[CellKey.no_track_percent] = wswl
 
     text += "\n----------------------仓库分布----------------------"
-    warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(output_file,
-                                                                                 key_column=RowName.Warehouse)
+    warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
+        output_file, key_column=RowName.Warehouse)
     warehouse_text, lowest_warehouse = generate_distribution_report(
         warehouse_distribution, warehouse_no_track, data_map, CellKey.warehouse_condition
     )
@@ -480,12 +478,9 @@ def go():
     )
     text += store_text
 
-    # 分析时间段
     text += "\n----------------------时间段分布----------------------"
     time_segment_analysis = analyze_time_segments(
-        output_file, time_column=RowName.CreationTime, courier_column=RowName.Courier
-    )
-    # print("\n按时间段统计结果：")
+        output_file, time_column=RowName.CreationTime, courier_column=RowName.Courier)
     time_segment_text = ""
     lowest_segment = ""  # 保存上网率最低的时间段
     lowest_swl = 101  # 初始化为比 100 大的值
