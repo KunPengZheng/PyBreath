@@ -21,6 +21,9 @@ class RowName:
     Tracking_No = 'Tracking No./物流跟踪号'
     Courier = 'Courier/快递'
     OutboundTime = "OutboundTime/出库时间"
+    Warehouse = "Warehouse/仓库"
+    Client = "Client/客户"
+    CreationTime = "Creation time/创建时间"
 
 
 @dataclass(frozen=True)
@@ -459,7 +462,7 @@ def go():
 
     text += "\n----------------------仓库分布----------------------"
     warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(output_file,
-                                                                                 key_column="Warehouse/仓库")
+                                                                                 key_column=RowName.Warehouse)
     warehouse_text, lowest_warehouse = generate_distribution_report(
         warehouse_distribution, warehouse_no_track, data_map, CellKey.warehouse_condition
     )
@@ -467,7 +470,7 @@ def go():
 
     text += "\n----------------------店铺分布----------------------"
     store_distribution, store_no_track_distribution = count_distribution_and_no_track(
-        output_file, key_column="Client/客户")
+        output_file, key_column=RowName.Client)
     store_text, lowest_store = generate_distribution_report(
         store_distribution, store_no_track_distribution, data_map, CellKey.store_condition
     )
@@ -476,7 +479,7 @@ def go():
     # 分析时间段
     text += "\n----------------------时间段分布----------------------"
     time_segment_analysis = analyze_time_segments(
-        output_file, time_column="Creation time/创建时间", courier_column="Courier/快递"
+        output_file, time_column=RowName.CreationTime, courier_column=RowName.Courier
     )
     # print("\n按时间段统计结果：")
     time_segment_text = ""
