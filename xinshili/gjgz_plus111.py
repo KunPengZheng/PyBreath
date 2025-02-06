@@ -125,7 +125,6 @@ def update_courier_status(filepath, maps):
             # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
             if current_tracking_no == tracking_no:
                 sheet.cell(row=row, column=courier_col, value=status)
-                break  # 找到后退出循环，避免重复更新同一行
 
     # 保存更新后的文件
     wb.save(filepath)
