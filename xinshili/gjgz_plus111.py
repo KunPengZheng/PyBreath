@@ -24,6 +24,7 @@ class RowName:
     Warehouse = "Warehouse/仓库"
     Client = "Client/客户"
     CreationTime = "Creation time/创建时间"
+    SKU = "SKU"
 
 
 @dataclass(frozen=True)
@@ -424,7 +425,7 @@ def go():
     text = ""
 
     text += "\n----------------------SKU分布----------------------"
-    sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(xlsx_path, key_column="SKU")
+    sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(xlsx_path, key_column=RowName.SKU)
     sku_text, lowest_sku = generate_distribution_report(
         sku_distribution, sku_no_track_distribution, data_map, CellKey.sku_condition
     )
