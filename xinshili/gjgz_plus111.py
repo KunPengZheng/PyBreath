@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants
 from xinshili.usps_utils import track
-from xinshili.utils import round2, getYmd
+from xinshili.utils import round2, getYmd, delete_file
 
 """
 zbw轨迹跟踪分析
@@ -552,6 +552,8 @@ def go():
     text += f"\n{sum_up_text}"
     data_map[CellKey.sum_up] = sum_up_text
 
+    # 删除去重文件
+    delete_file(output_file)
     # 数据打印
     # print(data_map)
     print(text)
