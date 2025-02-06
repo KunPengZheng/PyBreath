@@ -70,6 +70,34 @@ class Pattern:
     delivered = r"delivered"
 
 
+def get_invalid_tracking_numbers(file_path):
+    """
+    获取不是纯数字或不是9开头的物流跟踪号
+    :param file_path: Excel文件路径
+    :return: 无效物流跟踪号列表
+    """
+    try:
+        # 读取xlsx文件
+        df = pd.read_excel(file_path)
+
+        # 获取 Tracking No./物流跟踪号 列
+        if "Tracking No./物流跟踪号" not in df.columns:
+            print("找不到 'Tracking No./物流跟踪号' 列")
+            return []
+
+        tracking_numbers = df["Tracking No./物流跟踪号"].astype(str)  # 转换为字符串类型，避免数值类型的问题
+
+        # 筛选出不符合条件的物流跟踪号
+        invalid_tracking_numbers = tracking_numbers[
+            ~tracking_numbers.str.match(r"^\d+$") | ~tracking_numbers.str.startswith("9")
+            ]
+
+        return invalid_tracking_numbers.tolist()
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return []
+
+
 def update_courier_status(filepath, maps):
     wb = openpyxl.load_workbook(filepath)
     sheet = wb.active  # 默认使用活动工作表
@@ -395,6 +423,11 @@ def go():
         raise ValueError(f"{analyse_obj} 未定义")
 
     xlsx_path = input("请输入文件的绝对路径：")
+
+    invalid_numbers = get_invalid_tracking_numbers(xlsx_path)
+    if (len(invalid_numbers) > 0):
+        raise ValueError(f"存在无效的物流跟踪号：{invalid_numbers}")
+
     check_and_add_courier_column(xlsx_path)
     results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
 

@@ -30,6 +30,21 @@ def get_yd():
     return month_day
 
 
+def delete_file(file_path):
+    """
+    删除指定的文件
+    :param file_path: 要删除的文件的绝对路径
+    """
+    try:
+        if os.path.exists(file_path):  # 检查文件是否存在
+            os.remove(file_path)  # 删除文件
+            print(f"文件 {file_path} 已成功删除")
+        else:
+            print(f"文件 {file_path} 不存在")
+    except Exception as e:
+        print(f"删除文件时发生错误: {e}")
+
+
 def open_dir(folder_path):
     # 使用 os.system 调用 macOS 的 open 命令
     # os.system(f"open {folder_path}")
