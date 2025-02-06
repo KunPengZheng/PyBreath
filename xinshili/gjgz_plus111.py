@@ -437,10 +437,10 @@ def go():
     interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
     text += "\n----------------------时间----------------------"
     text += f"\n更新时间: {current_time}"
-    data_map[CellKey.update_time] = current_time
     text += f"\n出库日期：{ck_time}"
     text += f"\n跟踪日期：{gz_time}"
     text += f"\n间隔时间：{interval_time}"
+    data_map[CellKey.update_time] = current_time
 
     total_count, no_track_count = count_pattern_state(output_file, RowName.Courier, Pattern.no_track)
     total_count2, delivered_count = count_pattern_state(output_file, RowName.Courier, Pattern.delivered)
@@ -454,7 +454,6 @@ def go():
     text += f"\n未上网数：{no_track_count}"
     text += f"\n上网率：{swl}%"
     text += f"\n未上网率：{wswl}%"
-
     data_map[CellKey.order_count] = total_count
     data_map[CellKey.delivered_counts] = delivered_count
     data_map[CellKey.delivered_percent] = qsl
@@ -549,9 +548,9 @@ def go():
     else:
         sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
 
-    data_map[CellKey.sum_up] = sum_up_text
     text += "\n----------------------总结&建议----------------------"
     text += f"\n{sum_up_text}"
+    data_map[CellKey.sum_up] = sum_up_text
 
     # 数据打印
     # print(data_map)
