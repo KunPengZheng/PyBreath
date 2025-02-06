@@ -35,7 +35,6 @@ class CourierStateMapKey:
     not_yet_map = "not_yet_map"
     pre_ship_map = "pre_ship_map"
     delivered_map = "delivered_map"
-    irregular_number_map = "irregular_number_map"
 
 
 class CourierStateMapValue:
@@ -70,32 +69,44 @@ class Pattern:
     delivered = r"delivered"
 
 
-def get_invalid_tracking_numbers(file_path):
+def find_irregular_tracking_numbers(filepath):
     """
-    获取不是纯数字或不是9开头的物流跟踪号
-    :param file_path: Excel文件路径
-    :return: 无效物流跟踪号列表
+    查找不规则的快递单号（不是纯数字或者不是9开头）
+    :param filepath: Excel文件路径
+    :return: 不规则快递单号字典
     """
     try:
-        # 读取xlsx文件
-        df = pd.read_excel(file_path)
+        # 打开xlsx文件
+        wb = openpyxl.load_workbook(filepath)
+        sheet = wb.active  # 默认使用活动工作表
 
-        # 获取 Tracking No./物流跟踪号 列
-        if "Tracking No./物流跟踪号" not in df.columns:
+        # 获取 'Tracking No./物流跟踪号' 列索引
+        tracking_no_col = None
+        for col in range(1, sheet.max_column + 1):
+            if sheet.cell(row=1, column=col).value == 'Tracking No./物流跟踪号':
+                tracking_no_col = col
+                break
+
+        if tracking_no_col is None:
             print("找不到 'Tracking No./物流跟踪号' 列")
-            return []
 
-        tracking_numbers = df["Tracking No./物流跟踪号"].astype(str)  # 转换为字符串类型，避免数值类型的问题
+        # 存储不规则快递单号的字典
+        irregular_number_map = {}
 
-        # 筛选出不符合条件的物流跟踪号
-        invalid_tracking_numbers = tracking_numbers[
-            ~tracking_numbers.str.match(r"^\d+$") | ~tracking_numbers.str.startswith("9")
-            ]
+        # 遍历所有行，从第二行开始（跳过表头）
+        for row in range(2, sheet.max_row + 1):
+            tracking_no = str(sheet.cell(row=row, column=tracking_no_col).value)  # 转换为字符串
+            # 判断是否是纯数字并且以9开头
+            if not tracking_no.isdigit() or not tracking_no.startswith('9'):
+                irregular_number_map[tracking_no] = CourierStateMapValue.irregular_no_tracking
 
-        return invalid_tracking_numbers.tolist()
+        if (len(irregular_number_map) > 0):
+            irregular_number_list = list(irregular_number_map.keys())
+            print(f"存在无效的物流跟踪号：{irregular_number_list}")
+            update_courier_status(filepath, irregular_number_map)
+
     except Exception as e:
         print(f"发生错误: {e}")
-        return []
 
 
 def update_courier_status(filepath, maps):
@@ -134,16 +145,7 @@ def extract_and_process_data(filepath, column_name, group_size):
         CourierStateMapKey.not_yet_map: {},
         CourierStateMapKey.pre_ship_map: {},
         CourierStateMapKey.delivered_map: {},
-        CourierStateMapKey.irregular_number_map: {},
     }
-
-    # 不规则的快递单号不需要跟踪
-    for tracking_number in data[RowName.Tracking_No]:
-        # 不是纯数字 或者 不是9开头 的都为不规则 快递单号
-        if not str(tracking_number).isdigit() or not str(tracking_number).startswith('9'):
-            results_map[CourierStateMapKey.irregular_number_map][
-                tracking_number] = CourierStateMapValue.irregular_no_tracking
-    update_courier_status(filepath, results_map[CourierStateMapKey.irregular_number_map])
 
     # 将无内容的单元格赋值""空字符串。
     data[column_name] = data[column_name].fillna('')
@@ -424,11 +426,10 @@ def go():
 
     xlsx_path = input("请输入文件的绝对路径：")
 
-    invalid_numbers = get_invalid_tracking_numbers(xlsx_path)
-    if (len(invalid_numbers) > 0):
-        raise ValueError(f"存在无效的物流跟踪号：{invalid_numbers}")
-
     check_and_add_courier_column(xlsx_path)
+
+    find_irregular_tracking_numbers(xlsx_path)
+
     results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
 
     # no_tracking_count = len(results[CourierStateMapKey.not_yet_results]) + len(
