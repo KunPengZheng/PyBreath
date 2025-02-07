@@ -64,12 +64,14 @@ class CellKey:
     sum_up = "sum_up"
     exception = "exception"
     shipping_service_condition = "shipping_service_condition"
+    unpaid_count = "unpaid_count"
 
 
 @dataclass(frozen=True)
 class Pattern:
     no_track = r"not_yet|pre_ship|irregular_no_tracking|no_tracking"
     delivered = r"delivered"
+    unpaid = r"unpaid"
 
 
 def find_irregular_tracking_numbers(filepath):
@@ -489,17 +491,20 @@ def go(analyse_obj, xlsx_path):
 
     total_count, no_track_count = count_pattern_state(output_file, RowName.Courier, Pattern.no_track)
     total_count2, delivered_count = count_pattern_state(output_file, RowName.Courier, Pattern.delivered)
+    total_count3, unpaid_count = count_pattern_state(output_file, RowName.Courier, Pattern.unpaid)
     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
     wswl = round2(100 - swl)
     qsl = round2((int(delivered_count) / int(total_count)) * 100)
     text += "\n----------------------概览----------------------"
     text += f"\n订单总数：{total_count}"
+    text += f"\n邮资未付数：{unpaid_count}"
     text += f"\n签收数：{delivered_count}"
     text += f"\n签收率：{qsl}%"
     text += f"\n未上网数：{no_track_count}"
     text += f"\n上网率：{swl}%"
     text += f"\n未上网率：{wswl}%"
     data_map[CellKey.order_count] = total_count
+    data_map[CellKey.unpaid_count] = unpaid_count
     data_map[CellKey.delivered_counts] = delivered_count
     data_map[CellKey.delivered_percent] = qsl
     data_map[CellKey.no_track_number] = no_track_count
@@ -635,6 +640,7 @@ def go(analyse_obj, xlsx_path):
     detail_sheet_value(tat, [
         data_map[CellKey.update_time],
         data_map[CellKey.order_count],
+        data_map[CellKey.unpaid_count],
         data_map[CellKey.delivered_counts],
         data_map[CellKey.delivered_percent],
         data_map[CellKey.no_track_number],

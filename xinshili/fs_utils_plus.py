@@ -63,11 +63,11 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
     row_nums = get_row_for_specific_date(ck_time)
 
     if analyse_obj == ClientConstants.zbw:
-        post_data = {"valueRange": {"range": f"JZrQj9!B{row_nums}:N{row_nums}", "values": [lists]}}
+        post_data = {"valueRange": {"range": f"JZrQj9!B{row_nums}:P{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.sanrio:
-        post_data = {"valueRange": {"range": f"wGMg6A!B{row_nums}:N{row_nums}", "values": [lists]}}
+        post_data = {"valueRange": {"range": f"wGMg6A!B{row_nums}:P{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.mz_xsd:
-        post_data = {"valueRange": {"range": f"QJ0wXX!B{row_nums}:N{row_nums}", "values": [lists]}}
+        post_data = {"valueRange": {"range": f"QJ0wXX!B{row_nums}:P{row_nums}", "values": [lists]}}
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
