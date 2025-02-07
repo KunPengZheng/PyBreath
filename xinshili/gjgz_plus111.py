@@ -418,12 +418,15 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
     return report_text, lowest_entity
 
 
-def go():
-    analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
+def go(analyse_obj, xlsx_path):
+    if analyse_obj is None:
+        analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
+
     if analyse_obj != ClientConstants.zbw and analyse_obj != ClientConstants.sanrio:
         raise ValueError(f"{analyse_obj} 未定义")
 
-    xlsx_path = input("请输入文件的绝对路径：")
+    if xlsx_path is None:
+        xlsx_path = input("请输入文件的绝对路径：")
 
     check_and_add_courier_column(xlsx_path)
 
@@ -477,8 +480,8 @@ def go():
 
     total_count, no_track_count = count_pattern_state(output_file, RowName.Courier, Pattern.no_track)
     total_count2, delivered_count = count_pattern_state(output_file, RowName.Courier, Pattern.delivered)
-    swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-    wswl = 100 - swl
+    wswl = round2(((int(no_track_count) / int(total_count)) * 100))
+    swl = 100 - wswl
     qsl = round2((int(delivered_count) / int(total_count)) * 100)
     text += "\n----------------------概览----------------------"
     text += f"\n订单总数：{total_count}"
@@ -610,5 +613,36 @@ def go():
     ], ck_time, analyse_obj)
 
 
+def automatic(dir_path, analyse_obj):
+    for root, dirs, files in os.walk(dir_path):
+        """
+        root: 当前文件夹路径
+        dirs: 当前文件夹下的子文件夹列表
+        files: 当前文件夹下的文件列表
+        """
+        # print(f"当前文件夹: {root}")
+        # print(f"子文件夹: {dirs}")
+        # print(f"文件: {files}")
+        # print("--------")
+        pattern = r"^出库时间\d+_\d+\.xlsx$"  # 正则表达式
+        for ele in files:
+            if re.match(pattern, ele):
+                # print(f"匹配的文件: {root}/{ele}")
+                xlsx_path = f"{root}/{ele}"
+                total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
+                total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
+                wswl = round2(((int(no_track_count) / int(total_count)) * 100))
+                swl = 100 - wswl
+                qsl = round2((int(delivered_count) / int(total_count)) * 100)
+                # print(f"{xlsx_path}, swl：{swl}, qsl:{qsl}")
+                if (swl < 99 and qsl < 97):  # 如果上网率 < 99 且 签收率 < 97
+                    print(f"需要跟踪的文件：{xlsx_path}, swl：{swl}, qsl:{qsl}")
+                    go(analyse_obj, xlsx_path)
+
+
 if __name__ == '__main__':
-    go()
+    # 手动
+    # go(None, None)
+    # 自动
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
