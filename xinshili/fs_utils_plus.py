@@ -57,7 +57,7 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
     elif analyse_obj == ClientConstants.mz_xsd:
         url = f"{FsConstants.spreadsheets_base_url}DlrssfNVZhjvWPtOxw5cA0lKnAe{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.xyl:
-        url = f"{FsConstants.spreadsheets_base_url}OUe0sOo5Zh2PgwtYMLXcoSjTnxg{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}XuOMshb8ZhIEaatUIYNcHwspnjg{FsConstants.values_spreadsheets_write_way}"
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -90,7 +90,7 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
     elif analyse_obj == ClientConstants.sanrio:
         url = f"{FsConstants.spreadsheets_base_url}TZQ8s1r1GhihRstNl5kco7xlnsf{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.xyl:
-        url = f"{FsConstants.spreadsheets_base_url}OUe0sOo5Zh2PgwtYMLXcoSjTnxg{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}XuOMshb8ZhIEaatUIYNcHwspnjg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.mz_xsd:
         url = f"{FsConstants.spreadsheets_base_url}DlrssfNVZhjvWPtOxw5cA0lKnAe{FsConstants.values_spreadsheets_write_way}"
     else:
