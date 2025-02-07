@@ -90,6 +90,7 @@ def find_irregular_tracking_numbers(filepath):
 
         if tracking_no_col is None:
             print("找不到 'Tracking No./物流跟踪号' 列")
+            return {}
 
         # 存储不规则快递单号的字典
         irregular_number_map = {}
@@ -101,13 +102,11 @@ def find_irregular_tracking_numbers(filepath):
             if not tracking_no.isdigit() or not tracking_no.startswith('9'):
                 irregular_number_map[tracking_no] = CourierStateMapValue.irregular_no_tracking
 
-        if (len(irregular_number_map) > 0):
-            irregular_number_list = list(irregular_number_map.keys())
-            print(f"存在无效的物流跟踪号：{irregular_number_list}")
-            update_courier_status(filepath, irregular_number_map)
+        return irregular_number_map
 
     except Exception as e:
         print(f"发生错误: {e}")
+        return {}
 
 
 def update_courier_status(filepath, maps):
@@ -433,7 +432,12 @@ def go(analyse_obj, xlsx_path):
 
     check_and_add_courier_column(xlsx_path)
 
-    find_irregular_tracking_numbers(xlsx_path)
+    irregular_number_map = find_irregular_tracking_numbers(xlsx_path)
+    irregular_number_list = []
+    if (len(irregular_number_map) > 0):
+        irregular_number_list = list(irregular_number_map.keys())
+        print(f"存在无效的物流跟踪号：{irregular_number_list}")
+        update_courier_status(xlsx_path, irregular_number_map)
 
     results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
 
@@ -543,27 +547,30 @@ def go(analyse_obj, xlsx_path):
     lowest_txt += f"\n最低上网率的 时间段：{lowest_segment}"
 
     sum_up_text = ""
+    if (len(irregular_number_list) > 0):
+        sum_up_text += f"不规则单号：{irregular_number_list}"
+        sum_up_text += f"\n"
     swl_flag = False
     qsl_flag = False
     # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
     if (interval_time == 1):
         if (swl < 30):
-            sum_up_text += f"☁️注意：间隔第1天，上网率为{swl}%，未达30%，建议跟进！"
+            sum_up_text += f"\n☁️注意：间隔第1天，上网率为{swl}%，未达30%，建议跟进！"
             swl_flag = True
         else:
-            sum_up_text += f"☀️间隔第1天，上网率为{swl}%，上网率优秀"
+            sum_up_text += f"\n☀️间隔第1天，上网率为{swl}%，上网率优秀"
     elif (interval_time == 2):
         if (swl < 70):
-            sum_up_text += f"🌧️异常：间隔第2天，上网率为{swl}%，未达75%，建议分析数据尝试定位问题！"
+            sum_up_text += f"\n🌧️异常：间隔第2天，上网率为{swl}%，未达75%，建议分析数据尝试定位问题！"
             swl_flag = True
         else:
-            sum_up_text += f"☀️间隔第2天，上网率为{swl}%，上网率优秀"
+            sum_up_text += f"\n☀️间隔第2天，上网率为{swl}%，上网率优秀"
     else:  # 间隔时间 >= 3天
         if (swl < 97):
-            sum_up_text += f"❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率为{swl}%，未达97%，分析数据反馈问题！"
+            sum_up_text += f"\n❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率为{swl}%，未达97%，分析数据反馈问题！"
             swl_flag = True
         else:
-            sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}%，上网率优秀"
+            sum_up_text += f"\n☀️间隔第{interval_time}天，上网率为{swl}%，上网率优秀"
 
     # 要持续监控一个星期才行，从出库开始计算，三天内没有签收的不正常，五天内签收没达到50%也不正常，7天内没到90也不正常
     if (interval_time >= 1 and interval_time <= 3):
