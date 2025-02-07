@@ -548,25 +548,24 @@ def go(analyse_obj, xlsx_path):
     # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
     if (interval_time == 1):
         if (swl < 30):
-            sum_up_text += f"☁️注意：间隔第1天，上网率为{swl}，未达30%，建议跟进！"
-            sum_up_text += lowest_txt
+            sum_up_text += f"☁️注意：间隔第1天，上网率为{swl}%，未达30%，建议跟进！"
             swl_flag = True
         else:
-            sum_up_text += f"☀️间隔第1天，上网率为{swl}，上网率优秀"
+            sum_up_text += f"☀️间隔第1天，上网率为{swl}%，上网率优秀"
     elif (interval_time == 2):
         if (swl < 70):
-            sum_up_text += f"🌧️异常：间隔第2天，上网率为{swl}，未达75%，建议分析数据尝试定位问题！"
-            sum_up_text += lowest_txt
+            sum_up_text += f"🌧️异常：间隔第2天，上网率为{swl}%，未达75%，建议分析数据尝试定位问题！"
             swl_flag = True
         else:
-            sum_up_text += f"☀️间隔第2天，上网率为{swl}，上网率优秀"
+            sum_up_text += f"☀️间隔第2天，上网率为{swl}%，上网率优秀"
     else:  # 间隔时间 >= 3天
         if (swl < 97):
-            sum_up_text += f"❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率为{swl}，未达97%，分析数据反馈问题！"
-            sum_up_text += lowest_txt
+            sum_up_text += f"❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率为{swl}%，未达97%，分析数据反馈问题！"
             swl_flag = True
         else:
-            sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}，上网率优秀"
+            sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}%，上网率优秀"
+
+    sum_up_text += lowest_txt
 
     # 要持续监控一个星期才行，从出库开始计算，三天内没有签收的不正常，五天内签收没达到50%也不正常，7天内没到90也不正常
     if (interval_time >= 1 and interval_time <= 3):
@@ -645,16 +644,20 @@ def automatic(dir_path, analyse_obj):
         pattern = r"^出库时间\d+_\d+\.xlsx$"  # 正则表达式
         for ele in files:
             if re.match(pattern, ele):
-                # print(f"匹配的文件: {root}/{ele}")
+                print(f"匹配的文件: {root}/{ele}")
                 xlsx_path = f"{root}/{ele}"
-                total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
-                total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
-                wswl = round2(((int(no_track_count) / int(total_count)) * 100))
-                swl = 100 - wswl
-                qsl = round2((int(delivered_count) / int(total_count)) * 100)
-                # print(f"{xlsx_path}, swl：{swl}, qsl:{qsl}")
-                if (swl < 99 and qsl < 97):  # 如果上网率 < 99 且 签收率 < 97
-                    print(f"需要跟踪的文件：{xlsx_path}, swl：{swl}, qsl:{qsl}")
+                try:
+                    total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
+                    total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
+                    wswl = round2(((int(no_track_count) / int(total_count)) * 100))
+                    swl = 100 - wswl
+                    qsl = round2((int(delivered_count) / int(total_count)) * 100)
+                    # print(f"{xlsx_path}, swl：{swl}, qsl:{qsl}")
+                    if (swl < 99 and qsl < 97):  # 如果上网率 < 99 且 签收率 < 97
+                        print(f"需要跟踪的文件：{xlsx_path}, swl：{swl}, qsl:{qsl}")
+                        go(analyse_obj, xlsx_path)
+                except Exception as e:
+                    print(f"发生错误: {e}")
                     go(analyse_obj, xlsx_path)
 
 
@@ -664,3 +667,4 @@ if __name__ == '__main__':
     # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
