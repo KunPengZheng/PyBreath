@@ -403,6 +403,7 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
     :return: 生成的分布报告文本
     """
     report_text = ""
+    report_text2 = ""
     lowest_swl = 101  # 初始化为一个比 100 大的值，用于比较
     lowest_entity = ""  # 保存最低上网率的实体信息
 
@@ -411,7 +412,9 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
         no_track_count = no_track_distribution.get(entity, 0)
         swl = round2(100 - ((int(no_track_count) / int(count)) * 100))
         strs = f"\n{entity}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{swl}%"
+        strs2 = f"\n{entity}： count：{count}；swl：{swl}%"
         report_text += strs
+        report_text2 += strs2
 
         # 判断是否是最低的上网率
         if swl < lowest_swl:
@@ -419,16 +422,19 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
             lowest_entity = strs
 
     data_map[data_map_key] = report_text  # 将结果存储到 data_map 中
-    return report_text, lowest_entity
+    return report_text, lowest_entity, report_text2
 
 
 def go(analyse_obj, xlsx_path):
     if analyse_obj is None:
-        analyse_obj = input("请输跟踪对象（zbw/sanrio/mz_xsd）：")
+        analyse_obj = input("请输跟踪对象（zbw/sanrio/xyl/mz_xsd/md_fc/mx_dg）：")
 
     if analyse_obj != ClientConstants.zbw \
             and analyse_obj != ClientConstants.sanrio \
-            and analyse_obj != ClientConstants.mz_xsd:
+            and analyse_obj != ClientConstants.xyl \
+            and analyse_obj != ClientConstants.mz_xsd \
+            and analyse_obj != ClientConstants.md_fc \
+            and analyse_obj != ClientConstants.mx_dg:
         raise ValueError(f"{analyse_obj} 未定义")
 
     if xlsx_path is None:
@@ -469,7 +475,7 @@ def go(analyse_obj, xlsx_path):
 
     text += "\n----------------------SKU分布----------------------"
     sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(xlsx_path, key_column=RowName.SKU)
-    sku_text, lowest_sku = generate_distribution_report(
+    sku_text, lowest_sku, sku_text2 = generate_distribution_report(
         sku_distribution, sku_no_track_distribution, data_map, CellKey.sku_condition
     )
     text += sku_text
@@ -514,7 +520,7 @@ def go(analyse_obj, xlsx_path):
     text += "\n----------------------仓库分布----------------------"
     warehouse_distribution, warehouse_no_track = count_distribution_and_no_track(
         output_file, key_column=RowName.Warehouse)
-    warehouse_text, lowest_warehouse = generate_distribution_report(
+    warehouse_text, lowest_warehouse, warehouse_text2 = generate_distribution_report(
         warehouse_distribution, warehouse_no_track, data_map, CellKey.warehouse_condition
     )
     text += warehouse_text
@@ -522,7 +528,7 @@ def go(analyse_obj, xlsx_path):
     text += "\n----------------------店铺分布----------------------"
     store_distribution, store_no_track_distribution = count_distribution_and_no_track(
         output_file, key_column=RowName.Client)
-    store_text, lowest_store = generate_distribution_report(
+    store_text, lowest_store, store_text2 = generate_distribution_report(
         store_distribution, store_no_track_distribution, data_map, CellKey.store_condition
     )
     text += store_text
@@ -530,7 +536,7 @@ def go(analyse_obj, xlsx_path):
     text += "\n----------------------物流渠道分布----------------------"
     shipping_service_distribution, shipping_service_no_track_distribution = count_distribution_and_no_track(
         output_file, key_column=RowName.ShippingService)
-    shipping_service_text, lowest_shipping_service = generate_distribution_report(
+    shipping_service_text, lowest_shipping_service, shipping_service_text2 = generate_distribution_report(
         shipping_service_distribution, shipping_service_no_track_distribution, data_map,
         CellKey.shipping_service_condition
     )
@@ -636,7 +642,12 @@ def go(analyse_obj, xlsx_path):
 
     # 写入飞书在线文档
     tat = get_token()
-    brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
+    if analyse_obj != ClientConstants.zbw or analyse_obj != ClientConstants.sanrio or analyse_obj != ClientConstants.xyl:
+        lists = f"swl：{swl}"
+        lists += f"\n{warehouse_text2}"
+        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+    else:
+        brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
     detail_sheet_value(tat, [
         data_map[CellKey.update_time],
         data_map[CellKey.order_count],
@@ -682,14 +693,14 @@ def automatic(dir_path, analyse_obj):
                         print(f"需要跟踪的文件：{xlsx_path}, swl：{swl}, qsl:{qsl}")
                         go(analyse_obj, xlsx_path)
                 except Exception as e:
-                    print(f"发生错误: {e}")
                     go(analyse_obj, xlsx_path)
 
 
 if __name__ == '__main__':
     # 手动
-    go(None, None)
+    # go(None, None)
     # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
