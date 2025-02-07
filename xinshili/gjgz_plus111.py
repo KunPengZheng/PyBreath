@@ -483,8 +483,8 @@ def go(analyse_obj, xlsx_path):
 
     total_count, no_track_count = count_pattern_state(output_file, RowName.Courier, Pattern.no_track)
     total_count2, delivered_count = count_pattern_state(output_file, RowName.Courier, Pattern.delivered)
-    wswl = round2(((int(no_track_count) / int(total_count)) * 100))
-    swl = 100 - wswl
+    swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+    wswl = round2(100 - swl)
     qsl = round2((int(delivered_count) / int(total_count)) * 100)
     text += "\n----------------------概览----------------------"
     text += f"\n订单总数：{total_count}"
@@ -565,8 +565,6 @@ def go(analyse_obj, xlsx_path):
         else:
             sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}%，上网率优秀"
 
-    sum_up_text += lowest_txt
-
     # 要持续监控一个星期才行，从出库开始计算，三天内没有签收的不正常，五天内签收没达到50%也不正常，7天内没到90也不正常
     if (interval_time >= 1 and interval_time <= 3):
         if (interval_time >= 2 and qsl == 0):
@@ -597,6 +595,8 @@ def go(analyse_obj, xlsx_path):
 
     text += "\n----------------------总结&建议----------------------"
     text += f"\n{sum_up_text}"
+    sum_up_text += f"\n"
+    sum_up_text += lowest_txt
     data_map[CellKey.sum_up] = sum_up_text
 
     if (swl_flag or qsl_flag):
@@ -649,8 +649,7 @@ def automatic(dir_path, analyse_obj):
                 try:
                     total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
                     total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
-                    wswl = round2(((int(no_track_count) / int(total_count)) * 100))
-                    swl = 100 - wswl
+                    swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
                     qsl = round2((int(delivered_count) / int(total_count)) * 100)
                     # print(f"{xlsx_path}, swl：{swl}, qsl:{qsl}")
                     if (swl < 99 and qsl < 97):  # 如果上网率 < 99 且 签收率 < 97
