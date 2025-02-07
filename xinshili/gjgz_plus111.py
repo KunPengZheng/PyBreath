@@ -25,6 +25,7 @@ class RowName:
     Client = "Client/客户"
     CreationTime = "Creation time/创建时间"
     SKU = "SKU"
+    ShippingService = "Shipping service/物流渠道"
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,7 @@ class CellKey:
     time_segment_condition = "time_segment_condition"
     sum_up = "sum_up"
     exception = "exception"
+    shipping_service_condition = "shipping_service_condition"
 
 
 @dataclass(frozen=True)
@@ -520,6 +522,15 @@ def go(analyse_obj, xlsx_path):
     )
     text += store_text
 
+    text += "\n----------------------物流渠道分布----------------------"
+    shipping_service_distribution, shipping_service_no_track_distribution = count_distribution_and_no_track(
+        output_file, key_column=RowName.ShippingService)
+    shipping_service_text, lowest_shipping_service = generate_distribution_report(
+        shipping_service_distribution, shipping_service_no_track_distribution, data_map,
+        CellKey.shipping_service_condition
+    )
+    text += shipping_service_text
+
     text += "\n----------------------时间段分布----------------------"
     time_segment_analysis = analyze_time_segments(
         output_file, time_column=RowName.CreationTime, courier_column=RowName.Courier)
@@ -541,14 +552,16 @@ def go(analyse_obj, xlsx_path):
     data_map[CellKey.time_segment_condition] = time_segment_text
 
     lowest_txt = ""
+    lowest_txt += f"\n"
     lowest_txt += f"\n最低上网率的 仓库：{lowest_warehouse}"
     lowest_txt += f"\n最低上网率的 SKU：{lowest_sku}"
     lowest_txt += f"\n最低上网率的 商店：{lowest_store}"
     lowest_txt += f"\n最低上网率的 时间段：{lowest_segment}"
+    lowest_txt += f"\n最低上网率的 物流渠道：{lowest_shipping_service}"
 
     sum_up_text = ""
     if (len(irregular_number_list) > 0):
-        sum_up_text += f"不规则单号：{irregular_number_list}"
+        sum_up_text += f"存在不规则单号：{irregular_number_list}"
         sum_up_text += f"\n"
     swl_flag = False
     qsl_flag = False
@@ -578,32 +591,31 @@ def go(analyse_obj, xlsx_path):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为0%，异常状态！"
             qsl_flag = True
         else:
-            sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+            sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 3 and interval_time <= 5):
         if (qsl <= 30):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
             qsl_flag = True
         else:
-            sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+            sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 5 and interval_time <= 7):
         if (qsl <= 70):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
             qsl_flag = True
         else:
-            sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+            sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 7 and interval_time <= 9):
         if (qsl <= 95):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
             qsl_flag = True
         else:
-            sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+            sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
     else:
-        sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+        sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
 
     text += "\n----------------------总结&建议----------------------"
-    text += f"\n{sum_up_text}"
-    sum_up_text += f"\n"
     sum_up_text += lowest_txt
+    text += f"\n{sum_up_text}"
     data_map[CellKey.sum_up] = sum_up_text
 
     if (swl_flag or qsl_flag):
@@ -629,6 +641,7 @@ def go(analyse_obj, xlsx_path):
         data_map[CellKey.track_percent],
         data_map[CellKey.no_track_percent],
         data_map[CellKey.warehouse_condition],
+        data_map[CellKey.shipping_service_condition],
         data_map[CellKey.store_condition],
         data_map[CellKey.sku_condition],
         data_map[CellKey.time_segment_condition],
