@@ -642,7 +642,7 @@ def automatic(dir_path, analyse_obj):
 
 if __name__ == '__main__':
     # 手动
-    # go(None, None)
+    go(None, None)
     # 自动
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
