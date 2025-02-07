@@ -421,9 +421,11 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
 
 def go(analyse_obj, xlsx_path):
     if analyse_obj is None:
-        analyse_obj = input("请输跟踪对象（zbw/sanrio）：")
+        analyse_obj = input("请输跟踪对象（zbw/sanrio/mz_xsd）：")
 
-    if analyse_obj != ClientConstants.zbw and analyse_obj != ClientConstants.sanrio:
+    if analyse_obj != ClientConstants.zbw \
+            and analyse_obj != ClientConstants.sanrio \
+            and analyse_obj != ClientConstants.mz_xsd:
         raise ValueError(f"{analyse_obj} 未定义")
 
     if xlsx_path is None:
