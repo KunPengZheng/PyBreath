@@ -31,6 +31,8 @@ class ClientConstants:
     zbw = "zbw"
     sanrio = "sanrio"
     mz_xsd = "mz_xsd"
+    mx_dg = "mx_dg"
+    md_fc = "md_fc"
 
 
 def get_token():
