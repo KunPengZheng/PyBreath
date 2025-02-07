@@ -98,7 +98,7 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
     elif analyse_obj == ClientConstants.sanrio:
         post_data = {
             "valueRange": {"range": f"48d357!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.sanrio:
+    elif analyse_obj == ClientConstants.mz_xsd:
         post_data = {
             "valueRange": {"range": f"91b897!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
     else:
