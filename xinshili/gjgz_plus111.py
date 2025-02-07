@@ -61,6 +61,7 @@ class CellKey:
     sku_condition = "sku_condition"
     time_segment_condition = "time_segment_condition"
     sum_up = "sum_up"
+    exception = "exception"
 
 
 @dataclass(frozen=True)
@@ -540,23 +541,28 @@ def go(analyse_obj, xlsx_path):
     lowest_txt += f"\n最低上网率的 时间段：{lowest_segment}"
 
     sum_up_text = ""
+    swl_flag = False
+    qsl_flag = False
     # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
     if (interval_time == 1):
         if (swl < 30):
             sum_up_text += f"☁️注意：间隔第1天，上网率为{swl}，未达30%，建议跟进！"
             sum_up_text += lowest_txt
+            swl_flag = True
         else:
             sum_up_text += f"☀️间隔第1天，上网率为{swl}，上网率优秀"
     elif (interval_time == 2):
         if (swl < 70):
             sum_up_text += f"🌧️异常：间隔第2天，上网率为{swl}，未达75%，建议分析数据尝试定位问题！"
             sum_up_text += lowest_txt
+            swl_flag = True
         else:
             sum_up_text += f"☀️间隔第2天，上网率为{swl}，上网率优秀"
     else:  # 间隔时间 >= 3天
         if (swl < 97):
             sum_up_text += f"❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率为{swl}，未达97%，分析数据反馈问题！"
             sum_up_text += lowest_txt
+            swl_flag = True
         else:
             sum_up_text += f"☀️间隔第{interval_time}天，上网率为{swl}，上网率优秀"
 
@@ -564,21 +570,25 @@ def go(analyse_obj, xlsx_path):
     if (interval_time >= 1 and interval_time <= 3):
         if (interval_time >= 2 and qsl == 0):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为0%，异常状态！"
+            qsl_flag = True
         else:
             sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 3 and interval_time <= 5):
-        if (qsl <= 35):
+        if (qsl <= 30):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
+            qsl_flag = True
         else:
             sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 5 and interval_time <= 7):
-        if (qsl <= 80):
+        if (qsl <= 70):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
+            qsl_flag = True
         else:
             sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 7 and interval_time <= 9):
         if (qsl <= 95):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
+            qsl_flag = True
         else:
             sum_up_text += f"\n间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
     else:
@@ -587,6 +597,11 @@ def go(analyse_obj, xlsx_path):
     text += "\n----------------------总结&建议----------------------"
     text += f"\n{sum_up_text}"
     data_map[CellKey.sum_up] = sum_up_text
+
+    if (swl_flag or qsl_flag):
+        data_map[CellKey.exception] = "异常"
+    else:
+        data_map[CellKey.exception] = ""
 
     # 删除去重文件
     delete_file(output_file)
@@ -610,6 +625,7 @@ def go(analyse_obj, xlsx_path):
         data_map[CellKey.sku_condition],
         data_map[CellKey.time_segment_condition],
         data_map[CellKey.sum_up],
+        data_map[CellKey.exception],
     ], ck_time, analyse_obj)
 
 
