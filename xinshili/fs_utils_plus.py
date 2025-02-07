@@ -54,10 +54,10 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
         url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.sanrio:
         url = f"{FsConstants.spreadsheets_base_url}TZQ8s1r1GhihRstNl5kco7xlnsf{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.mz_xsd:
-        url = f"{FsConstants.spreadsheets_base_url}DlrssfNVZhjvWPtOxw5cA0lKnAe{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.xyl:
         url = f"{FsConstants.spreadsheets_base_url}XuOMshb8ZhIEaatUIYNcHwspnjg{FsConstants.values_spreadsheets_write_way}"
+    elif analyse_obj == ClientConstants.mz_xsd:
+        url = f"{FsConstants.spreadsheets_base_url}DlrssfNVZhjvWPtOxw5cA0lKnAe{FsConstants.values_spreadsheets_write_way}"
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -69,10 +69,10 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
         post_data = {"valueRange": {"range": f"JZrQj9!B{row_nums}:P{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.sanrio:
         post_data = {"valueRange": {"range": f"wGMg6A!B{row_nums}:P{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.mz_xsd:
-        post_data = {"valueRange": {"range": f"QJ0wXX!B{row_nums}:P{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.xyl:
         post_data = {"valueRange": {"range": f"HaX1qU!B{row_nums}:P{row_nums}", "values": [lists]}}
+    elif analyse_obj == ClientConstants.mz_xsd:
+        post_data = {"valueRange": {"range": f"QJ0wXX!B{row_nums}:P{row_nums}", "values": [lists]}}
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
