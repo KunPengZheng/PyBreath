@@ -425,7 +425,7 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
     return report_text, lowest_entity, report_text2
 
 
-def generate_distribution_report2(distribution, no_track_distribution, data_map, data_map_key):
+def generate_distribution_report2(distribution, no_track_distribution, data_map, data_map_key, interval_time):
     """
     通用的分布报告生成函数，统计订单分布、无轨迹订单、计算上网率，并找出最低上网率的所有实体
     :param distribution: 订单分布字典
@@ -437,7 +437,7 @@ def generate_distribution_report2(distribution, no_track_distribution, data_map,
     report_text = ""
     report_text2 = ""
     lowest_swl = 101  # 初始化为比100大的值
-    lowest_entities = []  # 存储多个最低上网率的实体信息
+    lowest_entities = {}  # 存储多个最低上网率的实体信息
 
     # 遍历分布数据
     for entity, count in distribution.items():
@@ -453,12 +453,24 @@ def generate_distribution_report2(distribution, no_track_distribution, data_map,
         # 更新最低上网率的实体
         if swl < lowest_swl:
             lowest_swl = swl
-            lowest_entities = [strs]  # 重新存储，清空旧的
+            lowest_entities[entity] = {"entity": entity, "count": count, "no_track_count": no_track_count, "swl": swl,
+                                       "strs": strs}
         elif swl == lowest_swl:
-            lowest_entities.append(strs)  # 追加同样最低上网率的实体
+            lowest_entities[entity] = {"entity": entity, "count": count, "no_track_count": no_track_count, "swl": swl,
+                                       "strs": strs}
+
+    resultList = []
+    for key, value in lowest_entities.items():
+        no_track_counts = value["no_track_count"]
+        strss = value["strs"]
+        if (interval_time >= 3):
+            resultList.append(strss)
+        else:
+            if (no_track_counts >= 4):
+                resultList.append(strss)
 
     data_map[data_map_key] = report_text  # 将结果存储到 data_map
-    return report_text, lowest_entities, report_text2
+    return report_text, resultList, report_text2
 
 
 def go(analyse_obj, xlsx_path):
@@ -509,17 +521,6 @@ def go(analyse_obj, xlsx_path):
 
     text = ""
 
-    text += "\n----------------------SKU分布----------------------"
-    sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(xlsx_path, key_column=RowName.SKU)
-    sku_text, lowest_sku, sku_text2 = generate_distribution_report2(
-        sku_distribution, sku_no_track_distribution, data_map, CellKey.sku_condition
-    )
-    text += sku_text
-
-    output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
-    # 同一单会有多个sku，多个sku会生成多行数据，分析sku的时候不能去重，其它的需要去重
-    remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
-
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ck_time = get_days_difference(xlsx_path)
     gz_time = getYmd()
@@ -531,6 +532,17 @@ def go(analyse_obj, xlsx_path):
     text += f"\n跟踪日期：{gz_time}"
     text += f"\n间隔时间：{interval_time}"
     data_map[CellKey.update_time] = current_time
+
+    text += "\n----------------------SKU分布----------------------"
+    sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(xlsx_path, key_column=RowName.SKU)
+    sku_text, lowest_sku, sku_text2 = generate_distribution_report2(
+        sku_distribution, sku_no_track_distribution, data_map, CellKey.sku_condition, interval_time
+    )
+    text += sku_text
+
+    output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
+    # 同一单会有多个sku，多个sku会生成多行数据，分析sku的时候不能去重，其它的需要去重
+    remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
 
     total_count, no_track_count = count_pattern_state(output_file, RowName.Courier, Pattern.no_track)
     total_count2, delivered_count = count_pattern_state(output_file, RowName.Courier, Pattern.delivered)
