@@ -550,10 +550,10 @@ def go(analyse_obj, xlsx_path):
     lowest_swl = 101  # 初始化为比 100 大的值
     for segment_start, stats in time_segment_analysis.items():
         segment_end = segment_start + timedelta(minutes=3)
-        total_count = stats["total_count"]
+        total_count_temp = stats["total_count"]
         no_track_count = stats["no_track_count"]
-        segmentswl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-        strs = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
+        segmentswl = round2(100 - ((int(no_track_count) / int(total_count_temp)) * 100))
+        strs = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count_temp}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
         text += strs
         time_segment_text += strs
         # 判断是否是最低的上网率
