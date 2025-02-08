@@ -425,6 +425,42 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
     return report_text, lowest_entity, report_text2
 
 
+def generate_distribution_report2(distribution, no_track_distribution, data_map, data_map_key):
+    """
+    通用的分布报告生成函数，统计订单分布、无轨迹订单、计算上网率，并找出最低上网率的所有实体
+    :param distribution: 订单分布字典
+    :param no_track_distribution: 无轨迹分布字典
+    :param data_map:
+    :param data_map_key: 用于存储到 `data_map` 的 key（例如 `CellKey.warehouse_condition` 或 `CellKey.store_condition`）
+    :return: 生成的分布报告文本, 最低上网率的所有实体信息, 精简版报告文本
+    """
+    report_text = ""
+    report_text2 = ""
+    lowest_swl = 101  # 初始化为比100大的值
+    lowest_entities = []  # 存储多个最低上网率的实体信息
+
+    # 遍历分布数据
+    for entity, count in distribution.items():
+        no_track_count = no_track_distribution.get(entity, 0)
+        swl = round2(100 - ((int(no_track_count) / int(count)) * 100))  # 计算上网率
+
+        # 生成报告内容
+        strs = f"\n{entity}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{swl}%"
+        strs2 = f"\n{entity}：({count},{swl}%)"
+        report_text += strs
+        report_text2 += strs2
+
+        # 更新最低上网率的实体
+        if swl < lowest_swl:
+            lowest_swl = swl
+            lowest_entities = [strs]  # 重新存储，清空旧的
+        elif swl == lowest_swl:
+            lowest_entities.append(strs)  # 追加同样最低上网率的实体
+
+    data_map[data_map_key] = report_text  # 将结果存储到 data_map
+    return report_text, lowest_entities, report_text2
+
+
 def go(analyse_obj, xlsx_path):
     if analyse_obj is None:
         analyse_obj = input("请输跟踪对象（zbw/sanrio/xyl/mz_xsd/md_fc/mx_dg）：")
@@ -475,7 +511,7 @@ def go(analyse_obj, xlsx_path):
 
     text += "\n----------------------SKU分布----------------------"
     sku_distribution, sku_no_track_distribution = count_distribution_and_no_track(xlsx_path, key_column=RowName.SKU)
-    sku_text, lowest_sku, sku_text2 = generate_distribution_report(
+    sku_text, lowest_sku, sku_text2 = generate_distribution_report2(
         sku_distribution, sku_no_track_distribution, data_map, CellKey.sku_condition
     )
     text += sku_text
@@ -565,7 +601,10 @@ def go(analyse_obj, xlsx_path):
     lowest_txt = ""
     lowest_txt += f"\n"
     lowest_txt += f"\n最低上网率的 仓库：{lowest_warehouse}"
-    lowest_txt += f"\n最低上网率的 SKU：{lowest_sku}"
+
+    lowest_txt += f"\n最低上网率的 SKU："
+    for item in lowest_sku:
+        lowest_txt += item
     lowest_txt += f"\n最低上网率的 商店：{lowest_store}"
     lowest_txt += f"\n最低上网率的 时间段：{lowest_segment}"
     lowest_txt += f"\n最低上网率的 物流渠道：{lowest_shipping_service}"
