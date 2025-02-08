@@ -700,6 +700,7 @@ if __name__ == '__main__':
     go(None, None)
     # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
