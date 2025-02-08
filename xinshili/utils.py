@@ -163,3 +163,15 @@ def getYmd():
     formatted_today = today.strftime("%Y/%m/%d")
     # print(formatted_today)
     return formatted_today
+
+
+def is_us_weekend(date_str):
+    """
+    中国和美国的时差相差：13-16 个钟头，目前日期的单位最小是日期，没有到小时，所以这里我们默认和美国相差一天，
+    也就是中国时间周日为美国的周六，中国时间周一为美国的周日
+    """
+    # 解析字符串为 datetime 对象
+    date_obj = datetime.strptime(date_str, "%Y/%m/%d")
+
+    # 判断是否为 周日（6）或者周一 (0)，即为美国的周六和周日
+    return date_obj.weekday() in [6, 0]
