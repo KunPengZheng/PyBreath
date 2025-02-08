@@ -623,58 +623,73 @@ def go(analyse_obj, xlsx_path):
     lowest_txt += f"\n最低上网率的 物流渠道：{lowest_shipping_service}"
 
     sum_up_text = ""
+
+    actual_interval = ""
+    if (is_usweekend == 6):  # 6是中国周日，美国周六
+        sum_up_text += f"美国时间：周六（和中国相差13-16个小时）"
+        sum_up_text += f"\n"
+        actual_interval = "（-2）"
+    elif (is_usweekend == 0):  # 0是中国周一，美国周日
+        sum_up_text += f"美国时间周日（相差13-16个小时）"
+        sum_up_text += f"\n"
+        actual_interval = "（-1）"
+    else:
+        actual_interval = ""
+
     if (len(irregular_number_list) > 0):
         sum_up_text += f"存在不规则单号：{irregular_number_list}"
         sum_up_text += f"\n"
+
     swl_flag = False
     qsl_flag = False
+
     # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
     if (interval_time == 1):
         if (swl < 30):
-            sum_up_text += f"\n☁️注意：间隔第1天，上网率为{swl}%，未达30%，建议跟进！"
+            sum_up_text += f"\n☁️注意：间隔第{interval_time}{actual_interval}天，上网率为{swl}%，未达30%，建议跟进！"
             swl_flag = True
         else:
-            sum_up_text += f"\n☀️间隔第1天，上网率为{swl}%，上网率优秀"
+            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，上网率为{swl}%，上网率优秀"
     elif (interval_time == 2):
         if (swl < 70):
-            sum_up_text += f"\n🌧️异常：间隔第2天，上网率为{swl}%，未达75%，建议分析数据尝试定位问题！"
+            sum_up_text += f"\n🌧️异常：间隔第{interval_time}{actual_interval}天，上网率为{swl}%，未达75%，建议分析数据尝试定位问题！"
             swl_flag = True
         else:
-            sum_up_text += f"\n☀️间隔第2天，上网率为{swl}%，上网率优秀"
+            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，上网率为{swl}%，上网率优秀"
     else:  # 间隔时间 >= 3天
         if (swl < 97):
-            sum_up_text += f"\n❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}天，上网率为{swl}%，未达97%，分析数据反馈问题！"
+            sum_up_text += f"\n❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}{actual_interval}天，上网率为{swl}%，未达97%，分析数据反馈问题！"
             swl_flag = True
         else:
-            sum_up_text += f"\n☀️间隔第{interval_time}天，上网率为{swl}%，上网率优秀"
+            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，上网率为{swl}%，上网率优秀"
 
     # 要持续监控一个星期才行，从出库开始计算，三天内没有签收的不正常，五天内签收没达到50%也不正常，7天内没到90也不正常
     if (interval_time >= 1 and interval_time <= 3):
         if (interval_time >= 2 and qsl == 0):
-            sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为0%，异常状态！"
+            sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为0%，异常状态！"
             qsl_flag = True
         else:
-            sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 3 and interval_time <= 5):
         if (qsl <= 30):
-            sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
+            sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，异常状态！"
             qsl_flag = True
         else:
-            sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 5 and interval_time <= 7):
         if (qsl <= 70):
-            sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
+            sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，异常状态！"
             qsl_flag = True
         else:
-            sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 7 and interval_time <= 9):
         if (qsl <= 95):
-            sum_up_text += f"\n🚨警报：间隔第{interval_time}天，签收率为{qsl}%，异常状态！"
+            sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，异常状态！"
             qsl_flag = True
         else:
-            sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
     else:
-        sum_up_text += f"\n☀️间隔第{interval_time}天，签收率为{qsl}%，继续跟进！"
+        sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
 
     text += "\n----------------------总结&建议----------------------"
     sum_up_text += lowest_txt
@@ -693,30 +708,30 @@ def go(analyse_obj, xlsx_path):
     print(text)
 
     # 写入飞书在线文档
-    tat = get_token()
-    if analyse_obj != ClientConstants.zbw or analyse_obj != ClientConstants.sanrio or analyse_obj != ClientConstants.xyl:
-        lists = f"({total_count},{swl}%)"
-        lists += f"\n{warehouse_text2}"
-        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-    else:
-        brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
-    detail_sheet_value(tat, [
-        data_map[CellKey.update_time],
-        data_map[CellKey.order_count],
-        data_map[CellKey.unpaid_count],
-        data_map[CellKey.delivered_counts],
-        data_map[CellKey.delivered_percent],
-        data_map[CellKey.no_track_number],
-        data_map[CellKey.track_percent],
-        data_map[CellKey.no_track_percent],
-        data_map[CellKey.warehouse_condition],
-        data_map[CellKey.shipping_service_condition],
-        data_map[CellKey.store_condition],
-        data_map[CellKey.sku_condition],
-        data_map[CellKey.time_segment_condition],
-        data_map[CellKey.sum_up],
-        data_map[CellKey.exception],
-    ], ck_time, analyse_obj)
+    # tat = get_token()
+    # if analyse_obj != ClientConstants.zbw or analyse_obj != ClientConstants.sanrio or analyse_obj != ClientConstants.xyl:
+    #     lists = f"({total_count},{swl}%)"
+    #     lists += f"\n{warehouse_text2}"
+    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+    # else:
+    #     brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
+    # detail_sheet_value(tat, [
+    #     data_map[CellKey.update_time],
+    #     data_map[CellKey.order_count],
+    #     data_map[CellKey.unpaid_count],
+    #     data_map[CellKey.delivered_counts],
+    #     data_map[CellKey.delivered_percent],
+    #     data_map[CellKey.no_track_number],
+    #     data_map[CellKey.track_percent],
+    #     data_map[CellKey.no_track_percent],
+    #     data_map[CellKey.warehouse_condition],
+    #     data_map[CellKey.shipping_service_condition],
+    #     data_map[CellKey.store_condition],
+    #     data_map[CellKey.sku_condition],
+    #     data_map[CellKey.time_segment_condition],
+    #     data_map[CellKey.sum_up],
+    #     data_map[CellKey.exception],
+    # ], ck_time, analyse_obj)
 
 
 def automatic(dir_path, analyse_obj):
