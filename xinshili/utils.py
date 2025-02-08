@@ -174,4 +174,4 @@ def is_us_weekend(date_str):
     date_obj = datetime.strptime(date_str, "%Y/%m/%d")
 
     # 判断是否为 周日（6）或者周一 (0)，即为美国的周六和周日
-    return date_obj.weekday() in [6, 0]
+    return date_obj.weekday()
