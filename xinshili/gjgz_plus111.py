@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants
 from xinshili.usps_utils import track
-from xinshili.utils import round2, getYmd, delete_file
+from xinshili.utils import round2, getYmd, delete_file, is_us_weekend
 
 """
 zbw轨迹跟踪分析
@@ -23,7 +23,7 @@ class RowName:
     OutboundTime = "OutboundTime/出库时间"
     Warehouse = "Warehouse/仓库"
     Client = "Client/客户"
-    CreationTime = "Creation time/创建时间"
+    CreationWaveTime = "Create wave time/生成波次时间"
     SKU = "SKU"
     ShippingService = "Shipping service/物流渠道"
 
@@ -524,6 +524,7 @@ def go(analyse_obj, xlsx_path):
     ck_time = get_days_difference(xlsx_path)
     gz_time = getYmd()
     interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
+    # is_usweekend = is_us_weekend(ck_time)
     text += "\n----------------------时间----------------------"
     text += f"\n更新时间: {current_time}"
     text += f"\n出库日期：{ck_time}"
@@ -580,7 +581,7 @@ def go(analyse_obj, xlsx_path):
 
     text += "\n----------------------时间段分布----------------------"
     time_segment_analysis = analyze_time_segments(
-        output_file, time_column=RowName.CreationTime, courier_column=RowName.Courier)
+        output_file, time_column=RowName.CreationWaveTime, courier_column=RowName.Courier)
     time_segment_text = ""
     lowest_segment = ""  # 保存上网率最低的时间段
     lowest_swl = 101  # 初始化为比 100 大的值
