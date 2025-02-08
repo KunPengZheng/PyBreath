@@ -412,7 +412,7 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
         no_track_count = no_track_distribution.get(entity, 0)
         swl = round2(100 - ((int(no_track_count) / int(count)) * 100))
         strs = f"\n{entity}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{swl}%"
-        strs2 = f"\n{entity}： count：{count}；swl：{swl}%"
+        strs2 = f"\n{entity}：({count},{swl}%)"
         report_text += strs
         report_text2 += strs2
 
@@ -643,7 +643,7 @@ def go(analyse_obj, xlsx_path):
     # 写入飞书在线文档
     tat = get_token()
     if analyse_obj != ClientConstants.zbw or analyse_obj != ClientConstants.sanrio or analyse_obj != ClientConstants.xyl:
-        lists = f"swl：{swl}"
+        lists = f"({total_count},{swl}%)"
         lists += f"\n{warehouse_text2}"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
     else:
@@ -702,5 +702,5 @@ if __name__ == '__main__':
     # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
