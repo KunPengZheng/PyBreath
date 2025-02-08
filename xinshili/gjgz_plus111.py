@@ -525,7 +525,7 @@ def go(analyse_obj, xlsx_path):
     ck_time = get_days_difference(xlsx_path)
     gz_time = getYmd()
     interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
-    # is_usweekend = is_us_weekend(ck_time)
+    is_usweekend = is_us_weekend(ck_time)
     text += "\n----------------------时间----------------------"
     text += f"\n更新时间: {current_time}"
     text += f"\n出库日期：{ck_time}"
