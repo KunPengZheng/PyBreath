@@ -681,16 +681,15 @@ def automatic(dir_path, analyse_obj):
         pattern = r"^出库时间\d+_\d+\.xlsx$"  # 正则表达式
         for ele in files:
             if re.match(pattern, ele):
-                print(f"匹配的文件: {root}/{ele}")
                 xlsx_path = f"{root}/{ele}"
+                # print(f"匹配的文件: {xlsx_path}")
                 try:
                     total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
                     total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
                     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
                     qsl = round2((int(delivered_count) / int(total_count)) * 100)
                     # print(f"{xlsx_path}, swl：{swl}, qsl:{qsl}")
-                    if (swl < 99 and qsl < 97):  # 如果上网率 < 99 且 签收率 < 97
-                        print(f"需要跟踪的文件：{xlsx_path}, swl：{swl}, qsl:{qsl}")
+                    if (swl < 99 or qsl < 97):  # 如果上网率 < 99 且 签收率 < 97
                         go(analyse_obj, xlsx_path)
                 except Exception as e:
                     go(analyse_obj, xlsx_path)
@@ -701,6 +700,9 @@ if __name__ == '__main__':
     go(None, None)
     # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.2", ClientConstants.xyl)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
