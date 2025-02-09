@@ -760,7 +760,7 @@ def automatic(dir_path, analyse_obj):
                     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
                     qsl = round2((int(delivered_count) / int(total_count)) * 100)
                     # print(f"{xlsx_path}, swl：{swl}, qsl:{qsl}")
-                    if (swl < 99 or qsl < 98):  # 如果上网率 < 99 且 签收率 < 97
+                    if (swl < 99 or qsl < 98):  # 如果上网率 < 99 或 签收率 < 98
                         go(analyse_obj, xlsx_path)
                 except Exception as e:
                     go(analyse_obj, xlsx_path)
