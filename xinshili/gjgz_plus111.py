@@ -753,16 +753,28 @@ def automatic(dir_path, analyse_obj):
         for ele in files:
             if re.match(pattern, ele):
                 xlsx_path = f"{root}/{ele}"
-                # print(f"匹配的文件: {xlsx_path}")
+                print(f"匹配的文件: {xlsx_path}")
                 try:
                     total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
                     total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
-                    swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-                    qsl = round2((int(delivered_count) / int(total_count)) * 100)
-                    # print(f"{xlsx_path}, swl：{swl}, qsl:{qsl}")
-                    if (swl < 99 or qsl < 98):  # 如果上网率 < 99 或 签收率 < 98
+
+                    if total_count == 0:
+                        swl = 0  # 处理 total_count 为 0 的情况
+                    else:
+                        swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+
+                    if total_count == 0:
+                        qsl = 0  # 处理 total_count 为 0 的情况
+                    else:
+                        qsl = round2((int(delivered_count) / int(total_count)) * 100)
+
+                    if swl < 99 or qsl < 98:
                         go(analyse_obj, xlsx_path)
+                except ZeroDivisionError:
+                    print(f"警告：{xlsx_path} 的 total_count 为 0，跳过计算。")
+                    go(analyse_obj, xlsx_path)  # 仍然执行 go 但避免除零错误
                 except Exception as e:
+                    print(f"处理 {xlsx_path} 时发生错误: {e}")
                     go(analyse_obj, xlsx_path)
 
 
@@ -774,10 +786,10 @@ if __name__ == '__main__':
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.1", ClientConstants.sanrio)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.1", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.2", ClientConstants.xyl)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg", ClientConstants.mx_dg)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc", ClientConstants.md_fc)
