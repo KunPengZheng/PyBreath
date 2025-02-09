@@ -58,6 +58,8 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
         url = f"{FsConstants.spreadsheets_base_url}XuOMshb8ZhIEaatUIYNcHwspnjg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.mz_xsd:
         url = f"{FsConstants.spreadsheets_base_url}DlrssfNVZhjvWPtOxw5cA0lKnAe{FsConstants.values_spreadsheets_write_way}"
+    elif analyse_obj == ClientConstants.mx_dg:
+        url = f"{FsConstants.spreadsheets_base_url}J3pusHrvih4THKtsyMJcz5Pin0d{FsConstants.values_spreadsheets_write_way}"
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -73,6 +75,8 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
         post_data = {"valueRange": {"range": f"HaX1qU!B{row_nums}:P{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.mz_xsd:
         post_data = {"valueRange": {"range": f"QJ0wXX!B{row_nums}:P{row_nums}", "values": [lists]}}
+    elif analyse_obj == ClientConstants.mx_dg:
+        post_data = {"valueRange": {"range": f"315ce2!B{row_nums}:P{row_nums}", "values": [lists]}}
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -93,6 +97,8 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
         url = f"{FsConstants.spreadsheets_base_url}XuOMshb8ZhIEaatUIYNcHwspnjg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.mz_xsd:
         url = f"{FsConstants.spreadsheets_base_url}DlrssfNVZhjvWPtOxw5cA0lKnAe{FsConstants.values_spreadsheets_write_way}"
+    elif analyse_obj == ClientConstants.mx_dg:
+        url = f"{FsConstants.spreadsheets_base_url}J3pusHrvih4THKtsyMJcz5Pin0d{FsConstants.values_spreadsheets_write_way}"
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -113,6 +119,9 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
     elif analyse_obj == ClientConstants.xyl:
         post_data = {
             "valueRange": {"range": f"ff6512!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
+    elif analyse_obj == ClientConstants.mx_dg:
+        post_data = {
+            "valueRange": {"range": f"iczyVK!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
