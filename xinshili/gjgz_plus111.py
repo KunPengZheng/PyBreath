@@ -756,7 +756,7 @@ def automatic(dir_path, analyse_obj):
                     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
                     qsl = round2((int(delivered_count) / int(total_count)) * 100)
                     # print(f"{xlsx_path}, swl：{swl}, qsl:{qsl}")
-                    if (swl < 99 or qsl < 97):  # 如果上网率 < 99 且 签收率 < 97
+                    if (swl < 99 or qsl < 98):  # 如果上网率 < 99 且 签收率 < 97
                         go(analyse_obj, xlsx_path)
                 except Exception as e:
                     go(analyse_obj, xlsx_path)
@@ -768,7 +768,7 @@ if __name__ == '__main__':
     # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.1", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
