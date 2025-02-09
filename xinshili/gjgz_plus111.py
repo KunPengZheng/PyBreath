@@ -708,30 +708,30 @@ def go(analyse_obj, xlsx_path):
     print(text)
 
     # 写入飞书在线文档
-    # tat = get_token()
-    # if analyse_obj != ClientConstants.zbw or analyse_obj != ClientConstants.sanrio or analyse_obj != ClientConstants.xyl:
-    #     lists = f"({total_count},{swl}%)"
-    #     lists += f"\n{warehouse_text2}"
-    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-    # else:
-    #     brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
-    # detail_sheet_value(tat, [
-    #     data_map[CellKey.update_time],
-    #     data_map[CellKey.order_count],
-    #     data_map[CellKey.unpaid_count],
-    #     data_map[CellKey.delivered_counts],
-    #     data_map[CellKey.delivered_percent],
-    #     data_map[CellKey.no_track_number],
-    #     data_map[CellKey.track_percent],
-    #     data_map[CellKey.no_track_percent],
-    #     data_map[CellKey.warehouse_condition],
-    #     data_map[CellKey.shipping_service_condition],
-    #     data_map[CellKey.store_condition],
-    #     data_map[CellKey.sku_condition],
-    #     data_map[CellKey.time_segment_condition],
-    #     data_map[CellKey.sum_up],
-    #     data_map[CellKey.exception],
-    # ], ck_time, analyse_obj)
+    tat = get_token()
+    if analyse_obj != ClientConstants.zbw or analyse_obj != ClientConstants.sanrio or analyse_obj != ClientConstants.xyl:
+        lists = f"({total_count},{swl}%)"
+        lists += f"\n{warehouse_text2}"
+        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+    else:
+        brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
+    detail_sheet_value(tat, [
+        data_map[CellKey.update_time],
+        data_map[CellKey.order_count],
+        data_map[CellKey.unpaid_count],
+        data_map[CellKey.delivered_counts],
+        data_map[CellKey.delivered_percent],
+        data_map[CellKey.no_track_number],
+        data_map[CellKey.track_percent],
+        data_map[CellKey.no_track_percent],
+        data_map[CellKey.warehouse_condition],
+        data_map[CellKey.shipping_service_condition],
+        data_map[CellKey.store_condition],
+        data_map[CellKey.sku_condition],
+        data_map[CellKey.time_segment_condition],
+        data_map[CellKey.sum_up],
+        data_map[CellKey.exception],
+    ], ck_time, analyse_obj)
 
 
 def automatic(dir_path, analyse_obj):
@@ -770,7 +770,10 @@ if __name__ == '__main__':
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.1", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.2", ClientConstants.xyl)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg", ClientConstants.mx_dg)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc", ClientConstants.md_fc)
