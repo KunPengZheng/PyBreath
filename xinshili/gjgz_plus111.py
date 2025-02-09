@@ -453,6 +453,7 @@ def generate_distribution_report2(distribution, no_track_distribution, data_map,
         # 更新最低上网率的实体
         if swl < lowest_swl:
             lowest_swl = swl
+            lowest_entities.clear() # 清空数据
             lowest_entities[entity] = {"entity": entity, "count": count, "no_track_count": no_track_count, "swl": swl,
                                        "strs": strs}
         elif swl == lowest_swl:
