@@ -453,7 +453,7 @@ def generate_distribution_report2(distribution, no_track_distribution, data_map,
         # 更新最低上网率的实体
         if swl < lowest_swl:
             lowest_swl = swl
-            lowest_entities.clear() # 清空数据
+            lowest_entities.clear()  # 清空数据
             lowest_entities[entity] = {"entity": entity, "count": count, "no_track_count": no_track_count, "swl": swl,
                                        "strs": strs}
         elif swl == lowest_swl:
@@ -689,7 +689,10 @@ def go(analyse_obj, xlsx_path):
         else:
             sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
     else:
-        sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
+        if (qsl >= 98):
+            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，签收率优秀！"
+        else:
+            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
 
     text += "\n----------------------总结&建议----------------------"
     if (swl < 100):
