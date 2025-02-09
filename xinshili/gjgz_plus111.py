@@ -613,11 +613,10 @@ def go(analyse_obj, xlsx_path):
 
     lowest_txt = ""
     lowest_txt += f"\n"
-    lowest_txt += f"\n最低上网率的 仓库：{lowest_warehouse}"
-
     lowest_txt += f"\n最低上网率的 SKU："
     for item in lowest_sku:
         lowest_txt += item
+    lowest_txt += f"\n最低上网率的 仓库：{lowest_warehouse}"
     lowest_txt += f"\n最低上网率的 商店：{lowest_store}"
     lowest_txt += f"\n最低上网率的 时间段：{lowest_segment}"
     lowest_txt += f"\n最低上网率的 物流渠道：{lowest_shipping_service}"
@@ -692,7 +691,8 @@ def go(analyse_obj, xlsx_path):
         sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
 
     text += "\n----------------------总结&建议----------------------"
-    sum_up_text += lowest_txt
+    if (swl < 100):
+        sum_up_text += lowest_txt
     text += f"\n{sum_up_text}"
     data_map[CellKey.sum_up] = sum_up_text
 
@@ -768,7 +768,7 @@ if __name__ == '__main__':
     # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.1", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
