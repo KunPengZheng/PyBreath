@@ -14,6 +14,7 @@ class FsConstants:
     spreadsheets_base_url = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/"
     # 表格的写入方式：values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
     values_spreadsheets_write_way = "/values"
+    gjgz_token = "BGrnsxMFfhfoumtUDF8cXM8jnGg"
 
 
 FsOrderSheetMap = {
@@ -49,19 +50,14 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
     """
     详细表
     """
-    if analyse_obj == ClientConstants.zbw:
+    if analyse_obj == ClientConstants.zbw or \
+            analyse_obj == ClientConstants.sanrio or \
+            analyse_obj == ClientConstants.xyl or \
+            analyse_obj == ClientConstants.mz_xsd or \
+            analyse_obj == ClientConstants.mx_dg or \
+            analyse_obj == ClientConstants.md_fc:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.sanrio:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.xyl:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.mz_xsd:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.mx_dg:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.md_fc:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.values_spreadsheets_write_way}"
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -93,18 +89,14 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
     """
     简概表
     """
-    if analyse_obj == ClientConstants.zbw:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.sanrio:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.xyl:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.mz_xsd:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.mx_dg:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
-    elif analyse_obj == ClientConstants.md_fc:
-        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
+    if analyse_obj == ClientConstants.zbw or \
+            analyse_obj == ClientConstants.sanrio or \
+            analyse_obj == ClientConstants.xyl or \
+            analyse_obj == ClientConstants.mz_xsd or \
+            analyse_obj == ClientConstants.mx_dg or \
+            analyse_obj == ClientConstants.md_fc:
+        # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
+        url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.values_spreadsheets_write_way}"
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
