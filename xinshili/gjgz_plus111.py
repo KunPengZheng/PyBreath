@@ -718,7 +718,8 @@ def go(analyse_obj, xlsx_path):
         lists += f"\n{warehouse_text2}"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
     else:
-        brief_sheet_value(tat, [swl], ck_time, gz_time, analyse_obj)
+        lists = f"({total_count},{swl}%)"
+        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
     detail_sheet_value(tat, [
         data_map[CellKey.update_time],
         data_map[CellKey.order_count],
