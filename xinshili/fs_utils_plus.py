@@ -53,15 +53,15 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.sanrio:
-        url = f"{FsConstants.spreadsheets_base_url}TZQ8s1r1GhihRstNl5kco7xlnsf{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.xyl:
-        url = f"{FsConstants.spreadsheets_base_url}XuOMshb8ZhIEaatUIYNcHwspnjg{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.mz_xsd:
-        url = f"{FsConstants.spreadsheets_base_url}DlrssfNVZhjvWPtOxw5cA0lKnAe{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.mx_dg:
-        url = f"{FsConstants.spreadsheets_base_url}J3pusHrvih4THKtsyMJcz5Pin0d{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.md_fc:
-        url = f"{FsConstants.spreadsheets_base_url}VkZbsGy6QhTocOtBNfWcOMd6nYd{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -72,15 +72,15 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
     if analyse_obj == ClientConstants.zbw:
         post_data = {"valueRange": {"range": f"JZrQj9!B{row_nums}:P{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.sanrio:
-        post_data = {"valueRange": {"range": f"wGMg6A!B{row_nums}:P{row_nums}", "values": [lists]}}
+        post_data = {"valueRange": {"range": f"ph0AGJ!B{row_nums}:P{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.xyl:
-        post_data = {"valueRange": {"range": f"HaX1qU!B{row_nums}:P{row_nums}", "values": [lists]}}
+        post_data = {"valueRange": {"range": f"PqixpT!B{row_nums}:P{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.mz_xsd:
-        post_data = {"valueRange": {"range": f"QJ0wXX!B{row_nums}:P{row_nums}", "values": [lists]}}
+        post_data = {"valueRange": {"range": f"Cv3fIH!B{row_nums}:P{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.mx_dg:
-        post_data = {"valueRange": {"range": f"315ce2!B{row_nums}:P{row_nums}", "values": [lists]}}
+        post_data = {"valueRange": {"range": f"334FDH!B{row_nums}:P{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.md_fc:
-        post_data = {"valueRange": {"range": f"uWrNbe!B{row_nums}:P{row_nums}", "values": [lists]}}
+        post_data = {"valueRange": {"range": f"P0sVEI!B{row_nums}:P{row_nums}", "values": [lists]}}
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -96,15 +96,15 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
     if analyse_obj == ClientConstants.zbw:
         url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.sanrio:
-        url = f"{FsConstants.spreadsheets_base_url}TZQ8s1r1GhihRstNl5kco7xlnsf{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.xyl:
-        url = f"{FsConstants.spreadsheets_base_url}XuOMshb8ZhIEaatUIYNcHwspnjg{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.mz_xsd:
-        url = f"{FsConstants.spreadsheets_base_url}DlrssfNVZhjvWPtOxw5cA0lKnAe{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.mx_dg:
-        url = f"{FsConstants.spreadsheets_base_url}J3pusHrvih4THKtsyMJcz5Pin0d{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     elif analyse_obj == ClientConstants.md_fc:
-        url = f"{FsConstants.spreadsheets_base_url}VkZbsGy6QhTocOtBNfWcOMd6nYd{FsConstants.values_spreadsheets_write_way}"
+        url = f"{FsConstants.spreadsheets_base_url}BGrnsxMFfhfoumtUDF8cXM8jnGg{FsConstants.values_spreadsheets_write_way}"
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -118,19 +118,19 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
             "valueRange": {"range": f"fa00e1!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.sanrio:
         post_data = {
-            "valueRange": {"range": f"48d357!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.mz_xsd:
-        post_data = {
-            "valueRange": {"range": f"91b897!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
+            "valueRange": {"range": f"6tej5U!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.xyl:
         post_data = {
-            "valueRange": {"range": f"ff6512!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
+            "valueRange": {"range": f"42Ndb0!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
+    elif analyse_obj == ClientConstants.mz_xsd:
+        post_data = {
+            "valueRange": {"range": f"6BIGKF!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.mx_dg:
         post_data = {
-            "valueRange": {"range": f"iczyVK!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
+            "valueRange": {"range": f"QvGf9H!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
     elif analyse_obj == ClientConstants.md_fc:
         post_data = {
-            "valueRange": {"range": f"1de1b5!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
+            "valueRange": {"range": f"d9tS9E!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
