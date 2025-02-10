@@ -614,9 +614,10 @@ def go(analyse_obj, xlsx_path):
 
     lowest_txt = ""
     lowest_txt += f"\n"
-    lowest_txt += f"\n最低上网率的 SKU："
-    for item in lowest_sku:
-        lowest_txt += item
+    if (len(lowest_sku) > 0):
+        lowest_txt += f"\n最低上网率的 SKU："
+        for item in lowest_sku:
+            lowest_txt += item
     lowest_txt += f"\n最低上网率的 仓库：{lowest_warehouse}"
     lowest_txt += f"\n最低上网率的 商店：{lowest_store}"
     lowest_txt += f"\n最低上网率的 时间段：{lowest_segment}"
