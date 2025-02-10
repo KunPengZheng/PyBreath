@@ -37,6 +37,22 @@ class ClientConstants:
     md_fc = "md_fc"
 
 
+@dataclass(frozen=True)
+class MapFields:
+    detail = "detail"
+    brief = "brief"
+
+
+ClientMapConstants = {
+    ClientConstants.zbw: {MapFields.detail: "JZrQj9", MapFields.brief: "fa00e1"},
+    ClientConstants.sanrio: {MapFields.detail: "ph0AGJ", MapFields.brief: "6tej5U"},
+    ClientConstants.xyl: {MapFields.detail: "PqixpT", MapFields.brief: "42Ndb0"},
+    ClientConstants.mz_xsd: {MapFields.detail: "Cv3fIH", MapFields.brief: "6BIGKF"},
+    ClientConstants.mx_dg: {MapFields.detail: "334FDH", MapFields.brief: "QvGf9H"},
+    ClientConstants.md_fc: {MapFields.detail: "P0sVEI", MapFields.brief: "d9tS9E"},
+}
+
+
 def get_token():
     # 应用凭证里的 app id 和 app secret
     post_data = {"app_id": FsConstants.app_id, "app_secret": FsConstants.app_secret}
@@ -46,10 +62,7 @@ def get_token():
     return tat
 
 
-def detail_sheet_value(tat, lists, ck_time, analyse_obj):
-    """
-    详细表
-    """
+def get_map_url(analyse_obj):
     if analyse_obj == ClientConstants.zbw or \
             analyse_obj == ClientConstants.sanrio or \
             analyse_obj == ClientConstants.xyl or \
@@ -58,27 +71,27 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
             analyse_obj == ClientConstants.md_fc:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.values_spreadsheets_write_way}"
+        return url
     else:
         raise ValueError(f"{analyse_obj} 未定义")
+
+
+def detail_sheet_value(tat, lists, ck_time, analyse_obj):
+    """
+    详细表
+    """
+    url = get_map_url(analyse_obj)
 
     header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
 
     row_nums = get_row_for_specific_date(ck_time)
 
-    if analyse_obj == ClientConstants.zbw:
-        post_data = {"valueRange": {"range": f"JZrQj9!B{row_nums}:P{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.sanrio:
-        post_data = {"valueRange": {"range": f"ph0AGJ!B{row_nums}:P{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.xyl:
-        post_data = {"valueRange": {"range": f"PqixpT!B{row_nums}:P{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.mz_xsd:
-        post_data = {"valueRange": {"range": f"Cv3fIH!B{row_nums}:P{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.mx_dg:
-        post_data = {"valueRange": {"range": f"334FDH!B{row_nums}:P{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.md_fc:
-        post_data = {"valueRange": {"range": f"P0sVEI!B{row_nums}:P{row_nums}", "values": [lists]}}
+    if analyse_obj == ClientConstants.mz_xsd or \
+            analyse_obj == ClientConstants.mx_dg or \
+            analyse_obj == ClientConstants.md_fc:
+        post_data = {"valueRange": {"range": f"JZrQj9!B{row_nums}:O{row_nums}", "values": [lists]}}
     else:
-        raise ValueError(f"{analyse_obj} 未定义")
+        post_data = {"valueRange": {"range": f"JZrQj9!B{row_nums}:P{row_nums}", "values": [lists]}}
 
     # values_prepend 需要使用post请求方式，values需要使用put请求方式
     r2 = requests.put(url, data=json.dumps(post_data), headers=header)
@@ -89,42 +102,18 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
     """
     简概表
     """
-    if analyse_obj == ClientConstants.zbw or \
-            analyse_obj == ClientConstants.sanrio or \
-            analyse_obj == ClientConstants.xyl or \
-            analyse_obj == ClientConstants.mz_xsd or \
-            analyse_obj == ClientConstants.mx_dg or \
-            analyse_obj == ClientConstants.md_fc:
-        # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
-        url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.values_spreadsheets_write_way}"
-    else:
-        raise ValueError(f"{analyse_obj} 未定义")
+    url = get_map_url(analyse_obj)
 
     header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
 
     column_nums = get_column_for_specific_date(gz_time)
     row_nums = get_row_for_specific_date(ck_time)
 
-    if analyse_obj == ClientConstants.zbw:
-        post_data = {
-            "valueRange": {"range": f"fa00e1!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.sanrio:
-        post_data = {
-            "valueRange": {"range": f"6tej5U!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.xyl:
-        post_data = {
-            "valueRange": {"range": f"42Ndb0!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.mz_xsd:
-        post_data = {
-            "valueRange": {"range": f"6BIGKF!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.mx_dg:
-        post_data = {
-            "valueRange": {"range": f"QvGf9H!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
-    elif analyse_obj == ClientConstants.md_fc:
-        post_data = {
-            "valueRange": {"range": f"d9tS9E!{column_nums}{row_nums}:{column_nums}{row_nums}", "values": [lists]}}
-    else:
-        raise ValueError(f"{analyse_obj} 未定义")
+    post_data = {
+        "valueRange": {
+            "range": f"{ClientMapConstants[analyse_obj][MapFields.brief]}!{column_nums}{row_nums}:{column_nums}{row_nums}",
+            "values": [lists]}
+    }
 
     # values_prepend 需要使用post请求方式，values需要使用put请求方式
     r2 = requests.put(url, data=json.dumps(post_data), headers=header)

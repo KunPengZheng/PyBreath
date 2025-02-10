@@ -720,23 +720,45 @@ def go(analyse_obj, xlsx_path):
     else:
         lists = f"({total_count},{swl}%)"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-    detail_sheet_value(tat, [
-        data_map[CellKey.update_time],
-        data_map[CellKey.order_count],
-        data_map[CellKey.unpaid_count],
-        data_map[CellKey.delivered_counts],
-        data_map[CellKey.delivered_percent],
-        data_map[CellKey.no_track_number],
-        data_map[CellKey.track_percent],
-        data_map[CellKey.no_track_percent],
-        data_map[CellKey.warehouse_condition],
-        data_map[CellKey.shipping_service_condition],
-        data_map[CellKey.store_condition],
-        data_map[CellKey.sku_condition],
-        data_map[CellKey.time_segment_condition],
-        data_map[CellKey.sum_up],
-        data_map[CellKey.exception],
-    ], ck_time, analyse_obj)
+
+    if analyse_obj == ClientConstants.mz_xsd or \
+            analyse_obj == ClientConstants.mx_dg or \
+            analyse_obj == ClientConstants.md_fc:
+        detail_sheet_value(tat, [
+            data_map[CellKey.update_time],
+            data_map[CellKey.order_count],
+            data_map[CellKey.unpaid_count],
+            data_map[CellKey.delivered_counts],
+            data_map[CellKey.delivered_percent],
+            data_map[CellKey.no_track_number],
+            data_map[CellKey.track_percent],
+            data_map[CellKey.no_track_percent],
+            data_map[CellKey.warehouse_condition],
+            data_map[CellKey.shipping_service_condition],
+            data_map[CellKey.store_condition],
+            # data_map[CellKey.sku_condition],
+            data_map[CellKey.time_segment_condition],
+            data_map[CellKey.sum_up],
+            data_map[CellKey.exception],
+        ], ck_time, analyse_obj)
+    else:
+        detail_sheet_value(tat, [
+            data_map[CellKey.update_time],
+            data_map[CellKey.order_count],
+            data_map[CellKey.unpaid_count],
+            data_map[CellKey.delivered_counts],
+            data_map[CellKey.delivered_percent],
+            data_map[CellKey.no_track_number],
+            data_map[CellKey.track_percent],
+            data_map[CellKey.no_track_percent],
+            data_map[CellKey.warehouse_condition],
+            data_map[CellKey.shipping_service_condition],
+            data_map[CellKey.store_condition],
+            data_map[CellKey.sku_condition],
+            data_map[CellKey.time_segment_condition],
+            data_map[CellKey.sum_up],
+            data_map[CellKey.exception],
+        ], ck_time, analyse_obj)
 
 
 def automatic(dir_path, analyse_obj):
