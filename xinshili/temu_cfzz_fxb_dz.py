@@ -16,7 +16,7 @@ def write_data_to_sheet(sheet1, sheet2, columns1, columns2, exchange_rate):
     """
     try:
         target_row = 2  # 表2从第2行开始写入
-        for row in range(3, sheet1.max_row + 1):  # 跳过表1的第2行
+        for row in range(3, sheet1.max_row + 1):  # 从表1的第3行开始查找，⚠️有时候fxb发过来的表会从第2行开始，这时候就可以改这里
             # 从表1获取数据,写入表2
             openpyxl_utils.set_cell_value(sheet2, target_row, columns2["日期"],
                                           openpyxl_utils.get_cell_value(sheet1, row,
