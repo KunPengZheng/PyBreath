@@ -88,6 +88,26 @@ def get_cell_value(sheet, row, column):
     return sheet.cell(row, column).value
 
 
+def get_merged_cell_value(sheet, row, col):
+    """
+    获取合并单元格的内容，如果单元格是合并区域中的一部分，获取合并区域的左上角单元格的值。
+    :param sheet: 工作表
+    :param row: 行号
+    :param col: 列号
+    :return: 单元格的值
+    """
+    # 遍历所有合并单元格的区域
+    for merged_cell in sheet.merged_cells.ranges:
+        # 检查当前单元格是否在合并单元格的范围内
+        if merged_cell.min_row <= row <= merged_cell.max_row and merged_cell.min_col <= col <= merged_cell.max_col:
+            # 如果该单元格在合并区域内，则返回该合并区域的左上角单元格的值
+            top_left_cell = sheet.cell(row=merged_cell.min_row, column=merged_cell.min_col)
+            return top_left_cell.value
+
+    # 如果没有合并单元格，直接返回单元格的值
+    return sheet.cell(row=row, column=col).value
+
+
 def set_cell_value(sheet, row, column, value):
     """
     通过 openpyxl 设置工作表 sheet 中第 row 行的 column 列单元格的值
