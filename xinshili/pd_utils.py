@@ -20,3 +20,23 @@ def remove_duplicates_by_column(input_file, output_file, column_name):
         df_deduplicated.to_excel(output_file, index=False)
     except Exception as e:
         print(f"处理文件时发生错误：{e}")
+
+
+def filter_data(input_file, output_file, column_name, isinList):
+    """
+    将input_file1的指定列的内容 和 将input_file2的指定列的内容 进行匹配，匹配到了 则将input_file2指定列的内容 标记为红色
+    :param input_file: 输入文件路径
+    :param output_file: 结果文件路径
+    :param column_name: 指定的列名
+    :param isinList: 需要过滤出来的指定内容的集合
+    """
+    # 读取 Excel 文件
+    df = pd.read_excel(input_file, engine='openpyxl')
+
+    # 过滤数据，只保留符合条件的行
+    filtered_df = df[df[column_name].isin(isinList)]
+
+    # 将筛选结果保存到新的 Excel 文件
+    filtered_df.to_excel(output_file, index=False, engine='openpyxl')
+
+    print(f"筛选完成，结果已保存至 {output_file}")

@@ -1,5 +1,6 @@
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import PatternFill
 
 
 def load_excel_file(file_path):
@@ -142,3 +143,50 @@ def generate_column_value():
 def get_max_row(sheet):
     # 获取最大行号
     return sheet.max_row
+
+
+def match_sign(input_file1, input_file2, output_file, file1_column_name, file2_column_name):
+    """
+    将input_file1的指定列的内容 和 将input_file2的指定列的内容 进行匹配，匹配到了 则将input_file2指定列的内容 标记为红色
+    :param input_file1: 文件1的路径
+    :param input_file2: 文件2的路径
+    :param output_file: 输出文件的路径
+    :param file1_column_name: 文件1指定的列名
+    :param file2_column_name: 文件2指定的列名
+    """
+    wb1 = load_excel_file(input_file1)
+    wb2 = load_excel_file(input_file2)
+
+    sheet1 = wb1.active
+    sheet2 = wb2.active
+
+    # 获取文件1和文件2的表头
+    header1 = [cell.value for cell in sheet1[1]]  # 读取文件1的表头
+    header2 = [cell.value for cell in sheet2[1]]  # 读取文件2的表头
+
+    # 找到对应列索引
+    try:
+        col_index_1 = header1.index(file1_column_name) + 1
+        col_index_2 = header2.index(file2_column_name) + 1
+    except ValueError:
+        print("未找到对应的列，请检查表头名称是否正确")
+        exit()
+
+    # 读取文件1的指定列数据，存入集合以加快查询
+    tracking_numbers = set(
+        sheet1.cell(row, col_index_1).value for row in range(2, sheet1.max_row + 1) if
+        sheet1.cell(row, col_index_1).value
+    )
+
+    # 颜色填充样式（红色）
+    red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+
+    # 遍历文件2的指定列，匹配数据
+    for row in range(2, sheet2.max_row + 1):  # 从第2行开始（跳过表头）
+        cell = sheet2.cell(row, col_index_2)
+        if cell.value and cell.value in tracking_numbers:  # 如果匹配成功
+            cell.fill = red_fill  # **正确方式：使用 PatternFill 设置背景颜色**
+
+    # 保存修改后的文件
+    wb2.save(output_file)
+    print("匹配完成，结果已保存到", output_file)
