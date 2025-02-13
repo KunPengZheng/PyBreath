@@ -190,3 +190,43 @@ def match_sign(input_file1, input_file2, output_file, file1_column_name, file2_c
     # 保存修改后的文件
     wb2.save(output_file)
     print("匹配完成，结果已保存到", output_file)
+
+
+def mark_by_row_content(filepath, src_column_name, dst_column_name, src_search_list):
+    """
+      根据文件指定列的指定内容，将指定列的对应行的背景颜色设置为黄色
+     :param input_file1: 文件1的路径
+     :param input_file2: 文件2的路径
+     :param output_file: 输出文件的路径
+     :param file1_column_name: 文件1指定的列名
+     :param file2_column_name: 文件2指定的列名
+    """
+
+    # 打开 Excel 文件
+    wb = load_workbook(filepath)
+    sheet = wb.active  # 默认选择活动工作表
+
+    # 获取文件的表头
+    header = [cell.value for cell in sheet[1]]  # 读取表头
+
+    # 获取 src_column_name 和 dst_column_name 的列索引
+    try:
+        courier_col_idx = header.index(src_column_name) + 1
+        tracking_no_col_idx = header.index(dst_column_name) + 1
+    except ValueError:
+        print(f"未找到{src_column_name}或{dst_column_name}的列，请检查表头名称是否正确")
+        return
+
+    # 定义黄色背景填充
+    yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+
+    # 遍历每一行数据
+    for row in range(2, sheet.max_row + 1):  # 从第2行开始，跳过表头
+        courier_value = sheet.cell(row=row, column=courier_col_idx).value
+        if courier_value in src_search_list:
+            tracking_cell = sheet.cell(row=row, column=tracking_no_col_idx)
+            tracking_cell.fill = yellow_fill  # 设置背景颜色为黄色
+
+    # 保存修改后的文件
+    wb.save(filepath)
+    print(f"修改完成，已将背景颜色标记为黄色并保存到 {filepath}")
