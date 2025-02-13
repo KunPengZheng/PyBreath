@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 
 def remove_duplicates_by_column(input_file, output_file, column_name):
@@ -40,3 +41,33 @@ def filter_data(input_file, output_file, column_name, isinList):
     filtered_df.to_excel(output_file, index=False, engine='openpyxl')
 
     print(f"筛选完成，结果已保存至 {output_file}")
+
+
+def merge_xlsx_files(file_paths: list, output_path: str):
+    """
+    将多个文件合并为一个文件
+    :param file_paths: 文件路径的数组
+    :param output_path: 结果文件路径
+    """
+    # 用于存储合并后的所有数据
+    combined_data = []
+
+    for file_path in file_paths:
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            print(f"文件 {file_path} 不存在，跳过")
+            continue
+
+        # 读取每个 Excel 文件的内容
+        df = pd.read_excel(file_path)
+
+        # 将每个文件的 DataFrame 加入到 combined_data 列表中
+        combined_data.append(df)
+
+    # 将所有 DataFrame 拼接在一起
+    merged_df = pd.concat(combined_data, ignore_index=True)
+
+    # 将合并后的数据保存到一个新的 Excel 文件
+    merged_df.to_excel(output_path, index=False)
+
+    print(f"所有文件已合并，结果保存为: {output_path}")
