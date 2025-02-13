@@ -76,7 +76,7 @@ class Pattern:
     unpaid = r"unpaid"
 
 
-def find_irregular_tracking_numbers(filepath):
+def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
     """
     查找不规则的快递单号（不是纯数字或者不是9开头）
     :param filepath: Excel文件路径
@@ -90,12 +90,12 @@ def find_irregular_tracking_numbers(filepath):
         # 获取 'Tracking No./物流跟踪号' 列索引
         tracking_no_col = None
         for col in range(1, sheet.max_column + 1):
-            if sheet.cell(row=1, column=col).value == 'Tracking No./物流跟踪号':
+            if sheet.cell(row=1, column=col).value == column_name:
                 tracking_no_col = col
                 break
 
         if tracking_no_col is None:
-            print("找不到 'Tracking No./物流跟踪号' 列")
+            print(f"找不到 {column_name} 列")
             return {}
 
         # 存储不规则快递单号的字典
