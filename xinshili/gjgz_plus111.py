@@ -6,6 +6,8 @@ import openpyxl
 import pandas as pd
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+import concurrent.futures
+import time
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants
 from xinshili.usps_utils import track
@@ -134,7 +136,7 @@ def update_courier_status(filepath, maps):
     wb.save(filepath)
 
 
-def extract_and_process_data(filepath, column_name, group_size):
+def extract_and_process_data(filepath: str, column_name: str, group_size: int, request_interval: float = 5.0):
     data = pd.read_excel(filepath)
 
     if column_name not in data.columns:
@@ -150,13 +152,12 @@ def extract_and_process_data(filepath, column_name, group_size):
         CourierStateMapKey.delivered_map: {},
     }
 
-    # 将无内容的单元格赋值""空字符串。
+    # 将无内容的单元格赋值""空字符串
     data[column_name] = data[column_name].fillna('')
 
     # 获取指定内容的数据
     filtered_data = data[data[column_name].apply(
-        lambda x: str(x).strip().lower() in ['',
-                                             CourierStateMapValue.not_yet,
+        lambda x: str(x).strip().lower() in ['', CourierStateMapValue.not_yet,
                                              CourierStateMapValue.pre_ship,
                                              CourierStateMapValue.tracking,
                                              CourierStateMapValue.no_tracking])]
@@ -167,30 +168,45 @@ def extract_and_process_data(filepath, column_name, group_size):
     # 按组划分数据
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
 
-    # 请求每组数据
-    for idx, group in enumerate(grouped_items, start=1):
-        print(f"处理第 {idx} 组，共 {len(group)} 条数据")
-        track1 = track(group)  # 假设track是查询API的函数
+    # 使用线程池来并发请求每组数据
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # 提交任务
+        futures = {executor.submit(track, group): group for group in grouped_items}
 
-        for package_id, info in track1['data'].items():
-            # 判断错误类型并分类
-            if info.get('err'):
-                if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
-                    results_map[CourierStateMapKey.not_yet_map][package_id] = CourierStateMapValue.not_yet
-                elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
-                    results_map[CourierStateMapKey.pre_ship_map][package_id] = CourierStateMapValue.pre_ship
-                else:
-                    results_map[CourierStateMapKey.no_tracking_map][package_id] = CourierStateMapValue.no_tracking
-            else:
-                if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
-                        info.get('statusLong'):
-                    results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
-                elif "Delivered" in info.get('statusCategory'):
-                    results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
-                elif "Delivered to Agent" in info.get('statusCategory'):
-                    results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
-                else:
-                    results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
+        # 遍历所有的任务（每组数据的请求）
+        for future in concurrent.futures.as_completed(futures):
+            group = futures[future]  # 获取当前完成的任务的 group 数据
+            try:
+                track1 = future.result()  # 获取请求结果
+                print(f"处理第 {grouped_items.index(group) + 1} 组，共 {len(group)} 条数据")
+
+                # 对返回的数据进行处理
+                for package_id, info in track1['data'].items():
+                    # 判断错误类型并分类
+                    if info.get('err'):
+                        if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
+                            results_map[CourierStateMapKey.not_yet_map][package_id] = CourierStateMapValue.not_yet
+                        elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
+                            results_map[CourierStateMapKey.pre_ship_map][package_id] = CourierStateMapValue.pre_ship
+                        else:
+                            results_map[CourierStateMapKey.no_tracking_map][
+                                package_id] = CourierStateMapValue.no_tracking
+                    else:
+                        if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
+                                info.get('statusLong'):
+                            results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
+                        elif "Delivered" in info.get('statusCategory'):
+                            results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                        elif "Delivered to Agent" in info.get('statusCategory'):
+                            results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                        else:
+                            results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
+
+                # 等待指定的间隔时间，避免请求频率过高
+                time.sleep(request_interval)
+
+            except Exception as e:
+                print(f"处理组 {grouped_items.index(group) + 1} 时发生错误: {e}")
 
     return results_map
 
