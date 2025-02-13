@@ -19,7 +19,7 @@ def get_usd_to_cny_rate():
     # except Exception as e:
     #     print(f"获取汇率失败：{e}")
     #     return None
-    return 7.31
+    return 7.32
 
 
 def get_yd():
@@ -175,3 +175,48 @@ def is_us_weekend(date_str):
 
     # 判断是否为 周日（6）或者周一 (0)，即为美国的周六和周日
     return date_obj.weekday()
+
+
+# import datetime
+# import holidays
+#
+#
+# # 查询美国节日
+# def get_american_holiday(date):
+#     us_holidays = holidays.US(years=date.year)
+#     if date in us_holidays:
+#         return us_holidays[date]
+#     return None
+#
+#
+# # 查询中国节日
+# def get_chinese_holiday(date):
+#     cn_holidays = holidays.China(years=date.year)
+#     if date in cn_holidays:
+#         return cn_holidays[date]
+#     return None
+#
+#
+# # 具体查询某天是哪个节日
+# def get_holiday_info(date_str):
+#     date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+#
+#     # 查询美国节日
+#     us_holiday = get_american_holiday(date_obj)
+#     if us_holiday:
+#         print(f"{date_str} 是美国的节日: {us_holiday}")
+#     else:
+#         print(f"{date_str} 不是美国的节日")
+#
+#     # 查询中国节日
+#     cn_holiday = get_chinese_holiday(date_obj)
+#     if cn_holiday:
+#         print(f"{date_str} 是中国的节日: {cn_holiday}")
+#     else:
+#         print(f"{date_str} 不是中国的节日")
+#
+#
+# # 查询某天节日示例
+# date_str = "2025-11-28"  # 举例日期：2025年7月4日
+# get_holiday_info(date_str)
+
