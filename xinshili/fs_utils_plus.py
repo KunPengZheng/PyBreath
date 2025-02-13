@@ -35,6 +35,7 @@ class ClientConstants:
     mz_xsd = "mz_xsd"
     mx_dg = "mx_dg"
     md_fc = "md_fc"
+    md_flld = "md_flld"
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,7 @@ ClientMapConstants = {
     ClientConstants.mz_xsd: {MapFields.detail: "Cv3fIH", MapFields.brief: "6BIGKF"},
     ClientConstants.mx_dg: {MapFields.detail: "334FDH", MapFields.brief: "QvGf9H"},
     ClientConstants.md_fc: {MapFields.detail: "P0sVEI", MapFields.brief: "d9tS9E"},
+    ClientConstants.md_flld: {MapFields.brief: "ot68bY"},
 }
 
 
@@ -68,7 +70,8 @@ def get_map_url(analyse_obj):
             analyse_obj == ClientConstants.xyl or \
             analyse_obj == ClientConstants.mz_xsd or \
             analyse_obj == ClientConstants.mx_dg or \
-            analyse_obj == ClientConstants.md_fc:
+            analyse_obj == ClientConstants.md_fc or \
+            analyse_obj == ClientConstants.md_flld:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.values_spreadsheets_write_way}"
         return url
