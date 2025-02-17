@@ -145,7 +145,7 @@ def update_courier_status(filepath, maps):
     wb.save(filepath)
 
 
-def extract_and_process_data(filepath: str, column_name: str, group_size: int, request_interval: float = 5.0):
+def extract_and_process_data(filepath: str, column_name: str, group_size: int, request_interval: float = 2.0):
     data = pd.read_excel(filepath)
 
     if column_name not in data.columns:
@@ -1027,19 +1027,12 @@ def go(analyse_obj, xlsx_path):
             analyse_obj == ClientConstants.mx_dg or \
             analyse_obj == ClientConstants.md_fc:
         detail_sheet_value(tat, [
+            data_map[CellKey.Outbound_Time],
             data_map[CellKey.update_time],
-            data_map[CellKey.order_count],
-            data_map[CellKey.unpaid_count],
-            data_map[CellKey.delivered_counts],
-            data_map[CellKey.delivered_percent],
-            data_map[CellKey.no_track_number],
-            data_map[CellKey.track_percent],
-            data_map[CellKey.no_track_percent],
-            data_map[CellKey.warehouse_condition],
-            data_map[CellKey.shipping_service_condition],
+            data_map[CellKey.wl],
             data_map[CellKey.store_condition],
-            # data_map[CellKey.sku_condition],
             data_map[CellKey.time_segment_condition],
+            data_map[CellKey.shipping_service_condition],
             data_map[CellKey.sum_up],
             data_map[CellKey.exception],
         ], ck_time, analyse_obj)
@@ -1075,21 +1068,21 @@ def automatic(dir_path, analyse_obj):
                 xlsx_path = f"{root}/{ele}"
                 print(f"匹配的文件: {xlsx_path}")
                 try:
-                    total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
-                    total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
-
-                    if total_count == 0:
-                        swl = 0
-                    else:
-                        swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-
-                    if total_count == 0:
-                        qsl = 0
-                    else:
-                        qsl = round2((int(delivered_count) / int(total_count)) * 100)
-
-                    if swl < 99 or qsl < 98:
-                        go(analyse_obj, xlsx_path)
+                    # total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
+                    # total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
+                    #
+                    # if total_count == 0:
+                    #     swl = 0
+                    # else:
+                    #     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+                    #
+                    # if total_count == 0:
+                    #     qsl = 0
+                    # else:
+                    #     qsl = round2((int(delivered_count) / int(total_count)) * 100)
+                    #
+                    # if swl < 99 or qsl < 98:
+                    go(analyse_obj, xlsx_path)
                 except ZeroDivisionError:
                     print(f"警告：{xlsx_path} 的 total_count 为 0，跳过计算。")
                     go(analyse_obj, xlsx_path)  # 仍然执行 go 但避免除零错误
@@ -1100,7 +1093,7 @@ def automatic(dir_path, analyse_obj):
 
 if __name__ == '__main__':
     # 手动
-    go(None, None)
+    # go(None, None)
     # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
@@ -1112,4 +1105,4 @@ if __name__ == '__main__':
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.2", ClientConstants.xyl)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg", ClientConstants.mx_dg)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc", ClientConstants.md_fc)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc", ClientConstants.md_fc)
