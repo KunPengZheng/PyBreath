@@ -795,7 +795,10 @@ def go(analyse_obj, xlsx_path):
         for key, value in result_map.items():
             value1 = value["tracking_number"]
             value2 = value["kj"]
-            unpaid_text += f"\n平台单号：{key}, 物流跟踪号：{value1}, 是否kj：{value2}"
+            if (analyse_obj == ClientConstants.sanrio):
+                unpaid_text += f"\n平台单号：{key}, 物流跟踪号：{value1}, 是否kj：{value2}"
+            else:
+                unpaid_text += f"\n物流跟踪号：{value1}, 是否kj：{value2}"
             unpaid_text += f"\n"
     text += unpaid_text
 
