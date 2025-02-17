@@ -656,12 +656,13 @@ def generate_distribution_report2(distribution, no_track_distribution, sku_no_tr
         kjCount = sku_kj_count(xlsx_path, entity)
 
         # 生成报告内容
-        # strs = f"\n{entity}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{swl}%"
-        strs = f"\n{entity}：（{count}, {no_track_count}, {swl}%）,（{no_tracking_count}, {pre_ship_count}, " \
-               f"{not_yet_count}, {delivered_count}, {unpaid_count}）,（{kjCount}, {length_}*{width_}*{height_}*{unit_}）"
-        strs2 = f"\n{entity}：({count},{swl}%)"
-        report_text += strs
-        report_text2 += strs2
+        if (swl != 100.0):
+            # strs = f"\n{entity}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{swl}%"
+            strs = f"\n{entity}：（{count}, {no_track_count}, {swl}%）,（{no_tracking_count}, {pre_ship_count}, " \
+                   f"{not_yet_count}, {delivered_count}, {unpaid_count}）,（{kjCount}, {length_}*{width_}*{height_}*{unit_}）"
+            strs2 = f"\n{entity}：({count},{swl}%)"
+            report_text += strs
+            report_text2 += strs2
 
         # 更新最低上网率的实体
         if swl < lowest_swl:
