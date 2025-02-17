@@ -595,6 +595,28 @@ def sku_kj_count(file_path, sku_value, sku_column='SKU', shipping_service_column
     return len(filtered_data)
 
 
+def kj_count(file_path, shipping_service_column='Shipping service/物流渠道', recipient_column='Recipient/收件人'):
+    # 读取 Excel 文件
+    data = pd.read_excel(file_path)
+
+    # 确保必要的列存在
+    if shipping_service_column not in data.columns or recipient_column not in data.columns:
+        raise ValueError(f"文件中缺少必要的列，请检查列名是否正确")
+
+    # 条件1：'Shipping service/物流渠道' 不为 '上传物流面单(Upload_Shipping_Label)' 的行
+    condition1 = (data[shipping_service_column] != '上传物流面单(Upload_Shipping_Label)')
+
+    # 条件2：'Shipping service/物流渠道' 为 '上传物流面单(Upload_Shipping_Label)' 且 'Recipient/收件人' 为 'KJ' 的行
+    condition2 = (data[shipping_service_column] == '上传物流面单(Upload_Shipping_Label)') & (
+            data[recipient_column] == 'KJ')
+
+    # 综合筛选符合任一条件的行
+    filtered_data = data[condition1 | condition2]
+
+    # 返回符合条件的行数
+    return len(filtered_data)
+
+
 def generate_distribution_report(distribution, no_track_distribution, data_map, data_map_key):
     """
     通用的分布报告生成函数
@@ -840,8 +862,11 @@ def go(analyse_obj, xlsx_path):
     no_tracking_countl = round2((int(no_tracking_count) / int(total_count)) * 100)
     tracking_countl = round2((int(tracking_count) / int(total_count)) * 100)
 
+    kj_counts = kj_count(output_file)
+
     wl = ""
     wl += f"\n订单总数：{total_count}"
+    wl += f"\nKJ订单总数：{kj_counts}"
     wl += f"\n"
     wl += f"\n上网：（{track_count}, {swl}%）"
     wl += f"\n未上网：（{no_track_count}, {wswl}%）"
