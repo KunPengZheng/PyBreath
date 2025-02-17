@@ -1,4 +1,7 @@
 from datetime import datetime
+import os
+import re
+
 import pandas as pd
 from openpyxl import load_workbook
 
@@ -98,8 +101,9 @@ def merge_csv_files(file_paths, output_path):
     print(f"所有 CSV 文件已合并，结果保存至 {output_path}")
 
 
-def go():
-    input_path = input("请输入文件的绝对路径：")
+def go(input_path):
+    if input_path is None:
+        input_path = input("请输入文件的绝对路径：")
     xlsx_path = extract_path_before_csv(input_path)
     str_strip(xlsx_path, "快递单号")
     check_and_add_courier_column(xlsx_path)
@@ -160,6 +164,16 @@ def go():
     brief_sheet_value(tat, [fs_text], ck_time, gz_time, ClientConstants.md_flld)
 
 
+def automatic(dir_path):
+    for root, dirs, files in os.walk(dir_path):
+        pattern = r"^打单时间\d+_\d+\.xlsx$"  # 正则表达式
+        for ele in files:
+            if re.match(pattern, ele):
+                xlsx_path = f"{root}/{ele}"
+                print(f"匹配的文件: {xlsx_path}")
+                go(xlsx_path)
+
+
 if __name__ == '__main__':
     # # 示例调用
     # file_paths = [
@@ -168,4 +182,7 @@ if __name__ == '__main__':
     # ]  # 请替换为实际的文件路径
     # output_path = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.2/merged_output.csv'  # 合并后的文件路径
     # merge_csv_files(file_paths, output_path)
-    go()
+
+    go(None)
+
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
