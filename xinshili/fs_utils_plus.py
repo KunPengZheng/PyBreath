@@ -93,11 +93,11 @@ def detail_sheet_value(tat, lists, ck_time, analyse_obj):
             analyse_obj == ClientConstants.mx_dg or \
             analyse_obj == ClientConstants.md_fc:
         post_data = {
-            "valueRange": {"range": f"{ClientMapConstants[analyse_obj][MapFields.detail]}!B{row_nums}:O{row_nums}",
+            "valueRange": {"range": f"{ClientMapConstants[analyse_obj][MapFields.detail]}!A{row_nums}:H{row_nums}",
                            "values": [lists]}}
     else:
         post_data = {
-            "valueRange": {"range": f"{ClientMapConstants[analyse_obj][MapFields.detail]}!B{row_nums}:P{row_nums}",
+            "valueRange": {"range": f"{ClientMapConstants[analyse_obj][MapFields.detail]}!A{row_nums}:J{row_nums}",
                            "values": [lists]}}
 
     # values_prepend 需要使用post请求方式，values需要使用put请求方式
