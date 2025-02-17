@@ -516,7 +516,8 @@ def get_unpaid_platform_tracking_map(file_path):
         tracking_number = row['Tracking No./物流跟踪号']
         shipping_service = row['Shipping service/物流渠道']
         recipient = row['Recipient/收件人']
-        kj_ = shipping_service == '上传物流面单(Upload_Shipping_Label)' and recipient != 'KJ'
+        kj_ = (shipping_service == '上传物流面单(Upload_Shipping_Label)' and recipient == 'KJ') or \
+              (shipping_service != '上传物流面单(Upload_Shipping_Label)')
         platform_tracking_map[platform_number] = {"tracking_number": tracking_number, "kj": kj_}
 
     # 返回结果字典
@@ -578,12 +579,16 @@ def sku_kj_count(file_path, sku_value, sku_column='SKU', shipping_service_column
     if sku_column not in data.columns or shipping_service_column not in data.columns or recipient_column not in data.columns:
         raise ValueError(f"文件中缺少必要的列，请检查列名是否正确")
 
-    # 筛选出 SKU 列为指定内容，且 'Shipping service/物流渠道' 列为 '上传物流面单(Upload_Shipping_Label)'，
-    # 并且 'Recipient/收件人' 列为 'KJ' 的行
+    # 筛选出 SKU 列为指定内容，且满足以下两种情况之一：
+    # 1. 'Shipping service/物流渠道' 为 '上传物流面单(Upload_Shipping_Label)' 且 'Recipient/收件人' 为 'KJ'
+    # 2. 'Shipping service/物流渠道' 不为 '上传物流面单(Upload_Shipping_Label)'
     filtered_data = data[
         (data[sku_column] == sku_value) &  # 筛选 SKU 列为指定值
-        (data[shipping_service_column] == '上传物流面单(Upload_Shipping_Label)') &  # 筛选物流渠道为指定值
-        (data[recipient_column] == 'KJ')  # 筛选收件人列为 'KJ'
+        (
+                ((data[shipping_service_column] == '上传物流面单(Upload_Shipping_Label)') & (
+                        data[recipient_column] == 'KJ')) |  # 满足第一个条件
+                (data[shipping_service_column] != '上传物流面单(Upload_Shipping_Label)')  # 满足第二个条件
+        )
         ]
 
     # 返回符合条件的行数
