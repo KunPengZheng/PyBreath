@@ -1008,19 +1008,19 @@ def go(analyse_obj, xlsx_path):
         else:
             sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 3 and interval_time <= 5):
-        if (qsl <= 30):
+        if (qsl <= 20):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，异常状态！"
             qsl_flag = True
         else:
             sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 5 and interval_time <= 7):
-        if (qsl <= 70):
+        if (qsl <= 50):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，异常状态！"
             qsl_flag = True
         else:
             sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
     elif (interval_time > 7 and interval_time <= 9):
-        if (qsl <= 90):
+        if (qsl <= 80):
             sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，异常状态！"
             qsl_flag = True
         else:
@@ -1103,21 +1103,21 @@ def automatic(dir_path, analyse_obj):
                 xlsx_path = f"{root}/{ele}"
                 print(f"匹配的文件: {xlsx_path}")
                 try:
-                    # total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
-                    # total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
-                    #
-                    # if total_count == 0:
-                    #     swl = 0
-                    # else:
-                    #     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-                    #
-                    # if total_count == 0:
-                    #     qsl = 0
-                    # else:
-                    #     qsl = round2((int(delivered_count) / int(total_count)) * 100)
-                    #
-                    # if swl < 99 or qsl < 98:
-                    go(analyse_obj, xlsx_path)
+                    total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
+                    total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
+
+                    if total_count == 0:
+                        swl = 0
+                    else:
+                        swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+
+                    if total_count == 0:
+                        qsl = 0
+                    else:
+                        qsl = round2((int(delivered_count) / int(total_count)) * 100)
+
+                    if swl < 99 or qsl < 98:
+                        go(analyse_obj, xlsx_path)
                 except ZeroDivisionError:
                     print(f"警告：{xlsx_path} 的 total_count 为 0，跳过计算。")
                     go(analyse_obj, xlsx_path)  # 仍然执行 go 但避免除零错误
