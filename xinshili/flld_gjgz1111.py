@@ -66,14 +66,18 @@ def get_days_difference(file_path, column_name="打单时间"):
         # 获取当前年份
         current_year = datetime.now().year
 
-        # 判断日期格式，若没有年份，自动补充当前年份
-        if len(first_row_value.split('-')) == 2:  # 格式为 'MM-DD' 或 'DD-MM'
-            first_row_value = f"{current_year}-{first_row_value}"
-            print(first_row_value)
-
-        # 解析日期
-        outbound_time = datetime.strptime(first_row_value, "%Y-%m-%d %H:%M")
-        print(outbound_time)
+        # 检查日期类型，如果是字符串并且没有年份，补充当前年份
+        if isinstance(first_row_value, str):
+            # 如果是字符串并且没有年份，补充当前年份
+            if len(first_row_value.split('-')) == 2:  # 格式为 'MM-DD' 或 'DD-MM'
+                first_row_value = f"{current_year}-{first_row_value}"
+            # 尝试解析日期
+            outbound_time = datetime.strptime(first_row_value, "%Y-%m-%d %H:%M")
+        elif isinstance(first_row_value, datetime):
+            # 如果是已经是 datetime 类型，直接处理
+            outbound_time = first_row_value
+        else:
+            raise ValueError(f"无法解析日期: {first_row_value}")
 
         # 格式化为 "%Y/%m/%d" 格式
         formatted_date = outbound_time.strftime("%Y/%m/%d")
@@ -202,6 +206,6 @@ if __name__ == '__main__':
     # output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
     # merge_xlsx_files(file1, file2, output_file)
 
-    go(None)
+    # go(None)
 
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
