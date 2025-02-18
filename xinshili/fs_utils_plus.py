@@ -17,16 +17,6 @@ class FsConstants:
     gjgz_token = "BGrnsxMFfhfoumtUDF8cXM8jnGg"
 
 
-FsOrderSheetMap = {
-    "2025/01": "6a545c",
-    "2025/02": "wO42PC",
-    "2025/03": "K8DNxT",
-    "2025/04": "EF1w2u",
-    "2025/05": "lWkIyw",
-    "2025/06": "MXzip0",
-}
-
-
 @dataclass(frozen=True)
 class ClientConstants:
     zbw = "zbw"
@@ -36,6 +26,14 @@ class ClientConstants:
     mx_dg = "mx_dg"
     md_fc = "md_fc"
     md_flld = "md_flld"
+    cksj = "cksj"
+    cjsj = "cjsj"
+
+
+FsOrderSheetMap = {
+    ClientConstants.cksj: "6a545c",
+    ClientConstants.cjsj: "wO42PC",
+}
 
 
 @dataclass(frozen=True)
@@ -127,19 +125,18 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
     print(r2.json())  # 输出来判断写入是否成功
 
 
-def order_sheet_value(tat, lists, position, ck_time):
+def order_sheet_value(tat, lists, ck_time, analyse_obj):
     url = f"{FsConstants.spreadsheets_base_url}QeR8sB3Pkhieswtac5kcTxHkngc{FsConstants.values_spreadsheets_write_way}"
 
     header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
 
-    # 格式化为 "%Y/%m/%d" 格式
-    formatted_date = ck_time.strftime("%Y/%m")
-    value = FsOrderSheetMap.get(formatted_date)
+    row_nums = get_row_for_specific_date(ck_time)
+    value = FsOrderSheetMap.get(analyse_obj)
 
     if value is None:
-        raise ValueError(f"map不存在key:{formatted_date}")
+        raise ValueError(f"map不存在key:{value}")
 
-    post_data = {"valueRange": {"range": f"{value}!B{position}:AL{position}", "values": [lists]}}
+    post_data = {"valueRange": {"range": f"{value}!B{row_nums}:AL{row_nums}", "values": [lists]}}
 
     r2 = requests.put(url, data=json.dumps(post_data), headers=header)  # 请求写入
 
