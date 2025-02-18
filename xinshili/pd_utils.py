@@ -4,7 +4,7 @@ import os
 
 def remove_duplicates_by_column(input_file, output_file, column_name):
     """
-    删除指定列中重复的行，仅保留第一条，并覆盖源文件。
+    去重：删除指定列中重复的行，仅保留第一条，并覆盖源文件。
 
     参数：
     - input_file: str，输入文件路径

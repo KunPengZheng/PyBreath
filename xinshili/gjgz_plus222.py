@@ -10,6 +10,7 @@ import concurrent.futures
 import time
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants
+from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.usps_utils import track
 from xinshili.utils import round2, getYmd, delete_file, is_us_weekend, get_weekday, get_american_holiday, \
     get_chinese_holiday
@@ -467,27 +468,6 @@ def get_days_difference(file_path, column_name=RowName.OutboundTime):
     except Exception as e:
         print(f"发生错误: {e}")
         return None
-
-
-def remove_duplicates_by_column(input_file, output_file, column_name):
-    """
-    删除指定列中重复的行，仅保留第一条，并覆盖源文件。
-
-    参数：
-    - input_file: str，输入文件路径
-    - column_name: str，要检查重复的列名
-    """
-    try:
-        # 读取 Excel 文件
-        df = pd.read_excel(input_file)
-        # 检查列名是否存在
-        if column_name not in df.columns:
-            raise ValueError(f"列 '{column_name}' 不存在于输入文件中！")
-        # 删除指定列的重复项，仅保留第一条
-        df_deduplicated = df.drop_duplicates(subset=[column_name], keep='first')
-        df_deduplicated.to_excel(output_file, index=False)
-    except Exception as e:
-        print(f"处理文件时发生错误：{e}")
 
 
 def get_unpaid_platform_tracking_map(file_path):
@@ -1139,6 +1119,6 @@ if __name__ == '__main__':
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.2", ClientConstants.xyl)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg", ClientConstants.mx_dg)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc", ClientConstants.md_fc)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg", ClientConstants.mx_dg)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc", ClientConstants.md_fc)
