@@ -115,13 +115,13 @@ def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
         return {}
 
 
-def update_courier_status(filepath, maps):
+def update_courier_status(filepath, maps, wl=RowName.Tracking_No):
     wb = openpyxl.load_workbook(filepath)
     sheet = wb.active  # 默认使用活动工作表
 
     data = pd.read_excel(filepath)
     # 获取 'Tracking No./物流跟踪号' 列和 'Courier/快递' 列的索引
-    tracking_no_col = data.columns.get_loc(RowName.Tracking_No) + 1  # openpyxl索引从1开始
+    tracking_no_col = data.columns.get_loc(wl) + 1  # openpyxl索引从1开始
     courier_col = data.columns.get_loc(RowName.Courier) + 1  # openpyxl索引从1开始
 
     for tracking_no, status in maps.items():
@@ -136,7 +136,8 @@ def update_courier_status(filepath, maps):
     wb.save(filepath)
 
 
-def extract_and_process_data(filepath: str, column_name: str, group_size: int, request_interval: float = 5.0):
+def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
+                             request_interval: float = 5.0):
     data = pd.read_excel(filepath)
 
     if column_name not in data.columns:
@@ -163,7 +164,7 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, r
                                              CourierStateMapValue.no_tracking])]
 
     # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
-    items = filtered_data[RowName.Tracking_No].tolist()
+    items = filtered_data[wl_name].tolist()
 
     # 按组划分数据
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
