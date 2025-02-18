@@ -1,7 +1,8 @@
 import pandas as pd
 import warnings
 
-from xinshili.fs_utils_plus import order_sheet_value, get_token
+from xinshili.fs_utils_plus import order_sheet_value, get_token, get_row_for_specific_date, FsOrderSheetMap, \
+    ClientConstants
 from xinshili.utils import round2
 
 # 忽略 openpyxl 的样式警告
@@ -124,12 +125,8 @@ def analyze_data(file_path, order_column="Outbound Order No/出库单号",
                 c: round2((sorted_client_counts[c] / total_orders) * 100) if total_orders > 0 else 0
                 for c in clients}
 
-            # 计算 position = 日期的 day + 1
-            position = date.day + 1
-
             # 创建对象存储数据
             daily_data = {
-                "position": position,
                 "date": date,
                 "total_orders": total_orders,
                 "warehouse_counts": sorted_warehouse_counts,
@@ -146,67 +143,83 @@ def analyze_data(file_path, order_column="Outbound Order No/出库单号",
         return None
 
 
-# 主程序
-file_path = input("请输入Excel文件的路径：")
-result = analyze_data(file_path)
-tat = get_token()
+def go(analyse_obj):
+    if analyse_obj is None:
+        analyse_obj = input("请输跟踪对象（cksj/cjsj）：")
 
-if result:
-    print("\n每天的订单统计：")
-    for daily_data in result:
-        print(f"Position: {daily_data['position']}")
-        print(f"日期: {daily_data['date']}")
-        print(f"总订单数: {daily_data['total_orders']}")
-        print(f"仓库订单数: {daily_data['warehouse_counts']}")
-        print(f"仓库占比: {daily_data['warehouse_ratios']}")
-        print(f"客户订单数: {daily_data['client_counts']}")
-        print(f"客户占比: {daily_data['client_ratios']}")
-        print("-" * 40)
+    if analyse_obj != ClientConstants.cksj and \
+            analyse_obj != ClientConstants.cjsj:
+        raise ValueError(f"{analyse_obj} 未定义")
 
-        warehouse_counts_map = daily_data['warehouse_counts']
-        warehouse_ratios_map = daily_data['warehouse_ratios']
-        client_counts_map = daily_data['client_counts']
-        client_ratios_map = daily_data['client_ratios']
+    # 主程序
+    file_path = input("请输入Excel文件的路径：")
+    result = None
+    if (analyse_obj == ClientConstants.cksj):
+        result = analyze_data(file_path)
+    elif (analyse_obj == ClientConstants.cjsj):
+        result = analyze_data(file_path, time_column="Creation time/创建时间")
 
-        # 传递数据到表单（示例）
-        order_sheet_value(tat, [
-            daily_data['total_orders'],
+    tat = get_token()
 
-            str(warehouse_counts_map[mx]) + "（" + str(warehouse_ratios_map[mx]) + "%）",
-            str(warehouse_counts_map[mz]) + "（" + str(warehouse_ratios_map[mz]) + "%）",
-            str(warehouse_counts_map[md]) + "（" + str(warehouse_ratios_map[md]) + "%）",
+    if result:
+        print("\n每天的订单统计：")
+        for daily_data in result:
+            print(f"日期: {daily_data['date']}")
+            print(f"总订单数: {daily_data['total_orders']}")
+            print(f"仓库订单数: {daily_data['warehouse_counts']}")
+            print(f"仓库占比: {daily_data['warehouse_ratios']}")
+            print(f"客户订单数: {daily_data['client_counts']}")
+            print(f"客户占比: {daily_data['client_ratios']}")
+            print("-" * 40)
 
-            str(client_counts_map[client_RSN3001]) + "（" + str(client_ratios_map[client_RSN3001]) + "%）",
-            str(client_counts_map[client_RSN3002]) + "（" + str(client_ratios_map[client_RSN3002]) + "%）",
-            str(client_counts_map[client_RSN3003]) + "（" + str(client_ratios_map[client_RSN3003]) + "%）",
-            str(client_counts_map[client_RSN3004]) + "（" + str(client_ratios_map[client_RSN3004]) + "%）",
-            str(client_counts_map[client_RSN3005]) + "（" + str(client_ratios_map[client_RSN3005]) + "%）",
-            str(client_counts_map[client_RSN3006]) + "（" + str(client_ratios_map[client_RSN3006]) + "%）",
-            str(client_counts_map[client_RSN3007]) + "（" + str(client_ratios_map[client_RSN3007]) + "%）",
-            str(client_counts_map[client_RSN3008]) + "（" + str(client_ratios_map[client_RSN3008]) + "%）",
-            str(client_counts_map[client_RSN3009]) + "（" + str(client_ratios_map[client_RSN3009]) + "%）",
-            str(client_counts_map[client_RSN30010]) + "（" + str(client_ratios_map[client_RSN30010]) + "%）",
-            str(client_counts_map[client_RSN30011]) + "（" + str(client_ratios_map[client_RSN30011]) + "%）",
-            str(client_counts_map[client_RSN30012]) + "（" + str(client_ratios_map[client_RSN30012]) + "%）",
-            str(client_counts_map[client_RSN30013]) + "（" + str(client_ratios_map[client_RSN30013]) + "%）",
-            str(client_counts_map[client_RSN30014]) + "（" + str(client_ratios_map[client_RSN30014]) + "%）",
-            str(client_counts_map[client_RSN30015]) + "（" + str(client_ratios_map[client_RSN30015]) + "%）",
-            str(client_counts_map[client_RSN30016]) + "（" + str(client_ratios_map[client_RSN30016]) + "%）",
-            str(client_counts_map[client_RSN30017]) + "（" + str(client_ratios_map[client_RSN30017]) + "%）",
-            str(client_counts_map[client_RSN30018]) + "（" + str(client_ratios_map[client_RSN30018]) + "%）",
-            str(client_counts_map[client_RSN30019]) + "（" + str(client_ratios_map[client_RSN30019]) + "%）",
-            str(client_counts_map[client_RSN30020]) + "（" + str(client_ratios_map[client_RSN30020]) + "%）",
-            str(client_counts_map[client_RSN30021]) + "（" + str(client_ratios_map[client_RSN30021]) + "%）",
-            str(client_counts_map[client_RSN30022]) + "（" + str(client_ratios_map[client_RSN30022]) + "%）",
-            str(client_counts_map[client_RSN30023]) + "（" + str(client_ratios_map[client_RSN30023]) + "%）",
-            str(client_counts_map[client_RSN30024]) + "（" + str(client_ratios_map[client_RSN30024]) + "%）",
-            str(client_counts_map[client_RSN30025]) + "（" + str(client_ratios_map[client_RSN30025]) + "%）",
-            str(client_counts_map[client_RSN30026]) + "（" + str(client_ratios_map[client_RSN30026]) + "%）",
-            str(client_counts_map[client_RSN30027]) + "（" + str(client_ratios_map[client_RSN30027]) + "%）",
-            str(client_counts_map[client_RSN30028]) + "（" + str(client_ratios_map[client_RSN30028]) + "%）",
-            str(client_counts_map[client_RSN30029]) + "（" + str(client_ratios_map[client_RSN30029]) + "%）",
-            str(client_counts_map[client_RSN30030]) + "（" + str(client_ratios_map[client_RSN30030]) + "%）",
-            str(client_counts_map[client_RSN30031]) + "（" + str(client_ratios_map[client_RSN30031]) + "%）",
-            str(client_counts_map[client_RSN30032]) + "（" + str(client_ratios_map[client_RSN30032]) + "%）",
-            str(client_counts_map[client_RSN30033]) + "（" + str(client_ratios_map[client_RSN30033]) + "%）",
-        ], daily_data['position'], daily_data['date'])
+            warehouse_counts_map = daily_data['warehouse_counts']
+            warehouse_ratios_map = daily_data['warehouse_ratios']
+            client_counts_map = daily_data['client_counts']
+            client_ratios_map = daily_data['client_ratios']
+
+            # 传递数据到表单（示例）
+            order_sheet_value(tat, [
+                daily_data['total_orders'],
+
+                str(warehouse_counts_map[mx]) + "（" + str(warehouse_ratios_map[mx]) + "%）",
+                str(warehouse_counts_map[mz]) + "（" + str(warehouse_ratios_map[mz]) + "%）",
+                str(warehouse_counts_map[md]) + "（" + str(warehouse_ratios_map[md]) + "%）",
+
+                str(client_counts_map[client_RSN3001]) + "（" + str(client_ratios_map[client_RSN3001]) + "%）",
+                str(client_counts_map[client_RSN3002]) + "（" + str(client_ratios_map[client_RSN3002]) + "%）",
+                str(client_counts_map[client_RSN3003]) + "（" + str(client_ratios_map[client_RSN3003]) + "%）",
+                str(client_counts_map[client_RSN3004]) + "（" + str(client_ratios_map[client_RSN3004]) + "%）",
+                str(client_counts_map[client_RSN3005]) + "（" + str(client_ratios_map[client_RSN3005]) + "%）",
+                str(client_counts_map[client_RSN3006]) + "（" + str(client_ratios_map[client_RSN3006]) + "%）",
+                str(client_counts_map[client_RSN3007]) + "（" + str(client_ratios_map[client_RSN3007]) + "%）",
+                str(client_counts_map[client_RSN3008]) + "（" + str(client_ratios_map[client_RSN3008]) + "%）",
+                str(client_counts_map[client_RSN3009]) + "（" + str(client_ratios_map[client_RSN3009]) + "%）",
+                str(client_counts_map[client_RSN30010]) + "（" + str(client_ratios_map[client_RSN30010]) + "%）",
+                str(client_counts_map[client_RSN30011]) + "（" + str(client_ratios_map[client_RSN30011]) + "%）",
+                str(client_counts_map[client_RSN30012]) + "（" + str(client_ratios_map[client_RSN30012]) + "%）",
+                str(client_counts_map[client_RSN30013]) + "（" + str(client_ratios_map[client_RSN30013]) + "%）",
+                str(client_counts_map[client_RSN30014]) + "（" + str(client_ratios_map[client_RSN30014]) + "%）",
+                str(client_counts_map[client_RSN30015]) + "（" + str(client_ratios_map[client_RSN30015]) + "%）",
+                str(client_counts_map[client_RSN30016]) + "（" + str(client_ratios_map[client_RSN30016]) + "%）",
+                str(client_counts_map[client_RSN30017]) + "（" + str(client_ratios_map[client_RSN30017]) + "%）",
+                str(client_counts_map[client_RSN30018]) + "（" + str(client_ratios_map[client_RSN30018]) + "%）",
+                str(client_counts_map[client_RSN30019]) + "（" + str(client_ratios_map[client_RSN30019]) + "%）",
+                str(client_counts_map[client_RSN30020]) + "（" + str(client_ratios_map[client_RSN30020]) + "%）",
+                str(client_counts_map[client_RSN30021]) + "（" + str(client_ratios_map[client_RSN30021]) + "%）",
+                str(client_counts_map[client_RSN30022]) + "（" + str(client_ratios_map[client_RSN30022]) + "%）",
+                str(client_counts_map[client_RSN30023]) + "（" + str(client_ratios_map[client_RSN30023]) + "%）",
+                str(client_counts_map[client_RSN30024]) + "（" + str(client_ratios_map[client_RSN30024]) + "%）",
+                str(client_counts_map[client_RSN30025]) + "（" + str(client_ratios_map[client_RSN30025]) + "%）",
+                str(client_counts_map[client_RSN30026]) + "（" + str(client_ratios_map[client_RSN30026]) + "%）",
+                str(client_counts_map[client_RSN30027]) + "（" + str(client_ratios_map[client_RSN30027]) + "%）",
+                str(client_counts_map[client_RSN30028]) + "（" + str(client_ratios_map[client_RSN30028]) + "%）",
+                str(client_counts_map[client_RSN30029]) + "（" + str(client_ratios_map[client_RSN30029]) + "%）",
+                str(client_counts_map[client_RSN30030]) + "（" + str(client_ratios_map[client_RSN30030]) + "%）",
+                str(client_counts_map[client_RSN30031]) + "（" + str(client_ratios_map[client_RSN30031]) + "%）",
+                str(client_counts_map[client_RSN30032]) + "（" + str(client_ratios_map[client_RSN30032]) + "%）",
+                str(client_counts_map[client_RSN30033]) + "（" + str(client_ratios_map[client_RSN30033]) + "%）",
+            ], daily_data['date'], analyse_obj)
+
+
+if __name__ == '__main__':
+    go(None)
