@@ -101,6 +101,20 @@ def merge_csv_files(file_paths, output_path):
     print(f"所有 CSV 文件已合并，结果保存至 {output_path}")
 
 
+def merge_xlsx_files(file1, file2, output_file):
+    # 读取两个 Excel 文件
+    df1 = pd.read_excel(file1)
+    df2 = pd.read_excel(file2)
+
+    # 合并两个 DataFrame，默认按行合并
+    merged_df = pd.concat([df1, df2], ignore_index=True)
+
+    # 将合并后的数据保存到新的 Excel 文件
+    merged_df.to_excel(output_file, index=False)
+
+    print(f"两个文件已合并，结果保存到 {output_file}")
+
+
 def go(input_path):
     if input_path is None:
         input_path = input("请输入文件的绝对路径：")
@@ -175,13 +189,18 @@ def automatic(dir_path):
 
 
 if __name__ == '__main__':
-    # # 示例调用
+    # 示例调用
     # file_paths = [
-    #     '/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.2/打单时间14_12(已打单).csv',
-    #     '/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.2/打单时间14_114(已发货).csv',
+    #     '/Users/zkp/Downloads/table_1.csv',
+    #     '/Users/zkp/Downloads/table_12.csv',
     # ]  # 请替换为实际的文件路径
-    # output_path = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.2/merged_output.csv'  # 合并后的文件路径
+    # output_path = '/Users/zkp/Downloads/打单时间16_119.xlsx'  # 合并后的文件路径
     # merge_csv_files(file_paths, output_path)
+
+    # file1 = '/Users/zkp/Downloads/table_1.xlsx'  # 请替换为您的第一个 Excel 文件路径
+    # file2 = '/Users/zkp/Downloads/table_12.xlsx'  # 请替换为您的第二个 Excel 文件路径
+    # output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
+    # merge_xlsx_files(file1, file2, output_file)
 
     go(None)
 
