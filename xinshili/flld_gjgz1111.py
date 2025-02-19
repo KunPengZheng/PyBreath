@@ -209,3 +209,4 @@ if __name__ == '__main__':
     # go(None)
 
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.2")
