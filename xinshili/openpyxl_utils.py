@@ -1,6 +1,7 @@
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill
+import os
 
 
 def load_excel_file(file_path):
@@ -230,3 +231,33 @@ def mark_by_row_content(filepath, src_column_name, dst_column_name, src_search_l
     # 保存修改后的文件
     wb.save(filepath)
     print(f"修改完成，已将背景颜色标记为黄色并保存到 {filepath}")
+
+
+def merge_xlsx_files(file_paths: list, output_path: str):
+    """
+    将多个 Excel 文件合并为一个新的 Excel 文件。
+    :param file_paths: 要合并的文件路径列表
+    :param output_path: 合并后的输出文件路径
+    """
+    # 创建一个新的工作簿
+    wb_new = Workbook()
+    ws_new = wb_new.active
+    ws_new.title = "合并数据"  # 新工作簿中的第一个工作表
+
+    for file_path in file_paths:
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            print(f"文件 {file_path} 不存在，跳过")
+            continue
+
+        # 加载现有的 Excel 文件
+        wb_old = load_workbook(file_path)
+        sheet_old = wb_old.active  # 默认读取第一个工作表
+
+        # 获取原工作表的所有数据
+        for row in sheet_old.iter_rows(values_only=True):
+            ws_new.append(row)  # 将每一行数据添加到新的工作簿
+
+    # 保存合并后的工作簿
+    wb_new.save(output_path)
+    print(f"所有文件已合并，结果保存为: {output_path}")
