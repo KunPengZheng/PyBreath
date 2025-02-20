@@ -764,10 +764,11 @@ def go(analyse_obj, xlsx_path):
         Outbound_Time += f"\n中国节日: {cn_holiday}"
 
     date_obj1 = datetime.strptime(gz_time, "%Y/%m/%d").date()
+    previous_day1 = date_obj1 - timedelta(days=1)
     Update_Time = ""
     Update_Time += current_time
     Update_Time += f"\n{get_weekday(gz_time)}"
-    us_holiday1 = get_american_holiday(previous_day)
+    us_holiday1 = get_american_holiday(previous_day1)
     if us_holiday1:
         Update_Time += f"\n美国节日: {us_holiday1}"
     cn_holiday1 = get_chinese_holiday(date_obj1)
