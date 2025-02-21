@@ -1,11 +1,7 @@
 from xinshili.openpyxl_utils import merge_xlsx_files
-import pandas as pd
-
 from xinshili.pd_utils import remove_duplicates_by_column
-
 import pandas as pd
-
-import pandas as pd
+import re
 
 
 def delete_matching_rows(input_file: str, output_file: str, keywords: list = ["运费和差价专用", "刷数据", "专拍"]):
@@ -25,7 +21,7 @@ def filter_pei_jian(input_file: str, output_file: str,
                                       "采集板从控模块", "采集板", "低压线束", "电池底壳", "外壳",
                                       "上盖", "高压互锁插座", "烟感器", "低压接触器",
                                       "预充电阻", "低压通讯", "电流传感器", "继电器", "保险丝", "熔断器", "分流器",
-                                      "接插件","维修开关", "烟雾传感器", "高压总成BDU", "高压插座", "低压通讯接口"]):
+                                      "接插件", "维修开关", "烟雾传感器", "高压总成BDU", "高压插座", "低压通讯接口"]):
     # 读取 Excel 文件
     df = pd.read_excel(input_file, engine='openpyxl')
 
@@ -164,22 +160,132 @@ def mathc_battery_brand(file_path):
     df.to_excel(file_path, index=False)  # 保存到新的Excel文件
 
 
+def match_ah(input_file: str):
+    # 读取 Excel 文件
+    df = pd.read_excel(input_file, engine='openpyxl')
+
+    # 如果 "Ah" 列不存在，则创建该列
+    if 'Ah' not in df.columns:
+        df['Ah'] = ""  # 创建一个空的 "Ah" 列
+
+    # 定义正则表达式
+    pattern = r'(\d+(\.\d+)?)(?=\s*(Ah|AH|ah|安时|安))'
+
+    # 在描述列中查找匹配的内容并提取数值
+    df['Ah'] = df['描述'].apply(lambda x: re.search(pattern, str(x)).group(1) if re.search(pattern, str(x)) else None)
+
+    # 将结果保存为新的 Excel 文件
+    df.to_excel(input_file, index=False, engine='openpyxl')
+
+
+def match_mo(input_file: str):
+    # 读取 Excel 文件
+    df = pd.read_excel(input_file, engine='openpyxl')
+
+    # 如果 "Ah" 列不存在，则创建该列
+    if '内阻' not in df.columns:
+        df['内阻'] = ""  # 创建一个空的 "Ah" 列
+
+    # 定义正则表达式
+    pattern = r'内阻[:：]?\s*(\d+(\.\d+)?(mΩ|左右)?(-\d+(\.\d+)?(mΩ|左右)?)?)|内组[:：]?\s*(\d+(\.\d+)?)|内阻[:：]?\s*(\d+(\.\d+)?mΩ左右)'
+
+    # 提取“内阻”后面的数值或区间，去除“内阻：”前缀
+    df['内阻'] = df['描述'].apply(
+        lambda x: re.search(pattern, str(x)).group(1) if re.search(pattern, str(x)) else None
+    )
+
+    # 将结果保存为新的 Excel 文件
+    df.to_excel(input_file, index=False, engine='openpyxl')
+
+
+def match_voltage(input_file: str):
+    # 读取 Excel 文件
+    df = pd.read_excel(input_file, engine='openpyxl')
+
+    # 定义正则表达式
+    pattern = r'(?:电压[:：]?\s*)?(\d+(\.\d+)?)(?=\s*(V|v|伏))'
+
+    # 提取电压数字
+    df['电压'] = df['描述'].apply(
+        lambda x: re.search(pattern, str(x)).group(1) if re.search(pattern, str(x)) else None
+    )
+
+    # 将结果保存为新的 Excel 文件
+    df.to_excel(input_file, index=False, engine='openpyxl')
+
+
+def match_voltage(input_file: str):
+    # 读取 Excel 文件
+    df = pd.read_excel(input_file, engine='openpyxl')
+
+    # 定义正则表达式
+    pattern = r'(?:电压[:：]?\s*)?(\d+(\.\d+)?)(?=\s*(V|v|伏))'
+
+    # 提取电压数字
+    df['电压'] = df['描述'].apply(
+        lambda x: re.search(pattern, str(x)).group(1) if re.search(pattern, str(x)) else None
+    )
+
+    # 将结果保存为新的 Excel 文件
+    df.to_excel(input_file, index=False, engine='openpyxl')
+
+
+def match_size(input_file: str):
+    # 读取 Excel 文件
+    df = pd.read_excel(input_file, engine='openpyxl')
+
+    # 定义正则表达式
+    pattern = r'(\d+(\.\d+)?([-×*–]?\d+(\.\d+)?)+)(?=\s*(mm|毫米|mm\（含极柱\）))'
+
+    # 提取尺寸数据
+    df['尺寸'] = df['描述'].apply(
+        lambda x: re.search(pattern, str(x)).group(1) if re.search(pattern, str(x)) else None
+    )
+
+    # 将结果保存为新的 Excel 文件
+    df.to_excel(input_file, index=False, engine='openpyxl')
+
+
+def match_weight(input_file: str):
+    # 读取 Excel 文件
+    df = pd.read_excel(input_file, engine='openpyxl')
+
+    # 定义正则表达式
+    pattern = r'(\d+(\.\d+)?)(?=\s*(kg|KG|g|G))'
+
+    # 提取重量数字
+    df['重量'] = df['描述'].apply(
+        lambda x: re.search(pattern, str(x)).group(1) if re.search(pattern, str(x)) else None
+    )
+
+    # 将结果保存为新的 Excel 文件
+    df.to_excel(input_file, index=False, engine='openpyxl')
+
+
 if __name__ == '__main__':
+    print()
     # # 合并
     # merge()
     # # 去重
-    # remove_duplicates_by_column("/Users/zkp/Downloads/咸鱼/merge_out.xlsx",
-    #                             "/Users/zkp/Downloads/咸鱼/merge_out_filter.xlsx", "标题")
-
-    delete_matching_rows("/Users/zkp/Downloads/咸鱼/merge_out_filter_副本.xlsx",
-                         "/Users/zkp/Downloads/咸鱼/merge_out_filter_副本.xlsx")
-
-    # 过滤出"配件"的数据
-    filter_pei_jian("/Users/zkp/Downloads/咸鱼/merge_out_filter_副本.xlsx", "/Users/zkp/Downloads/咸鱼/pj.xlsx")
-
-    # 过滤出"非配件"的数据
-    compare_and_save_xlsx("/Users/zkp/Downloads/咸鱼/merge_out_filter_副本.xlsx", "/Users/zkp/Downloads/咸鱼/pj.xlsx",
-                          "/Users/zkp/Downloads/咸鱼/dc.xlsx")
-
-    # 获取电池品牌
-    mathc_battery_brand("/Users/zkp/Downloads/咸鱼/dc.xlsx")
+    # remove_duplicates_by_column("/Users/zkp/Downloads/咸鱼2/数据表格09_15_12.xlsx",
+    #                             "/Users/zkp/Downloads/咸鱼2/qc.xlsx", "标题")
+    #
+    # delete_matching_rows("/Users/zkp/Downloads/咸鱼2/qc.xlsx",
+    #                      "/Users/zkp/Downloads/咸鱼2/qc.xlsx")
+    #
+    # # 过滤出"配件"的数据
+    # filter_pei_jian("/Users/zkp/Downloads/咸鱼2/qc.xlsx", "/Users/zkp/Downloads/咸鱼2/pj.xlsx")
+    #
+    # # 过滤出"非配件"的数据
+    # compare_and_save_xlsx("/Users/zkp/Downloads/咸鱼2/qc.xlsx", "/Users/zkp/Downloads/咸鱼2/pj.xlsx",
+    #                       "/Users/zkp/Downloads/咸鱼2/dc.xlsx")
+    #
+    # # 获取电池品牌
+    # mathc_battery_brand("/Users/zkp/Downloads/咸鱼2/dc.xlsx")
+    #
+    # # 提取ah数据
+    # match_ah("/Users/zkp/Downloads/咸鱼2/dc.xlsx")
+    # match_mo("/Users/zkp/Downloads/咸鱼2/dc.xlsx")
+    # match_voltage("/Users/zkp/Downloads/咸鱼2/dc.xlsx")
+    # match_size("/Users/zkp/Downloads/咸鱼2/dc.xlsx")
+    # match_weight("/Users/zkp/Downloads/咸鱼2/dc.xlsx")
