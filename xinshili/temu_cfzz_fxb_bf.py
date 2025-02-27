@@ -60,9 +60,9 @@ def match_and_write_prices(sheet2, sheet4, columns2, sku_col_4, cost_col_4):
                 for row_4 in range(2, sheet4.max_row + 1):  # 从表4的第2行开始
                     sku_value_4 = openpyxl_utils.get_cell_value(sheet4, row_4, sku_col_4)
                     if sku_value_4 == sku_value_2:  # 匹配款号
-                        cost_value_4 = openpyxl_utils.get_cell_value(sheet4, row_4, cost_col_4)
+                        cost_value_4 = openpyxl_utils.get_merged_cell_value(sheet4, row_4, cost_col_4)
                         # 提取括号中的数值
-                        match = re.search(r"（([\d.]+)", cost_value_4)
+                        match = re.search(r"[（(]([\d.]+)美金[）)]", cost_value_4)
                         if match:
                             matched_cost = float(match.group(1))
                         break

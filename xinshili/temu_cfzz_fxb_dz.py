@@ -30,13 +30,15 @@ def write_data_to_sheet(sheet1, sheet2, columns1, columns2, exchange_rate):
                                           openpyxl_utils.get_cell_value(sheet1, row,
                                                                         columns1["Quantity"]))
 
-            openpyxl_utils.set_cell_value(sheet2, target_row, columns2["款号"],
-                                          openpyxl_utils.get_cell_value(sheet1, row,
-                                                                        columns1["Seller SKU"]))
+            seller_sku = openpyxl_utils.get_cell_value(sheet1, row, columns1["Seller SKU"])
+            openpyxl_utils.set_cell_value(sheet2, target_row, columns2["款号"], seller_sku)
 
             # 写入公式到运费和汇率列，1个为2.99，在此基础上增加一个+0.5
+            yf = 2.99
+            if (seller_sku == "NCg3175B"):
+                yf = 2.50
             openpyxl_utils.set_cell_value(sheet2, target_row, columns2["运费"],
-                                          f"=2.99+IF(E{target_row}=1,0,(E{target_row}-1)*0.5)")
+                                          f"={yf}+IF(E{target_row}=1,0,(E{target_row}-1)*0.5)")
 
             # 汇率
             openpyxl_utils.set_cell_value(sheet2, target_row, columns2["汇率"], exchange_rate)
