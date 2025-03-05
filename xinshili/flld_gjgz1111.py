@@ -153,11 +153,11 @@ def go(input_path):
 
     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
     wswl = round2(100 - swl)
-    text += f"\n上网：（{track_count}, {swl}）"
-    fs_text += f"\n上网：（{track_count}, {swl}）"
+    text += f"\n上网：（{track_count}, {swl}%）"
+    fs_text += f"\n上网：（{track_count}, {swl}%）"
 
-    text += f"\n未上网：（{no_track_count}, {wswl}）"
-    fs_text += f"\n未上网：（{no_track_count}, {wswl}）"
+    text += f"\n未上网：（{no_track_count}, {wswl}%）"
+    fs_text += f"\n未上网：（{no_track_count}, {wswl}%）"
 
     text += f"\nnot_yet：{not_yet_count}"
     fs_text += f"\nnot_yet：{not_yet_count}"
