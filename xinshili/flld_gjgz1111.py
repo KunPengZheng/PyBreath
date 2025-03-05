@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants
 from xinshili.gjgz_plus111 import check_and_add_courier_column, RowName, extract_and_process_data, \
     update_courier_status, CourierStateMapKey, count_pattern_state, Pattern
-from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd
+from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2
 
 
 def extract_path_before_csv(file_path):
@@ -151,11 +151,13 @@ def go(input_path):
     text += f"\n订单总数：{total_count}"
     fs_text += f"\n订单总数：{total_count}"
 
-    text += f"\n有轨迹：{track_count}"
-    fs_text += f"\n有轨迹：{track_count}"
+    swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+    wswl = round2(100 - swl)
+    text += f"\n上网：（{track_count}, {swl}）"
+    fs_text += f"\n上网：（{track_count}, {swl}）"
 
-    text += f"\n无轨迹：{no_track_count}"
-    fs_text += f"\n无轨迹：{no_track_count}"
+    text += f"\n未上网：（{no_track_count}, {wswl}）"
+    fs_text += f"\n未上网：（{no_track_count}, {wswl}）"
 
     text += f"\nnot_yet：{not_yet_count}"
     fs_text += f"\nnot_yet：{not_yet_count}"
