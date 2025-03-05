@@ -963,7 +963,9 @@ def go(analyse_obj, xlsx_path):
     qsl_flag = False
 
     # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
-    if (interval_time == 1):
+    if (interval_time == 0):
+        sum_up_text += f"\n间隔第{interval_time}{actual_interval}天，上网率为{swl}%，继续观察👀！"
+    elif (interval_time == 1):
         if (swl < 30):
             sum_up_text += f"\n☁️注意：间隔第{interval_time}{actual_interval}天，上网率为{swl}%，未达30%，建议跟进！"
             swl_flag = True
