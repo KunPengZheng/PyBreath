@@ -14,6 +14,7 @@ class FsConstants:
     spreadsheets_base_url = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/"
     # 表格的写入方式：values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
     values_spreadsheets_write_way = "/values"
+    styles_batch_update = "/styles_batch_update"
     gjgz_token = "BGrnsxMFfhfoumtUDF8cXM8jnGg"
 
 
@@ -75,6 +76,97 @@ def get_map_url(analyse_obj):
         return url
     else:
         raise ValueError(f"{analyse_obj} 未定义")
+
+
+def get_bg_map_url(analyse_obj):
+    if analyse_obj == ClientConstants.zbw or \
+            analyse_obj == ClientConstants.sanrio or \
+            analyse_obj == ClientConstants.xyl or \
+            analyse_obj == ClientConstants.mz_xsd or \
+            analyse_obj == ClientConstants.mx_dg or \
+            analyse_obj == ClientConstants.md_fc or \
+            analyse_obj == ClientConstants.md_flld:
+        # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
+        url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.styles_batch_update}"
+        return url
+    else:
+        raise ValueError(f"{analyse_obj} 未定义")
+
+
+def detail_sheet_bg(tat, ck_time, analyse_obj):
+    """
+    设置背景
+    """
+    url = get_bg_map_url(analyse_obj)
+
+    header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
+
+    row_nums = get_row_for_specific_date(ck_time)
+
+    if analyse_obj == ClientConstants.mz_xsd or \
+            analyse_obj == ClientConstants.mx_dg or \
+            analyse_obj == ClientConstants.md_fc:
+        post_data = {
+            "data": [
+                {
+                    "ranges": [
+                        f"{ClientMapConstants[analyse_obj][MapFields.detail]}!A{row_nums}:H{row_nums}",
+                    ],
+                    "style": {
+                        # "foreColor": "#000000",
+                        "backColor": "#21d11f",
+                    }
+                }
+            ]
+        }
+    else:
+        post_data = {
+            "data": [
+                {
+                    "ranges": [
+                        f"{ClientMapConstants[analyse_obj][MapFields.detail]}!A{row_nums}:J{row_nums}",
+                    ],
+                    "style": {
+                        # "foreColor": "#000000",
+                        "backColor": "#F8F1D3",
+                    }
+                }
+            ]
+        }
+
+    # values_prepend 需要使用post请求方式，values需要使用put请求方式
+    r2 = requests.put(url, data=json.dumps(post_data), headers=header)
+    print(r2.json())  # 输出来判断写入是否成功
+
+
+def brief_sheet_bg(tat, ck_time, gz_time, analyse_obj):
+    """
+    设置背景
+    """
+    url = get_bg_map_url(analyse_obj)
+
+    header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
+
+    column_nums = get_column_for_specific_date(gz_time)
+    row_nums = get_row_for_specific_date(ck_time)
+
+    post_data = {
+        "data": [
+            {
+                "ranges": [
+                    f"{ClientMapConstants[analyse_obj][MapFields.brief]}!{column_nums}{row_nums}:{column_nums}{row_nums}",
+                ],
+                "style": {
+                    # "foreColor": "#000000",
+                    "backColor": "#F8F1D3",
+                }
+            }
+        ]
+    }
+
+    # values_prepend 需要使用post请求方式，values需要使用put请求方式
+    r2 = requests.put(url, data=json.dumps(post_data), headers=header)
+    print(r2.json())  # 输出来判断写入是否成功
 
 
 def detail_sheet_value(tat, lists, ck_time, analyse_obj):

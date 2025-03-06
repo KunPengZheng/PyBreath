@@ -9,7 +9,8 @@ from dataclasses import dataclass
 import concurrent.futures
 import time
 
-from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants
+from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants, detail_sheet_bg, \
+    brief_sheet_bg
 from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.usps_utils import track
 from xinshili.utils import round2, getYmd, delete_file, is_us_weekend, get_weekday, get_american_holiday, \
@@ -1022,7 +1023,12 @@ def go(analyse_obj, xlsx_path):
     data_map[CellKey.sum_up] = sum_up_text
 
     if (swl_flag or qsl_flag):
-        data_map[CellKey.exception] = "异常"
+        if (swl_flag and qsl_flag):
+            data_map[CellKey.exception] = "上网率&签收率 异常\n（签收率目前无法量化，只为提醒⏰）"
+        elif (swl_flag):
+            data_map[CellKey.exception] = "上网率异常"
+        elif (qsl_flag):
+            data_map[CellKey.exception] = "签收率异常\n（签收率目前无法量化，只为提醒⏰）"
     else:
         data_map[CellKey.exception] = ""
 
@@ -1038,9 +1044,13 @@ def go(analyse_obj, xlsx_path):
         lists = f"({total_count},{swl}%)"
         lists += f"\n{warehouse_text2}"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+        if (swl_flag):
+            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj)
     else:
         lists = f"({total_count},{swl}%)"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+        if (swl_flag):
+            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj)
 
     if analyse_obj == ClientConstants.mz_xsd or \
             analyse_obj == ClientConstants.mx_dg or \
@@ -1055,6 +1065,9 @@ def go(analyse_obj, xlsx_path):
             data_map[CellKey.sum_up],
             data_map[CellKey.exception],
         ], ck_time, analyse_obj)
+
+        if (swl_flag):
+            detail_sheet_bg(tat, ck_time, analyse_obj)
     else:
         detail_sheet_value(tat, [
             data_map[CellKey.Outbound_Time],
@@ -1068,6 +1081,9 @@ def go(analyse_obj, xlsx_path):
             data_map[CellKey.sum_up],
             data_map[CellKey.exception],
         ], ck_time, analyse_obj)
+
+        if (swl_flag):
+            detail_sheet_bg(tat, ck_time, analyse_obj)
 
 
 def automatic(dir_path, analyse_obj):
