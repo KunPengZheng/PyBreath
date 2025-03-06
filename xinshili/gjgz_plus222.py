@@ -962,6 +962,7 @@ def go(analyse_obj, xlsx_path):
 
     swl_flag = False
     qsl_flag = False
+    bg = "#ffffff"
 
     # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
     if (interval_time == 0):
@@ -970,18 +971,21 @@ def go(analyse_obj, xlsx_path):
         if (swl < 30):
             sum_up_text += f"\n☁️注意：间隔第{interval_time}{actual_interval}天，上网率为{swl}%，未达30%，建议跟进！"
             swl_flag = True
+            bg = "#F8F1D3"
         else:
             sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，上网率为{swl}%，上网率优秀"
     elif (interval_time == 2):
         if (swl < 70):
             sum_up_text += f"\n🌧️异常：间隔第{interval_time}{actual_interval}天，上网率为{swl}%，未达75%，建议分析数据尝试定位问题！"
             swl_flag = True
+            bg = "#E3C49C"
         else:
             sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，上网率为{swl}%，上网率优秀"
     else:  # 间隔时间 >= 3天
         if (swl < 97):
             sum_up_text += f"\n❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}{actual_interval}天，上网率为{swl}%，未达97%，分析数据反馈问题！"
             swl_flag = True
+            bg = "#F1C1BD"
         else:
             sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，上网率为{swl}%，上网率优秀"
 
@@ -1045,12 +1049,12 @@ def go(analyse_obj, xlsx_path):
         lists += f"\n{warehouse_text2}"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
         if (swl_flag):
-            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj)
+            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
     else:
         lists = f"({total_count},{swl}%)"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
         if (swl_flag):
-            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj)
+            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
 
     if analyse_obj == ClientConstants.mz_xsd or \
             analyse_obj == ClientConstants.mx_dg or \
@@ -1067,7 +1071,7 @@ def go(analyse_obj, xlsx_path):
         ], ck_time, analyse_obj)
 
         if (swl_flag):
-            detail_sheet_bg(tat, ck_time, analyse_obj)
+            detail_sheet_bg(tat, ck_time, analyse_obj, bg)
     else:
         detail_sheet_value(tat, [
             data_map[CellKey.Outbound_Time],
@@ -1083,7 +1087,7 @@ def go(analyse_obj, xlsx_path):
         ], ck_time, analyse_obj)
 
         if (swl_flag):
-            detail_sheet_bg(tat, ck_time, analyse_obj)
+            detail_sheet_bg(tat, ck_time, analyse_obj, bg)
 
 
 def automatic(dir_path, analyse_obj):

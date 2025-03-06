@@ -93,7 +93,7 @@ def get_bg_map_url(analyse_obj):
         raise ValueError(f"{analyse_obj} 未定义")
 
 
-def detail_sheet_bg(tat, ck_time, analyse_obj):
+def detail_sheet_bg(tat, ck_time, analyse_obj, bg):
     """
     设置背景
     """
@@ -113,8 +113,7 @@ def detail_sheet_bg(tat, ck_time, analyse_obj):
                         f"{ClientMapConstants[analyse_obj][MapFields.detail]}!A{row_nums}:H{row_nums}",
                     ],
                     "style": {
-                        # "foreColor": "#000000",
-                        "backColor": "#21d11f",
+                        "backColor": bg,
                     }
                 }
             ]
@@ -127,8 +126,7 @@ def detail_sheet_bg(tat, ck_time, analyse_obj):
                         f"{ClientMapConstants[analyse_obj][MapFields.detail]}!A{row_nums}:J{row_nums}",
                     ],
                     "style": {
-                        # "foreColor": "#000000",
-                        "backColor": "#F8F1D3",
+                        "backColor": bg,
                     }
                 }
             ]
@@ -139,7 +137,7 @@ def detail_sheet_bg(tat, ck_time, analyse_obj):
     print(r2.json())  # 输出来判断写入是否成功
 
 
-def brief_sheet_bg(tat, ck_time, gz_time, analyse_obj):
+def brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg):
     """
     设置背景
     """
@@ -157,8 +155,7 @@ def brief_sheet_bg(tat, ck_time, gz_time, analyse_obj):
                     f"{ClientMapConstants[analyse_obj][MapFields.brief]}!{column_nums}{row_nums}:{column_nums}{row_nums}",
                 ],
                 "style": {
-                    # "foreColor": "#000000",
-                    "backColor": "#F8F1D3",
+                    "backColor": bg,
                 }
             }
         ]
