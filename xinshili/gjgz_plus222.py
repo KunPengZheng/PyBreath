@@ -29,6 +29,8 @@ class RowName:
     CreationWaveTime = "Create wave time/生成波次时间"
     SKU = "SKU"
     ShippingService = "Shipping service/物流渠道"
+    PossessionSfDate = "PossessionSfDate/揽收时间"
+    LatestEventSfDate = "LatestEventSfDate/最新事件时间"
 
 
 @dataclass(frozen=True)
@@ -366,6 +368,20 @@ def check_and_add_courier_column(file_path, courier_column=RowName.Courier):
         print(f"发生错误: {e}")
 
 
+def check_and_add_possession_column(file_path):
+    """
+    检查 Excel 文件是否存在 'PossessionSfDate/揽收时间'列 和 'LatestEventSfDate/最新事件时间'列，如果没有，则在最后一列添加该列。
+    """
+    try:
+        data = pd.read_excel(file_path, engine='openpyxl')
+        if (RowName.PossessionSfDate not in data.columns) or (RowName.LatestEventSfDate not in data.columns):
+            if RowName.PossessionSfDate not in data.columns:
+                data[RowName.PossessionSfDate] = ""
+            if RowName.LatestEventSfDate not in data.columns:
+                data[RowName.LatestEventSfDate] = ""
+            data.to_excel(file_path, index=False, engine='openpyxl')
+    except Exception as e:
+        print(f"发生错误: {e}")
 
 
 def get_days_difference(file_path, column_name=RowName.OutboundTime):
@@ -390,6 +406,7 @@ def get_days_difference(file_path, column_name=RowName.OutboundTime):
     except Exception as e:
         print(f"发生错误: {e}")
         return None
+
 
 def generate_distribution_report(distribution, no_track_distribution, data_map, data_map_key):
     """
@@ -488,6 +505,7 @@ def go(analyse_obj, xlsx_path):
         xlsx_path = input("请输入文件的绝对路径：")
 
     check_and_add_courier_column(xlsx_path)
+    check_and_add_possession_column(xlsx_path)
 
     irregular_number_map = find_irregular_tracking_numbers(xlsx_path)
     irregular_number_list = []
