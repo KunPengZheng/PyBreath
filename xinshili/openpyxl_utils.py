@@ -233,6 +233,32 @@ def mark_by_row_content(filepath, src_column_name, dst_column_name, src_search_l
     print(f"修改完成，已将背景颜色标记为黄色并保存到 {filepath}")
 
 
+def highlight_courier_column(file_path, patternFill, column_name, lists):
+    wb = load_workbook(file_path)
+    ws = wb.active  # 获取当前活动的工作表
+
+    col_index = None
+    for col_num, col_cell in enumerate(ws[1], 1):  # 遍历第一行（列头）
+        if col_cell.value == column_name:
+            col_index = col_num
+            break
+
+    if col_index is None:
+        print(f"错误: 未找到 {column_name} 列")
+        return
+
+    # 遍历列中的每一行，如果值匹配则设置颜色背景
+    for row in range(2, ws.max_row + 1):  # 从第2行开始（跳过列头）
+        cell = ws.cell(row=row, column=col_index)
+        if cell.value in lists:
+            for col in range(1, ws.max_column + 1):  # 让整行改变颜色
+                ws.cell(row=row, column=col).fill = patternFill
+
+    # 保存 Excel 文件
+    wb.save(file_path)
+    print(f"标记完成，已更新 {file_path}")
+
+
 def merge_xlsx_files(file_paths: list, output_path: str):
     """
     将多个 Excel 文件合并为一个新的 Excel 文件。
