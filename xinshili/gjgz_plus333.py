@@ -1291,51 +1291,51 @@ def go(analyse_obj, xlsx_path):
     print(text)
 
     # 写入飞书在线文档
-    # tat = get_token()
-    # if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
-    #     lists = f"({total_count},{swl}%)"
-    #     lists += f"\n{warehouse_text2}"
-    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-    #     if (swl_flag):
-    #         brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
-    # else:
-    #     lists = f"({total_count},{swl}%)"
-    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-    #     if (swl_flag):
-    #         brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
-    #
-    # if analyse_obj == ClientConstants.mz_xsd or \
-    #         analyse_obj == ClientConstants.mx_dg or \
-    #         analyse_obj == ClientConstants.md_fc:
-    #     detail_sheet_value(tat, [
-    #         data_map[CellKey.Outbound_Time],
-    #         data_map[CellKey.update_time],
-    #         data_map[CellKey.wl],
-    #         data_map[CellKey.store_condition],
-    #         data_map[CellKey.time_segment_condition],
-    #         data_map[CellKey.shipping_service_condition],
-    #         data_map[CellKey.sum_up],
-    #         data_map[CellKey.exception],
-    #     ], ck_time, analyse_obj)
-    #
-    #     if (swl_flag):
-    #         detail_sheet_bg(tat, ck_time, analyse_obj, bg)
-    # else:
-    #     detail_sheet_value(tat, [
-    #         data_map[CellKey.Outbound_Time],
-    #         data_map[CellKey.update_time],
-    #         data_map[CellKey.wl],
-    #         data_map[CellKey.warehouse_condition],
-    #         data_map[CellKey.store_condition],
-    #         data_map[CellKey.time_segment_condition],
-    #         data_map[CellKey.shipping_service_condition],
-    #         data_map[CellKey.sku_condition],
-    #         data_map[CellKey.sum_up],
-    #         data_map[CellKey.exception],
-    #     ], ck_time, analyse_obj)
-    #
-    #     if (swl_flag):
-    #         detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+    tat = get_token()
+    if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
+        lists = f"({total_count},{swl}%)"
+        lists += f"\n{warehouse_text2}"
+        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+        if (swl_flag):
+            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+    else:
+        lists = f"({total_count},{swl}%)"
+        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+        if (swl_flag):
+            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+
+    if analyse_obj == ClientConstants.mz_xsd or \
+            analyse_obj == ClientConstants.mx_dg or \
+            analyse_obj == ClientConstants.md_fc:
+        detail_sheet_value(tat, [
+            data_map[CellKey.Outbound_Time],
+            data_map[CellKey.update_time],
+            data_map[CellKey.wl],
+            data_map[CellKey.store_condition],
+            data_map[CellKey.time_segment_condition],
+            data_map[CellKey.shipping_service_condition],
+            data_map[CellKey.sum_up],
+            data_map[CellKey.exception],
+        ], ck_time, analyse_obj)
+
+        if (swl_flag):
+            detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+    else:
+        detail_sheet_value(tat, [
+            data_map[CellKey.Outbound_Time],
+            data_map[CellKey.update_time],
+            data_map[CellKey.wl],
+            data_map[CellKey.warehouse_condition],
+            data_map[CellKey.store_condition],
+            data_map[CellKey.time_segment_condition],
+            data_map[CellKey.shipping_service_condition],
+            data_map[CellKey.sku_condition],
+            data_map[CellKey.sum_up],
+            data_map[CellKey.exception],
+        ], ck_time, analyse_obj)
+
+        if (swl_flag):
+            detail_sheet_bg(tat, ck_time, analyse_obj, bg)
 
 
 def automatic(dir_path, analyse_obj):
@@ -1356,12 +1356,13 @@ def automatic(dir_path, analyse_obj):
                 print(f"匹配的文件: {xlsx_path}")
                 try:
                     total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
+                    tracking_zero_count = count_tracking_with_sf_date_equality(xlsx_path)
                     total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
 
                     if total_count == 0:
                         swl = 0
                     else:
-                        swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+                        swl = round2(100 - ((int(no_track_count + tracking_zero_count) / int(total_count)) * 100))
 
                     if total_count == 0:
                         qsl = 0
@@ -1380,18 +1381,19 @@ def automatic(dir_path, analyse_obj):
 
 if __name__ == '__main__':
     # # 手动
-    # # go(None, None)
+    # go(None, None)
     # # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.1", ClientConstants.sanrio)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.2", ClientConstants.xyl)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3", ClientConstants.xyl)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg", ClientConstants.mx_dg)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc", ClientConstants.md_fc)
-
-    go(ClientConstants.zbw, "/Users/zkp/Downloads/出库时间9_245_test.xlsx")
