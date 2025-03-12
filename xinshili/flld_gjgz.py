@@ -159,17 +159,21 @@ def go(input_path):
     text += f"\n未上网：（{no_track_count}, {wswl}%）"
     fs_text += f"\n未上网：（{no_track_count}, {wswl}%）"
 
-    text += f"\nnot_yet：{not_yet_count}"
-    fs_text += f"\nnot_yet：{not_yet_count}"
+    not_yet_countl = round2((int(not_yet_count) / int(total_count)) * 100)
+    text += f"\nnot_yet：（{not_yet_count}, {not_yet_countl}%）"
+    fs_text += f"\nnot_yet：（{not_yet_count}, {not_yet_countl}%）"
 
-    text += f"\npre_ship：{pre_ship_count}"
-    fs_text += f"\npre_ship：{pre_ship_count}"
+    pre_ship_countl = round2((int(pre_ship_count) / int(total_count)) * 100)
+    text += f"\npre_ship：（{pre_ship_count}, {pre_ship_countl}%）"
+    fs_text += f"\npre_ship：（{pre_ship_count}, {pre_ship_countl}%）"
 
-    text += f"\ndelivered：{delivered_count}"
-    fs_text += f"\ndelivered：{delivered_count}"
+    delivered_countl = round2((int(delivered_count) / int(total_count)) * 100)
+    text += f"\ndelivered：（{delivered_count}, {delivered_countl}%）"
+    fs_text += f"\ndelivered：（{delivered_count}, {delivered_countl}%）"
 
-    text += f"\nunpaid：{unpaid_count}"
-    fs_text += f"\nunpaid：{unpaid_count}"
+    unpaid_countl = round2((int(unpaid_count) / int(total_count)) * 100)
+    text += f"\nunpaid：（{unpaid_count}, {unpaid_countl}%）"
+    fs_text += f"\nunpaid：（{unpaid_count}, {unpaid_countl}%）"
 
     unpaid_tracking_data = get_unpaid_tracking_data(xlsx_path)
     if (len(unpaid_tracking_data) > 0):
