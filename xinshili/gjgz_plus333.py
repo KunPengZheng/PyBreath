@@ -274,71 +274,60 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
     return results_map
 
 
-def count_pattern_state(file_path, column_name, patternStr):
+def count_pattern_and_tracking_with_sf_date(file_path, column_name, sfDateInterval_name, patterns):
     """
-    统计指定列指定内容的数量
+    统计指定列中多个正则表达式匹配内容的数量，并统计 "Courier/快递" 列内容为 'tracking' 且 "SfDateEquality" 列的内容为 0 的行数。
+
+    :param file_path: Excel 文件路径
+    :param column_name: 需要统计的列名
+    :param patterns: 正则表达式字典，key 为模式名称，value 为模式字符串
+    :return: 包含每个模式匹配计数和符合 'tracking' 且 'SfDateEquality' 为 0 的行数的字典
     """
     try:
         workbook = load_workbook(file_path)
         sheet = workbook.active
         headers = [cell.value for cell in sheet[1]]
-        if column_name not in headers:
-            raise ValueError(f"列名 '{column_name}' 不存在！")
-        column_index = headers.index(column_name) + 1
-        pattern = re.compile(patternStr, re.IGNORECASE)
-        total_count = 0
-        no_track_count = 0
+
+        # 检查列名是否存在
+        if column_name not in headers or sfDateInterval_name not in headers:
+            raise ValueError(f"Excel 文件中未找到 '{column_name}' 或 '{sfDateInterval_name}'列 找不到")
+
+        # 获取列索引
+        column_index = headers.index(column_name)
+        sfDateInterval_index = headers.index(sfDateInterval_name)
+
+        # 编译所有正则表达式
+        compiled_patterns = {key: re.compile(pattern, re.IGNORECASE) for key, pattern in patterns.items()}
+
+        # 初始化计数器
+        count_dict = {**{key: 0 for key in patterns}, "sfDateInterval": 0}  # 显式初始化
+        tracking_sf_date_equality_count = 0
+
+        # 遍历每一行数据
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
-            cell_value = row[column_index - 1]
-            if cell_value is not None:
-                total_count += 1
-                if pattern.search(str(cell_value)):
-                    no_track_count += 1
-        return total_count, no_track_count
-    except Exception as e:
-        print(f"发生错误: {e}")
-        return 0, 0
+            courier_value = row[column_index]
+            sfDateInterval_value = row[sfDateInterval_index]
 
+            # 判断是否符合 'tracking' 且 'SfDateEquality' 为 0 的条件
+            if courier_value == "tracking" and sfDateInterval_value == 0:
+                tracking_sf_date_equality_count += 1
 
-def count_tracking_with_sf_date_equality(file_path):
-    """
-    统计 "Courier/快递" 列内容为 'tracking' 且 "SfDateEquality" 列的内容为 0 的行数。
+            # 判断正则表达式匹配
+            if courier_value is not None:
+                cell_value_str = str(courier_value)
+                for key, pattern in compiled_patterns.items():
+                    if pattern.search(cell_value_str):
+                        count_dict[key] += 1
 
-    :param file_path: Excel 文件路径
-    :return: 符合条件的行数
-    """
-    try:
-        # 加载 Excel 文件
-        workbook = load_workbook(file_path, data_only=True)
-        sheet = workbook.active  # 获取活动表
+        # 将 'tracking' 且 'SfDateEquality' 为 0 的计数添加到字典中
+        count_dict["sfDateInterval"] = tracking_sf_date_equality_count
 
-        # 读取表头
-        headers = [cell.value for cell in sheet[1]]
-
-        # 确保列名存在
-        if RowName.Courier not in headers or RowName.SfDateInterval not in headers:
-            raise ValueError(f"Excel 文件中未找到 '{RowName.Courier}' 或 '{RowName.SfDateInterval}' 列")
-
-        # 获取列索引（Excel 列索引从 1 开始，转换为 Python 需要 -1）
-        courier_index = headers.index(RowName.Courier)
-        sf_date_equality_index = headers.index(RowName.SfDateInterval)
-
-        count = 0  # 统计符合条件的行数
-
-        # 遍历数据行（从第 2 行开始）
-        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
-            courier_value = row[courier_index]
-            sf_date_equality_value = row[sf_date_equality_index]
-
-            # 判断是否符合筛选条件
-            if courier_value == CourierStateMapValue.tracking and sf_date_equality_value == 0:
-                count += 1
-
-        return count
+        return count_dict
 
     except Exception as e:
         print(f"发生错误: {e}")
-        return 0
+        # 返回一个包含所有模式及 'tracking_sf_date_equality' 键的字典
+        return {key: 0 for key in patterns} | {"sfDateInterval": 0}  # 合并字典
 
 
 def count_distribution_and_no_track(file_path, key_column, courier_column=RowName.Courier):
@@ -373,8 +362,8 @@ def count_distribution_and_no_track(file_path, key_column, courier_column=RowNam
         return Counter(), Counter()
 
 
-def count_distribution_and_no_track1(file_path, key_column, courier_column=RowName.Courier,
-                                     sf_date_column=RowName.SfDateInterval):
+def dimension_distribution(file_path, key_column, courier_column=RowName.Courier,
+                           sf_date_column=RowName.SfDateInterval):
     """
     通用函数，统计指定列的分布情况及其对应 "无轨迹" 的数量。
     :param file_path: Excel 文件路径
@@ -388,24 +377,34 @@ def count_distribution_and_no_track1(file_path, key_column, courier_column=RowNa
         headers = [cell.value for cell in sheet[1]]
         if key_column not in headers or courier_column not in headers or sf_date_column not in headers:
             raise ValueError(f"列名 '{key_column}' 或 '{courier_column}' 或 '{sf_date_column}' 不存在！")
+
+        # 获取列索引（加 1 是因为 Excel 索引从 1 开始）
         key_index = headers.index(key_column) + 1
         courier_index = headers.index(courier_column) + 1
         sf_date_index = headers.index(sf_date_column) + 1
-        pattern = re.compile(Pattern.no_track, re.IGNORECASE)
+
+        # 初始化计数器
         key_counter = Counter()
         key_no_track_counter = Counter()
+
+        # 正则表达式和条件
+        pattern = re.compile(Pattern.no_track, re.IGNORECASE)
+
+        # 遍历每一行
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
             key_value = row[key_index - 1]
             courier_status = row[courier_index - 1]
             sf_date_value = row[sf_date_index - 1]
+
             if key_value is not None:
                 key_counter[key_value] += 1
                 if courier_status is not None:
-                    if (pattern.search(str(courier_status))):
+                    # 判断是否是 "无轨迹"
+                    if pattern.search(str(courier_status)) or (courier_status == "tracking" and sf_date_value == 0):
                         key_no_track_counter[key_value] += 1
-                    elif (courier_status == "tracking" and sf_date_value == 0):
-                        key_no_track_counter[key_value] += 1
+
         return key_counter, key_no_track_counter
+
     except Exception as e:
         print(f"发生错误: {e}")
         return Counter(), Counter()
@@ -564,19 +563,11 @@ def count_distribution_and_no_track3(file_path, key_column, courier_column=RowNa
         return Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter()
 
 
-def analyze_time_segments(file_path, time_column, courier_column, sf_date_column):
+def analyze_time_segments(file_path, data_map, time_column, courier_column, sf_date_column):
     """
-    按时间段（每3分钟为一段，忽略秒进行判断）统计总数和 "无轨迹" 的数量。
-    额外统计：如果 "Courier/快递" 列内容为 "tracking" 且 "SfDateEquality" 列的内容为 0，"无轨迹" 计数也 +1。
-
-    :param file_path: Excel 文件路径
-    :param time_column: 时间列名（格式："2025-01-22 23:11:43"）
-    :param courier_column: 快递状态列名
-    :param sf_date_column: SfDateEquality 列名
-    :return: 以 3 分钟为一段的统计数据
+    统计按 3 分钟为间隔的时间段数据，计算每个时间段的总数、无轨迹数，并找到最低上网率的时间段。
     """
     try:
-        # 加载 Excel 文件
         workbook = load_workbook(file_path, data_only=True)
         sheet = workbook.active
 
@@ -586,65 +577,68 @@ def analyze_time_segments(file_path, time_column, courier_column, sf_date_column
             raise ValueError(f"列名 '{time_column}'、'{courier_column}' 或 '{sf_date_column}' 不存在！")
 
         # 获取列索引
-        time_index = headers.index(time_column)
-        courier_index = headers.index(courier_column)
-        sf_date_index = headers.index(sf_date_column)
+        time_index, courier_index, sf_date_index = (
+            headers.index(time_column), headers.index(courier_column), headers.index(sf_date_column)
+        )
 
-        # 正则表达式匹配 "无轨迹"
         pattern_no_track = re.compile(r"(no_tracking|pre_ship|not_yet)", re.IGNORECASE)
 
-        # 读取并解析数据
         data = []
-        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
-            order_time = row[time_index]
-            courier_status = row[courier_index]
-            sf_date_value = row[sf_date_index]
-
-            if order_time is not None and isinstance(order_time, str):
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            order_time, courier_status, sf_date_value = row[time_index], row[courier_index], row[sf_date_index]
+            if isinstance(order_time, str):
                 try:
-                    # 解析时间格式为 "2025-01-22 23:11:43"
-                    order_time = datetime.strptime(order_time, "%Y-%m-%d %H:%M:%S")
-                    order_time_without_seconds = order_time.replace(second=0)
-                    data.append((order_time, order_time_without_seconds, courier_status, sf_date_value))
+                    order_time = datetime.strptime(order_time, "%Y-%m-%d %H:%M:%S").replace(second=0)
+                    data.append((order_time, courier_status, sf_date_value))
                 except ValueError:
                     continue
 
-        # 按时间段归类
-        data.sort(key=lambda x: x[1])  # 按无秒时间排序
+        data.sort(key=lambda x: x[0])  # 按时间排序
         time_segments = defaultdict(list)
-        if data:
-            base_time = data[0][1]  # 使用无秒时间作为基准
-            current_segment = []
-            for full_time, order_time_without_seconds, courier_status, sf_date_value in data:
-                if (order_time_without_seconds - base_time).total_seconds() <= 180:  # 3分钟内
-                    current_segment.append((full_time, courier_status, sf_date_value))
-                else:
-                    time_segments[base_time].extend(current_segment)
-                    base_time = order_time_without_seconds
-                    current_segment = [(full_time, courier_status, sf_date_value)]
-            if current_segment:
-                time_segments[base_time].extend(current_segment)
 
-        # 统计每个时间段的总数和无轨迹数量
+        if data:
+            base_time = data[0][0]  # 作为时间段起点
+            for order_time, courier_status, sf_date_value in data:
+                if (order_time - base_time).total_seconds() <= 180:
+                    time_segments[base_time].append((order_time, courier_status, sf_date_value))
+                else:
+                    base_time = order_time
+                    time_segments[base_time].append((order_time, courier_status, sf_date_value))
+
         segment_statistics = {}
+        lowest_segment, lowest_swl = "", 101  # 记录最低上网率的时间段
+
         for segment_start, entries in time_segments.items():
             total_count = len(entries)
             no_track_count = sum(
                 1 for _, courier_status, sf_date_value in entries
-                if (courier_status is not None and pattern_no_track.match(str(courier_status))) or
-                (courier_status == "tracking" and sf_date_value == 0)  # 新增 tracking & SfDateEquality=0 的判断
+                if pattern_no_track.match(str(courier_status or "")) or (
+                        courier_status == "tracking" and sf_date_value == 0)
             )
+            segmentswl = round(100 - ((no_track_count / total_count) * 100), 2) if total_count else 0
+
+            segment_info = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {(segment_start + timedelta(minutes=3)).strftime('%y-%m-%d %H:%M')}：（{total_count}, {no_track_count}, {segmentswl}%）"
             segment_statistics[segment_start] = {
                 "total_count": total_count,
                 "no_track_count": no_track_count,
-                "entries": entries,  # 记录每条数据
+                "swl": segmentswl,
+                "segment_info": segment_info
             }
 
-        return segment_statistics
+            if segmentswl < lowest_swl:
+                lowest_swl, lowest_segment = segmentswl, segment_info
+
+        time_segment_text = "".join(
+            stats["segment_info"] for stats in segment_statistics.values()
+        )
+
+        data_map[CellKey.time_segment_condition] = time_segment_text
+
+        return time_segment_text, lowest_segment
 
     except Exception as e:
         print(f"发生错误: {e}")
-        return {}
+        return "", ""
 
 
 def check_and_add_courier_column(file_path):
@@ -835,28 +829,25 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
     :param data_map_key: 用于存储到 `data_map` 的 key（例如 `CellKey.warehouse_condition` 或 `CellKey.store_condition`）
     :return: 生成的分布报告文本
     """
-    report_text = ""
-    report_text2 = ""
+    report_text = []
     lowest_swl = 101  # 初始化为一个比 100 大的值，用于比较
     lowest_entity = ""  # 保存最低上网率的实体信息
 
     # 遍历分布数据
     for entity, count in distribution.items():
         no_track_count = no_track_distribution.get(entity, 0)
-        swl = round2(100 - ((int(no_track_count) / int(count)) * 100))
-        # strs = f"\n{entity}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{swl}%"
-        strs = f"\n{entity}：（{count}, {no_track_count}, {swl}%）"
-        strs2 = f"\n{entity}：({count},{swl}%)"
-        report_text += strs
-        report_text2 += strs2
+        swl = round2(100 - ((no_track_count / count) * 100))  # 计算上网率
+        # 使用 f-string 格式化输出文本
+        report_text.append(f"\n{entity}：({count},{swl}%)")
 
         # 判断是否是最低的上网率
         if swl < lowest_swl:
             lowest_swl = swl
-            lowest_entity = strs
+            lowest_entity = f"\n{entity}：（{count}, {no_track_count}, {swl}%）"
 
-    data_map[data_map_key] = report_text  # 将结果存储到 data_map 中
-    return report_text, lowest_entity, report_text2
+    # 将结果存储到 data_map 中
+    data_map[data_map_key] = "".join(report_text)  # 使用 join 合并字符串，减少内存消耗
+    return "".join(report_text), lowest_entity
 
 
 def generate_distribution_report2(distribution, no_track_distribution, sku_no_tracking_distribution,
@@ -1065,128 +1056,124 @@ def go(analyse_obj, xlsx_path):
 
     output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
     # 同一单会有多个sku，多个sku会生成多行数据，分析sku的时候不能去重，其它的需要去重
-    remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
+    total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
 
-    total_count, no_track_count = count_pattern_state(output_file, RowName.Courier, Pattern.no_track)
-    track_count = total_count - no_track_count
-    total_count2, delivered_count = count_pattern_state(output_file, RowName.Courier, Pattern.delivered)
-    total_count3, unpaid_count = count_pattern_state(output_file, RowName.Courier, Pattern.unpaid)
-    total_count4, not_yet_count = count_pattern_state(output_file, RowName.Courier, Pattern.not_yet)
-    total_count5, pre_ship_count = count_pattern_state(output_file, RowName.Courier, Pattern.pre_ship)
-    total_count6, irregular_no_tracking_count = count_pattern_state(output_file, RowName.Courier,
-                                                                    Pattern.irregular_no_tracking)
-    total_count7, no_tracking_count = count_pattern_state(output_file, RowName.Courier, Pattern.no_tracking)
-    total_count8, tracking_count = count_pattern_state(output_file, RowName.Courier, Pattern.tracking)
-    tracking_zero_count = count_tracking_with_sf_date_equality(output_file)
+    patterns = {
+        "no_track": Pattern.no_track,
+        "delivered": Pattern.delivered,
+        "unpaid": Pattern.unpaid,
+        "not_yet": Pattern.not_yet,
+        "pre_ship": Pattern.pre_ship,
+        "irregular_no_tracking": Pattern.irregular_no_tracking,
+        "no_tracking": Pattern.no_tracking,
+        "tracking": Pattern.tracking
+    }
 
-    swl = round2(100 - ((int(no_track_count + tracking_zero_count) / int(total_count)) * 100))
+    count_dict = count_pattern_and_tracking_with_sf_date(output_file, RowName.Courier, RowName.SfDateInterval, patterns)
+
+    no_track_count = count_dict["no_track"]
+    delivered_count = count_dict["delivered"]
+    unpaid_count = count_dict["unpaid"]
+    not_yet_count = count_dict["not_yet"]
+    pre_ship_count = count_dict["pre_ship"]
+    irregular_no_tracking_count = count_dict["irregular_no_tracking"]
+    no_tracking_count = count_dict["no_tracking"]
+    tracking_count = count_dict["tracking"]
+    tracking_zero_count = count_dict["sfDateInterval"]
+
+    # 先进行一次计算，并缓存结果
+    total_count_int = int(total_count)
+    no_track_count_int = int(no_track_count)
+    tracking_zero_count_int = int(tracking_zero_count)
+    delivered_count_int = int(delivered_count)
+    unpaid_count_int = int(unpaid_count)
+    not_yet_count_int = int(not_yet_count)
+    pre_ship_count_int = int(pre_ship_count)
+    irregular_no_tracking_count_int = int(irregular_no_tracking_count)
+    no_tracking_count_int = int(no_tracking_count)
+    tracking_count_int = int(tracking_count)
+
+    # 计算百分比
+    swl = round2(100 - ((no_track_count_int + tracking_zero_count_int) / total_count_int * 100))
     wswl = round2(100 - swl)
-    qsl = round2((int(delivered_count) / int(total_count)) * 100)
-    unpaidl = round2((int(unpaid_count) / int(total_count)) * 100)
-    not_yetl = round2((int(not_yet_count) / int(total_count)) * 100)
-    pre_shipl = round2((int(pre_ship_count) / int(total_count)) * 100)
-    irregular_no_trackingl = round2((int(irregular_no_tracking_count) / int(total_count)) * 100)
-    no_tracking_countl = round2((int(no_tracking_count) / int(total_count)) * 100)
-    tracking_countl = round2((int(tracking_count - tracking_zero_count) / int(total_count)) * 100)
-    tracking_zero_countl = round2((int(tracking_zero_count) / int(total_count)) * 100)
+    qsl = round2((delivered_count_int / total_count_int) * 100)
+    unpaidl = round2((unpaid_count_int / total_count_int) * 100)
+    not_yetl = round2((not_yet_count_int / total_count_int) * 100)
+    pre_shipl = round2((pre_ship_count_int / total_count_int) * 100)
+    irregular_no_trackingl = round2((irregular_no_tracking_count_int / total_count_int) * 100)
+    no_tracking_countl = round2((no_tracking_count_int / total_count_int) * 100)
+    tracking_countl = round2(((tracking_count_int - tracking_zero_count_int) / total_count_int) * 100)
+    tracking_zero_countl = round2((tracking_zero_count_int / total_count_int) * 100)
 
     kj_counts = kj_count(output_file)
 
-    wl = ""
-    wl += f"\n订单总数：{total_count}"
-    wl += f"\nKJ订单总数：{kj_counts}"
-    wl += f"\n"
-    wl += f"\n上网：（{track_count - tracking_zero_count}, {swl}%）"
-    wl += f"\n未上网：（{no_track_count + tracking_zero_count}, {wswl}%）"
-    wl += f"\n"
-    wl += f"\ndelivered：（{delivered_count}, {qsl}%）"
-    wl += f"\nunpaid：（{unpaid_count}, {unpaidl}%）"
-    wl += f"\ntracking：（{tracking_count - tracking_zero_count}, {tracking_countl}%）"
-    wl += f"\ntracking_zero：（{tracking_zero_count}, {tracking_zero_countl}%）"
-
-    wl += f"\nno_tracking：（{no_tracking_count}, {no_tracking_countl}%）"
-    wl += f"\nnot_yet：（{not_yet_count}, {not_yetl}%）"
-    wl += f"\npre_ship：（{pre_ship_count}, {pre_shipl}%）"
-    wl += f"\nirregular_no_tracking：（{irregular_no_tracking_count}, {irregular_no_trackingl}%）"
-
-    wl += f"\n"
-    wl += irregular_number_text + unpaid_text
+    # 构建字符串
+    wl = (
+        f"\n订单总数：{total_count_int}"
+        f"\nKJ订单总数：{kj_counts}"
+        f"\n"
+        f"\n上网：（{tracking_count_int - tracking_zero_count_int}, {swl}%）"
+        f"\n未上网：（{no_track_count_int + tracking_zero_count_int}, {wswl}%）"
+        f"\n"
+        f"\ndelivered：（{delivered_count_int}, {qsl}%）"
+        f"\nunpaid：（{unpaid_count_int}, {unpaidl}%）"
+        f"\ntracking：（{tracking_count_int - tracking_zero_count_int}, {tracking_countl}%）"
+        f"\ntracking_zero：（{tracking_zero_count_int}, {tracking_zero_countl}%）"
+        f"\nno_tracking：（{no_tracking_count_int}, {no_tracking_countl}%）"
+        f"\nnot_yet：（{not_yet_count_int}, {not_yetl}%）"
+        f"\npre_ship：（{pre_ship_count_int}, {pre_shipl}%）"
+        f"\nirregular_no_tracking：（{irregular_no_tracking_count_int}, {irregular_no_trackingl}%）"
+        f"\n{irregular_number_text + unpaid_text}"
+    )
+    data_map[CellKey.wl] = wl
 
     text += "\n----------------------轨迹概览----------------------"
     text += wl
-    data_map[CellKey.wl] = wl
 
-    text += "\n----------------------仓库分布----------------------"
-    warehouse_distribution, warehouse_no_track = count_distribution_and_no_track1(
-        output_file, key_column=RowName.Warehouse)
-    warehouse_text, lowest_warehouse, warehouse_text2 = generate_distribution_report(
-        warehouse_distribution, warehouse_no_track, data_map, CellKey.warehouse_condition
-    )
-    text += warehouse_text
+    # 避免重复读取 Excel 文件
+    warehouse_count, warehouse_no_track_count = dimension_distribution(output_file, key_column=RowName.Warehouse)
+    warehouse_text, lowest_warehouse = generate_distribution_report(warehouse_count, warehouse_no_track_count,
+                                                                    data_map, CellKey.warehouse_condition)
+    text += "\n----------------------仓库分布----------------------" + warehouse_text
 
-    text += "\n----------------------店铺分布----------------------"
-    store_distribution, store_no_track_distribution = count_distribution_and_no_track1(
-        output_file, key_column=RowName.Client)
-    store_text, lowest_store, store_text2 = generate_distribution_report(
-        store_distribution, store_no_track_distribution, data_map, CellKey.store_condition
-    )
-    text += store_text
+    store_count, store_no_track_count = dimension_distribution(output_file, key_column=RowName.Client)
+    store_text, lowest_store = generate_distribution_report(store_count, store_no_track_count,
+                                                            data_map, CellKey.store_condition)
+    text += "\n----------------------店铺分布----------------------" + store_text
 
-    text += "\n----------------------物流渠道分布----------------------"
-    shipping_service_distribution, shipping_service_no_track_distribution = count_distribution_and_no_track1(
-        output_file, key_column=RowName.ShippingService)
-    shipping_service_text, lowest_shipping_service, shipping_service_text2 = generate_distribution_report(
-        shipping_service_distribution, shipping_service_no_track_distribution, data_map,
-        CellKey.shipping_service_condition
-    )
-    text += shipping_service_text
+    shipping_service_count, shipping_service_no_track_count = dimension_distribution(output_file,
+                                                                                     key_column=RowName.ShippingService)
+    shipping_service_text, lowest_shipping_service = generate_distribution_report(shipping_service_count,
+                                                                                  shipping_service_no_track_count,
+                                                                                  data_map,
+                                                                                  CellKey.shipping_service_condition)
+    text += "\n----------------------物流渠道分布----------------------" + shipping_service_text
 
-    text += "\n----------------------时间段分布----------------------"
-    time_segment_analysis = analyze_time_segments(
-        output_file, time_column=RowName.CreationWaveTime, courier_column=RowName.Courier,
-        sf_date_column=RowName.SfDateInterval)
-    time_segment_text = ""
-    lowest_segment = ""  # 保存上网率最低的时间段
-    lowest_swl = 101  # 初始化为比 100 大的值
-    for segment_start, stats in time_segment_analysis.items():
-        segment_end = segment_start + timedelta(minutes=3)
-        total_count_temp = stats["total_count"]
-        no_track_count = stats["no_track_count"]
-        segmentswl = round2(100 - ((int(no_track_count) / int(total_count_temp)) * 100))
-        # strs = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}： 订单总数：{total_count_temp}；无轨迹数：{no_track_count}；上网率：{segmentswl}%"
-        strs = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {segment_end.strftime('%y-%m-%d %H:%M')}：（{total_count_temp}, {no_track_count}, {segmentswl}%）"
-        text += strs
-        time_segment_text += strs
-        # 判断是否是最低的上网率
-        if segmentswl < lowest_swl:
-            lowest_swl = segmentswl
-            lowest_segment = strs
-    data_map[CellKey.time_segment_condition] = time_segment_text
+    time_segment_text, lowest_segment = analyze_time_segments(output_file, data_map,
+                                                              time_column=RowName.CreationWaveTime,
+                                                              courier_column=RowName.Courier,
+                                                              sf_date_column=RowName.SfDateInterval)
 
-    lowest_txt = ""
-    lowest_txt += f"\n"
-    if (len(lowest_sku) > 0):
-        lowest_txt += f"\n最低上网率的 SKU："
-        for item in lowest_sku:
-            lowest_txt += item
-    lowest_txt += f"\n最低上网率的 仓库：{lowest_warehouse}"
-    lowest_txt += f"\n最低上网率的 商店：{lowest_store}"
-    lowest_txt += f"\n最低上网率的 时间段：{lowest_segment}"
-    lowest_txt += f"\n最低上网率的 物流渠道：{lowest_shipping_service}"
+    text += "\n----------------------时间段分布----------------------" + time_segment_text
+
+    lowest_txt = "\n"
+    if lowest_sku:
+        lowest_txt += "\n最低上网率的 SKU：" + "".join(lowest_sku)
+    lowest_txt += f"""
+    最低上网率的 仓库：{lowest_warehouse}
+    最低上网率的 商店：{lowest_store}
+    最低上网率的 时间段：{lowest_segment}
+    最低上网率的 物流渠道：{lowest_shipping_service}
+    """
 
     sum_up_text = ""
-
     actual_interval = ""
-    if (is_usweekend == 6):  # 6是中国周日，美国周六
-        sum_up_text += f"美国时间：周六（和中国相差13-16个小时）"
-        sum_up_text += f"\n"
+    if is_usweekend == 6:  # 6是中国周日，美国周六
+        sum_up_text = "美国时间：周六（和中国相差13-16个小时）\n"
         actual_interval = "（-2）"
-    elif (is_usweekend == 0):  # 0是中国周一，美国周日
-        sum_up_text += f"美国时间：周日（相差13-16个小时）"
-        sum_up_text += f"\n"
+    elif is_usweekend == 0:  # 0是中国周一，美国周日
+        sum_up_text = "美国时间：周日（相差13-16个小时）\n"
         actual_interval = "（-1）"
-    else:
-        actual_interval = ""
 
     # if (len(irregular_number_list) > 0):
     #     sum_up_text += f"存在不规则单号：{irregular_number_list}"
@@ -1196,89 +1183,69 @@ def go(analyse_obj, xlsx_path):
     qsl_flag = False
     bg = "#ffffff"
 
-    # 如果三天后的上网率没有99%以上，那么就严重有问题；隔天应该要 》= 三分之一，隔两天应该要有》=75
-    if (interval_time == 0):
-        sum_up_text += f"\n间隔第{interval_time}{actual_interval}天，上网率为{swl}%，继续观察👀！"
-    elif (interval_time == 1):
-        if (swl < 30):
-            sum_up_text += f"\n☁️注意：间隔第{interval_time}{actual_interval}天，上网率为{swl}%，未达30%，建议跟进！"
-            swl_flag = True
-            bg = "#F8F1D3"
-        else:
-            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，上网率为{swl}%，上网率优秀"
-    elif (interval_time == 2):
-        if (swl < 70):
-            sum_up_text += f"\n🌧️异常：间隔第{interval_time}{actual_interval}天，上网率为{swl}%，未达75%，建议分析数据尝试定位问题！"
-            swl_flag = True
-            bg = "#E3C49C"
-        else:
-            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，上网率为{swl}%，上网率优秀"
-    else:  # 间隔时间 >= 3天
-        if (swl < 97):
-            sum_up_text += f"\n❄️⛈️🌀⚠️🚨警报：间隔第{interval_time}{actual_interval}天，上网率为{swl}%，未达97%，分析数据反馈问题！"
-            swl_flag = True
-            bg = "#F1C1BD"
-        else:
-            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，上网率为{swl}%，上网率优秀"
+    # 上网率判断
+    warning_levels = [
+        (0, 30, "☁️注意", "未达30%，建议跟进！", "#F8F1D3"),
+        (1, 70, "🌧️异常", "未达75%，建议分析数据尝试定位问题！", "#E3C49C"),
+        (3, 97, "❄️⛈️🌀⚠️🚨警报", "未达97%，分析数据反馈问题！", "#F1C1BD"),
+    ]
 
-    # 要持续监控一个星期才行，从出库开始计算，三天内没有签收的不正常，五天内签收没达到50%也不正常，7天内没到90也不正常
-    if (interval_time >= 1 and interval_time <= 3):
-        if (interval_time >= 2 and qsl == 0):
-            sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为0%，异常状态！"
-            qsl_flag = True
-        else:
-            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
-    elif (interval_time > 3 and interval_time <= 5):
-        if (qsl <= 20):
-            sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，异常状态！"
-            qsl_flag = True
-        else:
-            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
-    elif (interval_time > 5 and interval_time <= 7):
-        if (qsl <= 50):
-            sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，异常状态！"
-            qsl_flag = True
-        else:
-            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
-    elif (interval_time > 7 and interval_time <= 9):
-        if (qsl <= 80):
-            sum_up_text += f"\n🚨警报：间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，异常状态！"
-            qsl_flag = True
-        else:
-            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
+    sum_up_text += f"\n间隔第{interval_time}{actual_interval}天，上网率为{swl}%"
+
+    for days, threshold, icon, message, color in warning_levels:
+        if interval_time == days and swl < threshold:
+            sum_up_text += f"\n{icon} {message}"
+            swl_flag = True
+            bg = color
+            break
     else:
-        if (qsl >= 98):
-            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，签收率优秀！"
-        else:
-            sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
+        sum_up_text += "，上网率优秀"
+
+    # 签收率判断
+    qsl_warnings = [
+        (1, 3, 0, "🚨警报", "签收率为0%，异常状态！"),
+        (3, 5, 20, "🚨警报", "签收率未达20%，异常状态！"),
+        (5, 7, 50, "🚨警报", "签收率未达50%，异常状态！"),
+        (7, 9, 80, "🚨警报", "签收率未达80%，异常状态！"),
+    ]
+
+    for start, end, threshold, icon, message in qsl_warnings:
+        if start <= interval_time <= end and qsl <= threshold:
+            sum_up_text += f"\n{icon} {message}"
+            qsl_flag = True
+            break
+    else:
+        sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
+
+    if interval_time > 9 and qsl >= 98:
+        sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，签收率优秀！"
 
     text += "\n----------------------总结&建议----------------------"
-    if (swl < 100):
+    if swl < 100:
         sum_up_text += lowest_txt
     text += f"\n{sum_up_text}"
     data_map[CellKey.sum_up] = sum_up_text
 
-    if (swl_flag or qsl_flag):
-        if (swl_flag and qsl_flag):
+    # 异常状态记录
+    if swl_flag or qsl_flag:
+        if swl_flag and qsl_flag:
             data_map[CellKey.exception] = "上网率&签收率 异常\n（签收率目前无法量化，只为提醒⏰）"
-        elif (swl_flag):
+        elif swl_flag:
             data_map[CellKey.exception] = "上网率异常"
-        elif (qsl_flag):
+        elif qsl_flag:
             data_map[CellKey.exception] = "签收率异常\n（签收率目前无法量化，只为提醒⏰）"
     else:
         data_map[CellKey.exception] = ""
 
     # 删除去重文件
     delete_file(output_file)
-    # 数据打印
-    # print(data_map)
     print(text)
 
     # 写入飞书在线文档
     # tat = get_token()
     # if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
     #     lists = f"({total_count},{swl}%)"
-    #     lists += f"\n{warehouse_text2}"
+    #     lists += f"\n{warehouse_text}"
     #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
     #     if (swl_flag):
     #         brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
@@ -1339,22 +1306,22 @@ def automatic(dir_path, analyse_obj):
                 xlsx_path = f"{root}/{ele}"
                 print(f"匹配的文件: {xlsx_path}")
                 try:
-                    total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
-                    tracking_zero_count = count_tracking_with_sf_date_equality(xlsx_path)
-                    total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
-
-                    if total_count == 0:
-                        swl = 0
-                    else:
-                        swl = round2(100 - ((int(no_track_count + tracking_zero_count) / int(total_count)) * 100))
-
-                    if total_count == 0:
-                        qsl = 0
-                    else:
-                        qsl = round2((int(delivered_count) / int(total_count)) * 100)
-
-                    if swl < 99 or qsl < 98:
-                        go(analyse_obj, xlsx_path)
+                    # total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
+                    # tracking_zero_count = count_tracking_with_sf_date_equality(xlsx_path)
+                    # total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
+                    #
+                    # if total_count == 0:
+                    #     swl = 0
+                    # else:
+                    #     swl = round2(100 - ((int(no_track_count + tracking_zero_count) / int(total_count)) * 100))
+                    #
+                    # if total_count == 0:
+                    #     qsl = 0
+                    # else:
+                    #     qsl = round2((int(delivered_count) / int(total_count)) * 100)
+                    #
+                    # if swl < 99 or qsl < 98:
+                    go(analyse_obj, xlsx_path)
                 except ZeroDivisionError:
                     print(f"警告：{xlsx_path} 的 total_count 为 0，跳过计算。")
                     go(analyse_obj, xlsx_path)  # 仍然执行 go 但避免除零错误
