@@ -64,12 +64,6 @@ class CourierStateMapValue:
 class CellKey:
     Outbound_Time = "Outbound_Time"
     update_time = "update_time"
-    order_count = "order_count"
-    no_track_number = "no_track_number"
-    track_percent = "track_percent"
-    delivered_counts = "delivered_counts"
-    delivered_percent = "delivered_percent"
-    no_track_percent = "no_track_percent"
     warehouse_condition = "warehouse_condition"
     store_condition = "store_condition"
     sku_condition = "sku_condition"
@@ -77,7 +71,6 @@ class CellKey:
     sum_up = "sum_up"
     exception = "exception"
     shipping_service_condition = "shipping_service_condition"
-    unpaid_count = "unpaid_count"
     special_information = "special_information"
     wl = "wl"
 
