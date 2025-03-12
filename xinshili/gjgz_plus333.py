@@ -229,6 +229,7 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
 
                         latestEventSfDateTimeStr = info.get("latestEventSfDateTime")
                         possessionSfDateTimeStr = info.get("possessionSfDateTime")
+                        statusShortStr = info.get("statusShort")
 
                         latestEventMatch = re.search(r"\d{4}-\d{2}-\d{2}", str(latestEventSfDateTimeStr))
                         possessionEventMatch = re.search(r"\d{4}-\d{2}-\d{2}", str(possessionSfDateTimeStr))
@@ -250,6 +251,10 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                             days_diff = 0
                         else:
                             days_diff = (date1 - date2).days
+
+                        # 表示不是
+                        if (days_diff == 0 and statusShortStr == 'Arrived at USPS Regional Origin Facility'):
+                            days_diff = 99
 
                         results_map[CourierStateMapKey.possession_sf_date_map][package_id] = possessionSfDateTimeGroup
                         results_map[CourierStateMapKey.latest_event_sf_date_map][
@@ -1390,10 +1395,13 @@ if __name__ == '__main__':
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.1", ClientConstants.sanrio)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3", ClientConstants.sanrio)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.2", ClientConstants.xyl)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3", ClientConstants.xyl)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3", ClientConstants.xyl)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg", ClientConstants.mx_dg)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc", ClientConstants.md_fc)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd/2025.3", ClientConstants.mz_xsd)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg/2025.3", ClientConstants.mx_dg)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc/2025.3", ClientConstants.md_fc)
