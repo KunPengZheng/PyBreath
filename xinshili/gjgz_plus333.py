@@ -25,7 +25,7 @@ zbw轨迹跟踪分析
 class RowName:
     Tracking_No = 'Tracking No./物流跟踪号'
     Courier = 'Courier/快递'
-    OutboundTime = "OutboundTime/出库时间"
+    OutboundTime = "Creation time/创建时间"
     Warehouse = "Warehouse/仓库"
     Client = "Client/客户"
     CreationWaveTime = "Create wave time/生成波次时间"
@@ -89,21 +89,21 @@ class Pattern:
 
 def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
     """
-    查找不规则的快递单号（不是纯数字或者不是9开头）
+    查找不规则的快递单号（不是纯数字、不是9开头、或者包含下划线）
     :param filepath: Excel文件路径
+    :param column_name: 需要检查的列名，默认为 'Tracking No./物流跟踪号'
     :return: 不规则快递单号字典
     """
     try:
         # 打开xlsx文件
-        wb = openpyxl.load_workbook(filepath)
+        wb = openpyxl.load_workbook(filepath, data_only=True)
         sheet = wb.active  # 默认使用活动工作表
 
         # 获取 'Tracking No./物流跟踪号' 列索引
-        tracking_no_col = None
-        for col in range(1, sheet.max_column + 1):
-            if sheet.cell(row=1, column=col).value == column_name:
-                tracking_no_col = col
-                break
+        tracking_no_col = next(
+            (col for col in range(1, sheet.max_column + 1) if sheet.cell(row=1, column=col).value == column_name),
+            None
+        )
 
         if tracking_no_col is None:
             print(f"找不到 {column_name} 列")
@@ -114,11 +114,12 @@ def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
 
         # 遍历所有行，从第二行开始（跳过表头）
         for row in range(2, sheet.max_row + 1):
-            tracking_no = str(sheet.cell(row=row, column=tracking_no_col).value)  # 转换为字符串
-            # 判断是否是纯数字并且以9开头
-            if not tracking_no.isdigit() or not tracking_no.startswith('9'):
+            tracking_no = str(sheet.cell(row=row, column=tracking_no_col).value).strip()  # 转换为字符串并去除前后空格
+            # 判断是否为不合规单号
+            if not tracking_no.isdigit() or not tracking_no.startswith(("92", "93", "94")) or "_" in tracking_no:
                 irregular_number_map[tracking_no] = CourierStateMapValue.irregular_no_tracking
 
+        print("find_irregular_tracking_numbers 方法执行完成")
         return irregular_number_map
 
     except Exception as e:
@@ -135,7 +136,7 @@ def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_ma
     :param column_map: 需要更新的列 {状态映射: 对应的 Excel 列名}
     """
     # 1. 读取 Excel 文件
-    wb = openpyxl.load_workbook(filepath)
+    wb = openpyxl.load_workbook(filepath, data_only=True)
     sheet = wb.active
 
     # 2. 获取列索引
@@ -162,6 +163,7 @@ def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_ma
 
     # 6. 一次性保存 Excel
     wb.save(filepath)
+    print("update_courier_status 方法执行完成")
 
 
 # 预编译正则，提高性能
@@ -176,81 +178,85 @@ def parse_date(date_str):
 
 def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
                              request_interval: float = 2.0):
-    data = pd.read_excel(filepath)
+    print("extract_and_process_data 方法执行开始")
+
+    # **优化1：仅读取必要的列，减少内存占用**
+    data = pd.read_excel(filepath, usecols=[column_name, wl_name], dtype=str)
 
     if column_name not in data.columns:
         raise ValueError(f"列 '{column_name}' 不存在于 Excel 文件中")
 
-    # 初始化结果 map
+    # 初始化结果字典
     results_map = {
-        CourierStateMapKey.tracking_map: {},
-        CourierStateMapKey.no_tracking_map: {},
-        CourierStateMapKey.unpaid_map: {},
-        CourierStateMapKey.not_yet_map: {},
-        CourierStateMapKey.pre_ship_map: {},
-        CourierStateMapKey.delivered_map: {},
-        CourierStateMapKey.possession_sf_date_map: {},
-        CourierStateMapKey.latest_event_sf_date_map: {},
-        CourierStateMapKey.sf_date_equality_map: {},
+        "tracking_map": {},
+        "no_tracking_map": {},
+        "unpaid_map": {},
+        "not_yet_map": {},
+        "pre_ship_map": {},
+        "delivered_map": {},
+        "possession_sf_date_map": {},
+        "latest_event_sf_date_map": {},
+        "sf_date_equality_map": {},
     }
 
-    # 填充空值，并使用 `isin()` 进行过滤
+    # **优化2：过滤空值，减少计算量**
     data[column_name] = data[column_name].fillna('')
-    valid_values = {"", CourierStateMapValue.not_yet, CourierStateMapValue.pre_ship,
-                    CourierStateMapValue.tracking, CourierStateMapValue.no_tracking}
+    valid_values = {"", "not_yet", "pre_ship", "tracking", "no_tracking"}
     filtered_data = data[data[column_name].isin(valid_values)]
 
-    # 获取符合条件的物流单号列表
-    items = filtered_data[wl_name].tolist()
+    # **优化3：转换为列表，减少 Pandas 操作，提高性能**
+    items = filtered_data[wl_name].dropna().tolist()
 
-    # 分批处理
+    # **优化4：使用列表推导式减少循环开销**
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
 
     last_request_time = time.time()
+    print(f"提取到 {len(items)} 条数据，分成 {len(grouped_items)} 组")
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # 直接存储索引，避免 .index() 操作
+    # **优化5：限制最大线程数，防止 CPU 过载**
+    max_threads = min(5, len(grouped_items))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
         futures = {executor.submit(track, group): (idx, group) for idx, group in enumerate(grouped_items)}
 
         for future in concurrent.futures.as_completed(futures):
             idx, group = futures[future]
 
-            # 控制请求间隔
+            # **优化6：控制请求频率，减少 API 压力**
             elapsed_time = time.time() - last_request_time
             if elapsed_time < request_interval:
                 time.sleep(request_interval - elapsed_time)
             last_request_time = time.time()
 
             try:
-                track1 = future.result()
+                track1 = future.result()  # **优化7：及时释放 future 结果，减少内存占用**
                 print(f"处理第 {idx + 1} 组，共 {len(group)} 条数据")
 
                 for package_id, info in track1['data'].items():
                     if info.get('err'):
                         err_id = info.get('err_id')
                         if err_id == '-2147219283':
-                            results_map[CourierStateMapKey.not_yet_map][package_id] = CourierStateMapValue.not_yet
+                            results_map["not_yet_map"][package_id] = "not_yet"
                         elif err_id == 'pre-ship':
-                            results_map[CourierStateMapKey.pre_ship_map][package_id] = CourierStateMapValue.pre_ship
+                            results_map["pre_ship_map"][package_id] = "pre_ship"
                         else:
-                            results_map[CourierStateMapKey.no_tracking_map][
-                                package_id] = CourierStateMapValue.no_tracking
+                            results_map["no_tracking_map"][package_id] = "no_tracking"
 
-                        results_map[CourierStateMapKey.possession_sf_date_map][package_id] = ""
-                        results_map[CourierStateMapKey.latest_event_sf_date_map][package_id] = ""
-                        results_map[CourierStateMapKey.sf_date_equality_map][package_id] = 0
+                        # **优化8：避免存储空字符串**
+                        results_map["possession_sf_date_map"][package_id] = None
+                        results_map["latest_event_sf_date_map"][package_id] = None
+                        results_map["sf_date_equality_map"][package_id] = 0
                     else:
-                        status_category = info.get('statusCategory')
-                        status_long = info.get('statusLong')
+                        status_category = info.get('statusCategory', '')
+                        status_long = info.get('statusLong', '')
 
                         if "postage" in status_long:
-                            results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
+                            results_map["unpaid_map"][package_id] = "unpaid"
                         elif "Delivered" in status_category or "Delivered to Agent" in status_category:
-                            results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                            results_map["delivered_map"][package_id] = "delivered"
                         else:
-                            results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
+                            results_map["tracking_map"][package_id] = "tracking"
 
-                        # 解析日期
+                        # **优化9：解析日期并计算时间差**
                         possession_date = parse_date(info.get("possessionSfDateTime"))
                         latest_event_date = parse_date(info.get("latestEventSfDateTime"))
 
@@ -260,17 +266,18 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                         else:
                             days_diff = 0
 
-                        # 特殊情况
+                        # **优化10：特殊处理 USPS 物流**
                         if days_diff == 0 and info.get("statusShort") == 'Arrived at USPS Regional Origin Facility':
                             days_diff = 99
 
-                        results_map[CourierStateMapKey.possession_sf_date_map][package_id] = possession_date
-                        results_map[CourierStateMapKey.latest_event_sf_date_map][package_id] = latest_event_date
-                        results_map[CourierStateMapKey.sf_date_equality_map][package_id] = int(days_diff)
+                        results_map["possession_sf_date_map"][package_id] = possession_date
+                        results_map["latest_event_sf_date_map"][package_id] = latest_event_date
+                        results_map["sf_date_equality_map"][package_id] = int(days_diff)
 
             except Exception as e:
                 print(f"处理组 {idx + 1} 时发生错误: {e}")
 
+    print("extract_and_process_data 方法执行完成")
     return results_map
 
 
@@ -284,7 +291,7 @@ def count_pattern_and_tracking_with_sf_date(file_path, column_name, sfDateInterv
     :return: 包含每个模式匹配计数和符合 'tracking' 且 'SfDateEquality' 为 0 的行数的字典
     """
     try:
-        workbook = load_workbook(file_path)
+        workbook = load_workbook(file_path, data_only=True)
         sheet = workbook.active
         headers = [cell.value for cell in sheet[1]]
 
@@ -339,7 +346,7 @@ def count_distribution_and_no_track(file_path, key_column, courier_column=RowNam
     :return: 各值的总数和 "无轨迹" 数量的 Counter 对象
     """
     try:
-        workbook = load_workbook(file_path)
+        workbook = load_workbook(file_path, data_only=True)
         sheet = workbook.active
         headers = [cell.value for cell in sheet[1]]
         if key_column not in headers or courier_column not in headers:
@@ -372,7 +379,7 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
     :return: 各值的总数和 "无轨迹" 数量的 Counter 对象
     """
     try:
-        workbook = load_workbook(file_path)
+        workbook = load_workbook(file_path, data_only=True)
         sheet = workbook.active
         headers = [cell.value for cell in sheet[1]]
         if key_column not in headers or courier_column not in headers or sf_date_column not in headers:
@@ -419,7 +426,7 @@ def count_distribution_and_no_track2(file_path, key_column, courier_column=RowNa
     :return: 各值的总数和各个状态的数量的 Counter 对象
     """
     try:
-        workbook = load_workbook(file_path)
+        workbook = load_workbook(file_path, data_only=True)
         sheet = workbook.active
         headers = [cell.value for cell in sheet[1]]
 
@@ -664,13 +671,14 @@ def check_and_add_courier_column(file_path):
             data[RowName.SfDateInterval] = ""
         # 保存修改后的文件
         data.to_excel(file_path, index=False, engine='openpyxl')
+        print("check_and_add_courier_column 方法执行完成")
     except Exception as e:
         print(f"发生错误: {e}")
 
 
 def get_days_difference(file_path, column_name=RowName.OutboundTime):
     try:
-        workbook = load_workbook(file_path)
+        workbook = load_workbook(file_path, data_only=True)
         sheet = workbook.active
         # 获取表头
         headers = [cell.value for cell in sheet[1]]
@@ -1300,7 +1308,7 @@ def automatic(dir_path, analyse_obj):
         # print(f"子文件夹: {dirs}")
         # print(f"文件: {files}")
         # print("--------")
-        pattern = r"^出库时间\d+_\d+\.xlsx$"  # 正则表达式
+        pattern = r"^创建时间\d+_\d+\.xlsx$"  # 正则表达式
         for ele in files:
             if re.match(pattern, ele):
                 xlsx_path = f"{root}/{ele}"
@@ -1333,7 +1341,7 @@ def automatic(dir_path, analyse_obj):
 if __name__ == '__main__':
     # # 手动
     # go(None, None)
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/出库时间5_144.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间1_846.xlsx")
     # # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
