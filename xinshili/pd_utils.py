@@ -4,7 +4,7 @@ import os
 
 def remove_duplicates_by_column(input_file, output_file, column_name):
     """
-    去重：删除指定列中重复的行，仅保留第一条，并覆盖源文件。
+    去重：删除指定列中重复的行，仅保留第一条，并覆盖源文件，同时返回去重后的行数。
 
     参数：
     - input_file: str，输入文件路径
@@ -13,14 +13,23 @@ def remove_duplicates_by_column(input_file, output_file, column_name):
     try:
         # 读取 Excel 文件
         df = pd.read_excel(input_file)
+
         # 检查列名是否存在
         if column_name not in df.columns:
             raise ValueError(f"列 '{column_name}' 不存在于输入文件中！")
+
         # 删除指定列的重复项，仅保留第一条
         df_deduplicated = df.drop_duplicates(subset=[column_name], keep='first')
+
+        # 将去重后的数据保存到输出文件
         df_deduplicated.to_excel(output_file, index=False)
+
+        # 返回去重后的行数
+        return len(df_deduplicated)
+
     except Exception as e:
         print(f"处理文件时发生错误：{e}")
+        return 0  # 如果出现错误，返回 0 行数
 
 
 def filter_data(input_file, output_file, column_name, isinList):
