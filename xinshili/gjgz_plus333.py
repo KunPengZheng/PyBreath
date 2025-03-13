@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 import concurrent.futures
 import time
+import gc
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants, detail_sheet_bg, \
     brief_sheet_bg
@@ -180,7 +181,7 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                              request_interval: float = 2.0):
     print("extract_and_process_data 方法执行开始")
 
-    # **优化1：仅读取必要的列，减少内存占用**
+    # **优化1：仅读取必要的列**
     data = pd.read_excel(filepath, usecols=[column_name, wl_name], dtype=str)
 
     if column_name not in data.columns:
@@ -199,38 +200,46 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
         "sf_date_equality_map": {},
     }
 
-    # **优化2：过滤空值，减少计算量**
+    # **优化2：过滤无效值**
     data[column_name] = data[column_name].fillna('')
     valid_values = {"", "not_yet", "pre_ship", "tracking", "no_tracking"}
     filtered_data = data[data[column_name].isin(valid_values)]
 
-    # **优化3：转换为列表，减少 Pandas 操作，提高性能**
+    # **优化3：转换为列表，减少 Pandas 操作**
     items = filtered_data[wl_name].dropna().tolist()
 
-    # **优化4：使用列表推导式减少循环开销**
+    # **优化4：分组处理**
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
 
     last_request_time = time.time()
     print(f"提取到 {len(items)} 条数据，分成 {len(grouped_items)} 组")
 
-    # **优化5：限制最大线程数，防止 CPU 过载**
-    max_threads = min(5, len(grouped_items))
+    if not grouped_items:
+        print("没有数据可处理，结束方法。")
+        return results_map
+
+    # **优化5：限制线程数，减少系统压力**
+    # max_threads = min(3, len(grouped_items))
+    max_threads = min(3, 5)
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
-        futures = {executor.submit(track, group): (idx, group) for idx, group in enumerate(grouped_items)}
+        futures = {executor.submit(track, group): (idx, group)
+                   for idx, group in enumerate(grouped_items)}
 
         for future in concurrent.futures.as_completed(futures):
             idx, group = futures[future]
 
-            # **优化6：控制请求频率，减少 API 压力**
+            # **优化6：严格控制请求频率**
             elapsed_time = time.time() - last_request_time
             if elapsed_time < request_interval:
                 time.sleep(request_interval - elapsed_time)
             last_request_time = time.time()
 
             try:
-                track1 = future.result()  # **优化7：及时释放 future 结果，减少内存占用**
+                track1 = future.result()  # **及时释放 future 结果**
                 print(f"处理第 {idx + 1} 组，共 {len(group)} 条数据")
 
+                # **逐条处理包裹信息**
                 for package_id, info in track1['data'].items():
                     if info.get('err'):
                         err_id = info.get('err_id')
@@ -241,7 +250,6 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                         else:
                             results_map["no_tracking_map"][package_id] = "no_tracking"
 
-                        # **优化8：避免存储空字符串**
                         results_map["possession_sf_date_map"][package_id] = None
                         results_map["latest_event_sf_date_map"][package_id] = None
                         results_map["sf_date_equality_map"][package_id] = 0
@@ -256,23 +264,25 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                         else:
                             results_map["tracking_map"][package_id] = "tracking"
 
-                        # **优化9：解析日期并计算时间差**
                         possession_date = parse_date(info.get("possessionSfDateTime"))
                         latest_event_date = parse_date(info.get("latestEventSfDateTime"))
 
+                        days_diff = 0
                         if possession_date and latest_event_date:
                             days_diff = (datetime.strptime(latest_event_date, "%Y-%m-%d") -
                                          datetime.strptime(possession_date, "%Y-%m-%d")).days
-                        else:
-                            days_diff = 0
 
-                        # **优化10：特殊处理 USPS 物流**
+                        # **特殊处理 USPS**
                         if days_diff == 0 and info.get("statusShort") == 'Arrived at USPS Regional Origin Facility':
                             days_diff = 99
 
                         results_map["possession_sf_date_map"][package_id] = possession_date
                         results_map["latest_event_sf_date_map"][package_id] = latest_event_date
-                        results_map["sf_date_equality_map"][package_id] = int(days_diff)
+                        results_map["sf_date_equality_map"][package_id] = days_diff
+
+                # **手动释放内存**
+                del track1
+                gc.collect()
 
             except Exception as e:
                 print(f"处理组 {idx + 1} 时发生错误: {e}")
