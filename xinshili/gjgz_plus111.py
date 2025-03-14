@@ -138,7 +138,7 @@ def update_courier_status(filepath, maps, wl=RowName.Tracking_No):
 
 
 def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
-                             request_interval: float = 5.0):
+                             request_interval: float = 30.0):
     data = pd.read_excel(filepath)
 
     if column_name not in data.columns:
@@ -171,7 +171,7 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
 
     # 使用线程池来并发请求每组数据
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         # 提交任务
         futures = {executor.submit(track, group): group for group in grouped_items}
 
@@ -388,6 +388,7 @@ def get_days_difference(file_path, column_name=RowName.OutboundTime):
     except Exception as e:
         print(f"发生错误: {e}")
         return None
+
 
 def generate_distribution_report(distribution, no_track_distribution, data_map, data_map_key):
     """
