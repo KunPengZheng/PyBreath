@@ -149,6 +149,123 @@ def update_courier_status1(filepath, maps, wl=RowName.Tracking_No):
     wb.save(filepath)
 
 
+def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
+                             request_interval: float = 30.0):
+    data = pd.read_excel(filepath)
+
+    if column_name not in data.columns:
+        raise ValueError(f"列 '{column_name}' 不存在于 Excel 文件中")
+
+    # 存储结果的 map（字典）
+    results_map = {
+        CourierStateMapKey.tracking_map: {},
+        CourierStateMapKey.no_tracking_map: {},
+        CourierStateMapKey.unpaid_map: {},
+        CourierStateMapKey.not_yet_map: {},
+        CourierStateMapKey.pre_ship_map: {},
+        CourierStateMapKey.delivered_map: {},
+        CourierStateMapKey.possession_sf_date_map: {},
+        CourierStateMapKey.latest_event_sf_date_map: {},
+        CourierStateMapKey.sf_date_equality_map: {},
+    }
+
+    # 将无内容的单元格赋值""空字符串
+    data[column_name] = data[column_name].fillna('')
+
+    # 获取指定内容的数据
+    filtered_data = data[data[column_name].apply(
+        lambda x: str(x).strip().lower() in ['', CourierStateMapValue.not_yet,
+                                             CourierStateMapValue.pre_ship,
+                                             CourierStateMapValue.tracking,
+                                             CourierStateMapValue.no_tracking])]
+
+    # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
+    items = filtered_data[wl_name].tolist()
+
+    # 按组划分数据
+    grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
+
+    # 使用线程池来并发请求每组数据
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        # 提交任务
+        futures = {executor.submit(track, group): group for group in grouped_items}
+
+        # 遍历所有的任务（每组数据的请求）
+        for future in concurrent.futures.as_completed(futures):
+            group = futures[future]  # 获取当前完成的任务的 group 数据
+            try:
+                track1 = future.result()  # 获取请求结果
+                print(f"处理第 {grouped_items.index(group) + 1} 组，共 {len(group)} 条数据")
+
+                # 对返回的数据进行处理
+                for package_id, info in track1['data'].items():
+                    # 判断错误类型并分类
+                    if info.get('err'):
+                        if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
+                            results_map[CourierStateMapKey.not_yet_map][package_id] = CourierStateMapValue.not_yet
+                        elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
+                            results_map[CourierStateMapKey.pre_ship_map][package_id] = CourierStateMapValue.pre_ship
+                        else:
+                            results_map[CourierStateMapKey.no_tracking_map][
+                                package_id] = CourierStateMapValue.no_tracking
+
+                        results_map[CourierStateMapKey.possession_sf_date_map][package_id] = ""
+                        results_map[CourierStateMapKey.latest_event_sf_date_map][package_id] = ""
+                        results_map[CourierStateMapKey.sf_date_equality_map][package_id] = 0
+                    else:
+                        if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
+                                info.get('statusLong'):
+                            results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
+                        elif "Delivered" in info.get('statusCategory'):
+                            results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                        elif "Delivered to Agent" in info.get('statusCategory'):
+                            results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                        else:
+                            results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
+
+                        latestEventSfDateTimeStr = info.get("latestEventSfDateTime")
+                        possessionSfDateTimeStr = info.get("possessionSfDateTime")
+                        statusShortStr = info.get("statusShort")
+
+                        latestEventMatch = re.search(r"\d{4}-\d{2}-\d{2}", str(latestEventSfDateTimeStr))
+                        possessionEventMatch = re.search(r"\d{4}-\d{2}-\d{2}", str(possessionSfDateTimeStr))
+
+                        latestEventSfDateTimeGroup = latestEventMatch.group() if latestEventMatch else ""
+                        possessionSfDateTimeGroup = possessionEventMatch.group() if possessionEventMatch else ""
+
+                        if (latestEventSfDateTimeGroup == ""):
+                            date1 = ""
+                        else:
+                            date1 = datetime.strptime(latestEventSfDateTimeGroup, "%Y-%m-%d")
+
+                        if (possessionSfDateTimeGroup == ""):
+                            date2 = ""
+                        else:
+                            date2 = datetime.strptime(possessionSfDateTimeGroup, "%Y-%m-%d")
+
+                        if (latestEventSfDateTimeGroup == "" or possessionSfDateTimeGroup == ""):
+                            days_diff = 0
+                        else:
+                            days_diff = (date1 - date2).days
+
+                        # 表示不是
+                        if (days_diff == 0 and statusShortStr != 'Shipment Received, Package Acceptance Pending'):
+                            days_diff = 99
+
+                        results_map[CourierStateMapKey.possession_sf_date_map][package_id] = possessionSfDateTimeGroup
+                        results_map[CourierStateMapKey.latest_event_sf_date_map][
+                            package_id] = latestEventSfDateTimeGroup
+                        results_map[CourierStateMapKey.sf_date_equality_map][package_id] = int(days_diff)
+
+                # 等待指定的间隔时间，避免请求频率过高
+                time.sleep(request_interval)
+
+            except Exception as e:
+                print(f"处理组 {grouped_items.index(group) + 1} 时发生错误: {e}")
+
+    return results_map
+
+
 def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_map=None):
     """
     批量更新多个状态，避免重复读取和写入文件，提高效率
@@ -168,20 +285,22 @@ def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_ma
     # 3. 获取所有需要更新的列索引
     column_indices = {key: headers.index(col_name) + 1 for key, col_name in column_map.items()}
 
-    # 4. 读取 Excel 中的所有 tracking_no
+    # 4. 读取 Excel 中所有 tracking_no，并存储所有匹配的行号
     tracking_no_rows = {}
     for row in range(2, sheet.max_row + 1):  # 从第2行（跳过表头）开始
         tracking_no = sheet.cell(row=row, column=tracking_no_col).value
         if tracking_no:
-            tracking_no_rows[tracking_no] = row
+            if tracking_no not in tracking_no_rows:
+                tracking_no_rows[tracking_no] = []
+            tracking_no_rows[tracking_no].append(row)  # 存所有匹配的行
 
     # 5. 遍历所有需要更新的状态
     for state_map, col_name in column_map.items():
         col_index = column_indices[state_map]
         for tracking_no, status in maps_list.get(state_map, {}).items():
-            if tracking_no in tracking_no_rows:  # 仅更新存在的 tracking_no
-                row_index = tracking_no_rows[tracking_no]
-                sheet.cell(row=row_index, column=col_index, value=status)
+            if tracking_no in tracking_no_rows:
+                for row_index in tracking_no_rows[tracking_no]:  # 遍历所有行
+                    sheet.cell(row=row_index, column=col_index, value=status)
 
     # 6. 一次性保存 Excel
     wb.save(filepath)
@@ -196,120 +315,6 @@ date_regex = re.compile(r"\d{4}-\d{2}-\d{2}")
 def parse_date(date_str):
     match = date_regex.search(str(date_str))
     return match.group() if match else ""
-
-
-def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
-                             request_interval: float = 30.0):
-    print("extract_and_process_data 方法执行开始")
-
-    # **优化1：仅读取必要的列**
-    data = pd.read_excel(filepath, usecols=[column_name, wl_name], dtype=str)
-
-    if column_name not in data.columns:
-        raise ValueError(f"列 '{column_name}' 不存在于 Excel 文件中")
-
-    # 初始化结果字典
-    results_map = {
-        "tracking_map": {},
-        "no_tracking_map": {},
-        "unpaid_map": {},
-        "not_yet_map": {},
-        "pre_ship_map": {},
-        "delivered_map": {},
-        "possession_sf_date_map": {},
-        "latest_event_sf_date_map": {},
-        "sf_date_equality_map": {},
-    }
-
-    # **优化2：过滤无效值**
-    data[column_name] = data[column_name].fillna('')
-    valid_values = {"", "not_yet", "pre_ship", "tracking", "no_tracking"}
-    filtered_data = data[data[column_name].isin(valid_values)]
-
-    # **优化3：转换为列表，减少 Pandas 操作**
-    items = filtered_data[wl_name].dropna().tolist()
-
-    # **优化4：分组处理**
-    grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
-
-    last_request_time = time.time()
-    print(f"提取到 {len(items)} 条数据，分成 {len(grouped_items)} 组")
-
-    if not grouped_items:
-        print("没有数据可处理，结束方法。")
-        return results_map
-
-    # **优化5：限制线程数，减少系统压力**
-    # max_threads = min(3, len(grouped_items))
-    max_threads = min(1, 1)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
-        futures = {executor.submit(track, group): (idx, group)
-                   for idx, group in enumerate(grouped_items)}
-
-        for future in concurrent.futures.as_completed(futures):
-            idx, group = futures[future]
-
-            # **优化6：严格控制请求频率**
-            elapsed_time = time.time() - last_request_time
-            if elapsed_time < request_interval:
-                time.sleep(request_interval - elapsed_time)
-            last_request_time = time.time()
-
-            try:
-                track1 = future.result()  # **及时释放 future 结果**
-                print(f"处理第 {idx + 1} 组，共 {len(group)} 条数据")
-
-                # **逐条处理包裹信息**
-                for package_id, info in track1['data'].items():
-                    if info.get('err'):
-                        err_id = info.get('err_id')
-                        if err_id == '-2147219283':
-                            results_map["not_yet_map"][package_id] = "not_yet"
-                        elif err_id == 'pre-ship':
-                            results_map["pre_ship_map"][package_id] = "pre_ship"
-                        else:
-                            results_map["no_tracking_map"][package_id] = "no_tracking"
-
-                        results_map["possession_sf_date_map"][package_id] = None
-                        results_map["latest_event_sf_date_map"][package_id] = None
-                        results_map["sf_date_equality_map"][package_id] = 0
-                    else:
-                        status_category = info.get('statusCategory', '')
-                        status_long = info.get('statusLong', '')
-
-                        if "postage" in status_long:
-                            results_map["unpaid_map"][package_id] = "unpaid"
-                        elif "Delivered" in status_category or "Delivered to Agent" in status_category:
-                            results_map["delivered_map"][package_id] = "delivered"
-                        else:
-                            results_map["tracking_map"][package_id] = "tracking"
-
-                        possession_date = parse_date(info.get("possessionSfDateTime"))
-                        latest_event_date = parse_date(info.get("latestEventSfDateTime"))
-
-                        days_diff = 0
-                        if possession_date and latest_event_date:
-                            days_diff = (datetime.strptime(latest_event_date, "%Y-%m-%d") -
-                                         datetime.strptime(possession_date, "%Y-%m-%d")).days
-
-                        # **特殊处理 USPS**
-                        if days_diff == 0 and info.get("statusShort") == 'Arrived at USPS Regional Origin Facility':
-                            days_diff = 99
-
-                        results_map["possession_sf_date_map"][package_id] = possession_date
-                        results_map["latest_event_sf_date_map"][package_id] = latest_event_date
-                        results_map["sf_date_equality_map"][package_id] = days_diff
-
-                # **手动释放内存**
-                del track1
-                gc.collect()
-
-            except Exception as e:
-                print(f"处理组 {idx + 1} 时发生错误: {e}")
-
-    print("extract_and_process_data 方法执行完成")
-    return results_map
 
 
 def count_pattern_and_tracking_with_sf_date(file_path, column_name, sfDateInterval_name, patterns):
@@ -1282,51 +1287,51 @@ def go(analyse_obj, xlsx_path):
     print(text)
 
     # 写入飞书在线文档
-    tat = get_token()
-    if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
-        lists = f"({total_count},{swl}%)"
-        lists += f"\n{warehouse_text}"
-        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-        if (swl_flag):
-            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
-    else:
-        lists = f"({total_count},{swl}%)"
-        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-        if (swl_flag):
-            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
-
-    if analyse_obj == ClientConstants.mz_xsd or \
-            analyse_obj == ClientConstants.mx_dg or \
-            analyse_obj == ClientConstants.md_fc:
-        detail_sheet_value(tat, [
-            data_map[CellKey.Outbound_Time],
-            data_map[CellKey.update_time],
-            data_map[CellKey.wl],
-            data_map[CellKey.store_condition],
-            data_map[CellKey.time_segment_condition],
-            data_map[CellKey.shipping_service_condition],
-            data_map[CellKey.sum_up],
-            data_map[CellKey.exception],
-        ], ck_time, analyse_obj)
-
-        if (swl_flag):
-            detail_sheet_bg(tat, ck_time, analyse_obj, bg)
-    else:
-        detail_sheet_value(tat, [
-            data_map[CellKey.Outbound_Time],
-            data_map[CellKey.update_time],
-            data_map[CellKey.wl],
-            data_map[CellKey.warehouse_condition],
-            data_map[CellKey.store_condition],
-            data_map[CellKey.time_segment_condition],
-            data_map[CellKey.shipping_service_condition],
-            data_map[CellKey.sku_condition],
-            data_map[CellKey.sum_up],
-            data_map[CellKey.exception],
-        ], ck_time, analyse_obj)
-
-        if (swl_flag):
-            detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+    # tat = get_token()
+    # if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
+    #     lists = f"({total_count},{swl}%)"
+    #     lists += f"\n{warehouse_text}"
+    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+    #     if (swl_flag):
+    #         brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+    # else:
+    #     lists = f"({total_count},{swl}%)"
+    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+    #     if (swl_flag):
+    #         brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+    #
+    # if analyse_obj == ClientConstants.mz_xsd or \
+    #         analyse_obj == ClientConstants.mx_dg or \
+    #         analyse_obj == ClientConstants.md_fc:
+    #     detail_sheet_value(tat, [
+    #         data_map[CellKey.Outbound_Time],
+    #         data_map[CellKey.update_time],
+    #         data_map[CellKey.wl],
+    #         data_map[CellKey.store_condition],
+    #         data_map[CellKey.time_segment_condition],
+    #         data_map[CellKey.shipping_service_condition],
+    #         data_map[CellKey.sum_up],
+    #         data_map[CellKey.exception],
+    #     ], ck_time, analyse_obj)
+    #
+    #     if (swl_flag):
+    #         detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+    # else:
+    #     detail_sheet_value(tat, [
+    #         data_map[CellKey.Outbound_Time],
+    #         data_map[CellKey.update_time],
+    #         data_map[CellKey.wl],
+    #         data_map[CellKey.warehouse_condition],
+    #         data_map[CellKey.store_condition],
+    #         data_map[CellKey.time_segment_condition],
+    #         data_map[CellKey.shipping_service_condition],
+    #         data_map[CellKey.sku_condition],
+    #         data_map[CellKey.sum_up],
+    #         data_map[CellKey.exception],
+    #     ], ck_time, analyse_obj)
+    #
+    #     if (swl_flag):
+    #         detail_sheet_bg(tat, ck_time, analyse_obj, bg)
 
 
 def automatic(dir_path, analyse_obj):
@@ -1372,10 +1377,7 @@ def automatic(dir_path, analyse_obj):
 
 if __name__ == '__main__':
     # # 手动
-    # go(None, None)
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间11_925.xlsx")
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间12_725.xlsx")
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间13_669.xlsx")
+    go(None, None)
     # # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
