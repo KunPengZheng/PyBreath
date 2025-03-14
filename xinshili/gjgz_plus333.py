@@ -307,16 +307,6 @@ def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_ma
     print("update_courier_status 方法执行完成")
 
 
-# 预编译正则，提高性能
-date_regex = re.compile(r"\d{4}-\d{2}-\d{2}")
-
-
-# 解析日期的辅助函数
-def parse_date(date_str):
-    match = date_regex.search(str(date_str))
-    return match.group() if match else ""
-
-
 def count_pattern_and_tracking_with_sf_date(file_path, column_name, sfDateInterval_name, patterns):
     """
     统计指定列中多个正则表达式匹配内容的数量，并统计 "Courier/快递" 列内容为 'tracking' 且 "SfDateEquality" 列的内容为 0 的行数。
