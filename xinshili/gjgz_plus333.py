@@ -128,6 +128,27 @@ def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
         return {}
 
 
+def update_courier_status1(filepath, maps, wl=RowName.Tracking_No):
+    wb = openpyxl.load_workbook(filepath)
+    sheet = wb.active  # 默认使用活动工作表
+
+    data = pd.read_excel(filepath)
+    # 获取 'Tracking No./物流跟踪号' 列和 'Courier/快递' 列的索引
+    tracking_no_col = data.columns.get_loc(wl) + 1  # openpyxl索引从1开始
+    courier_col = data.columns.get_loc(RowName.Courier) + 1  # openpyxl索引从1开始
+
+    for tracking_no, status in maps.items():
+        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
+            # 获取当前行的物流跟踪号
+            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
+            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
+            if current_tracking_no == tracking_no:
+                sheet.cell(row=row, column=courier_col, value=status)
+
+    # 保存更新后的文件
+    wb.save(filepath)
+
+
 def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_map=None):
     """
     批量更新多个状态，避免重复读取和写入文件，提高效率
@@ -178,7 +199,7 @@ def parse_date(date_str):
 
 
 def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
-                             request_interval: float = 2.0):
+                             request_interval: float = 30.0):
     print("extract_and_process_data 方法执行开始")
 
     # **优化1：仅读取必要的列**
@@ -220,7 +241,7 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
 
     # **优化5：限制线程数，减少系统压力**
     # max_threads = min(3, len(grouped_items))
-    max_threads = min(3, 5)
+    max_threads = min(1, 1)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
         futures = {executor.submit(track, group): (idx, group)
@@ -961,7 +982,8 @@ def go(analyse_obj, xlsx_path):
     if irregular_number_map:
         irregular_number_list = list(irregular_number_map.keys())
         print(f"存在无效的物流跟踪号：{irregular_number_list}")
-        update_courier_status(xlsx_path, {CourierStateMapKey.irregular_number_map: irregular_number_map})
+        # update_courier_status(xlsx_path, {CourierStateMapKey.irregular_number_map: irregular_number_map})
+        update_courier_status1(xlsx_path, irregular_number_map)
 
     results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
 
@@ -1260,51 +1282,51 @@ def go(analyse_obj, xlsx_path):
     print(text)
 
     # 写入飞书在线文档
-    # tat = get_token()
-    # if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
-    #     lists = f"({total_count},{swl}%)"
-    #     lists += f"\n{warehouse_text}"
-    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-    #     if (swl_flag):
-    #         brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
-    # else:
-    #     lists = f"({total_count},{swl}%)"
-    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-    #     if (swl_flag):
-    #         brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
-    #
-    # if analyse_obj == ClientConstants.mz_xsd or \
-    #         analyse_obj == ClientConstants.mx_dg or \
-    #         analyse_obj == ClientConstants.md_fc:
-    #     detail_sheet_value(tat, [
-    #         data_map[CellKey.Outbound_Time],
-    #         data_map[CellKey.update_time],
-    #         data_map[CellKey.wl],
-    #         data_map[CellKey.store_condition],
-    #         data_map[CellKey.time_segment_condition],
-    #         data_map[CellKey.shipping_service_condition],
-    #         data_map[CellKey.sum_up],
-    #         data_map[CellKey.exception],
-    #     ], ck_time, analyse_obj)
-    #
-    #     if (swl_flag):
-    #         detail_sheet_bg(tat, ck_time, analyse_obj, bg)
-    # else:
-    #     detail_sheet_value(tat, [
-    #         data_map[CellKey.Outbound_Time],
-    #         data_map[CellKey.update_time],
-    #         data_map[CellKey.wl],
-    #         data_map[CellKey.warehouse_condition],
-    #         data_map[CellKey.store_condition],
-    #         data_map[CellKey.time_segment_condition],
-    #         data_map[CellKey.shipping_service_condition],
-    #         data_map[CellKey.sku_condition],
-    #         data_map[CellKey.sum_up],
-    #         data_map[CellKey.exception],
-    #     ], ck_time, analyse_obj)
-    #
-    #     if (swl_flag):
-    #         detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+    tat = get_token()
+    if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
+        lists = f"({total_count},{swl}%)"
+        lists += f"\n{warehouse_text}"
+        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+        if (swl_flag):
+            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+    else:
+        lists = f"({total_count},{swl}%)"
+        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+        if (swl_flag):
+            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+
+    if analyse_obj == ClientConstants.mz_xsd or \
+            analyse_obj == ClientConstants.mx_dg or \
+            analyse_obj == ClientConstants.md_fc:
+        detail_sheet_value(tat, [
+            data_map[CellKey.Outbound_Time],
+            data_map[CellKey.update_time],
+            data_map[CellKey.wl],
+            data_map[CellKey.store_condition],
+            data_map[CellKey.time_segment_condition],
+            data_map[CellKey.shipping_service_condition],
+            data_map[CellKey.sum_up],
+            data_map[CellKey.exception],
+        ], ck_time, analyse_obj)
+
+        if (swl_flag):
+            detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+    else:
+        detail_sheet_value(tat, [
+            data_map[CellKey.Outbound_Time],
+            data_map[CellKey.update_time],
+            data_map[CellKey.wl],
+            data_map[CellKey.warehouse_condition],
+            data_map[CellKey.store_condition],
+            data_map[CellKey.time_segment_condition],
+            data_map[CellKey.shipping_service_condition],
+            data_map[CellKey.sku_condition],
+            data_map[CellKey.sum_up],
+            data_map[CellKey.exception],
+        ], ck_time, analyse_obj)
+
+        if (swl_flag):
+            detail_sheet_bg(tat, ck_time, analyse_obj, bg)
 
 
 def automatic(dir_path, analyse_obj):
@@ -1351,7 +1373,9 @@ def automatic(dir_path, analyse_obj):
 if __name__ == '__main__':
     # # 手动
     # go(None, None)
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间1_846.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间11_925.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间12_725.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间13_669.xlsx")
     # # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
