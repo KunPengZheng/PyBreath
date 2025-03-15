@@ -1249,7 +1249,7 @@ def go(analyse_obj, xlsx_path):
 
     for start, end, threshold, icon, message in qsl_warnings:
         if start <= interval_time <= end and qsl <= threshold:
-            sum_up_text += f"\n{icon}：签收率为{swl}%，{message}"
+            sum_up_text += f"\n{icon}：签收率为{qsl}%，{message}"
             # qsl_flag = True
             break
     else:
