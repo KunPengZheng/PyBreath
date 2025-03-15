@@ -1220,40 +1220,43 @@ def go(analyse_obj, xlsx_path):
 
     # 上网率判断
     warning_levels = [
-        (0, 30, "☁️注意", "未达30%，建议跟进！", "#F8F1D3"),
-        (1, 70, "🌧️异常", "未达75%，建议分析数据尝试定位问题！", "#E3C49C"),
-        (3, 97, "❄️⛈️🌀⚠️🚨警报", "未达97%，分析数据反馈问题！", "#F1C1BD"),
+        (0, 30, "☁️注意", "未达30%！", "#F8F1D3"),
+        (1, 70, "🌧️异常", "未达70%！", "#E3C49C"),
+        (3, 97, "❄️警报", "未达97%！", "#F1C1BD"),
     ]
 
-    sum_up_text += f"\n间隔第{interval_time}{actual_interval}天，上网率为{swl}%"
+    sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
 
     for days, threshold, icon, message, color in warning_levels:
         if interval_time == days and swl < threshold:
-            sum_up_text += f"\n{icon} {message}"
+            sum_up_text += f"\n{icon}：上网率为{swl}%，{message}"
             swl_flag = True
             bg = color
             break
-    else:
-        sum_up_text += "，上网率优秀"
+    else:  # ✅ 只有 for 没有 break 时才会执行
+        if (swl >= 99):
+            sum_up_text += f"\n☀️上网率为{swl}%，优秀"
+        else:
+            sum_up_text += f"\n☀️上网率为{swl}%，达标"
 
     # 签收率判断
     qsl_warnings = [
-        (1, 3, 0, "🚨警报", "签收率为0%，异常状态！"),
-        (3, 5, 20, "🚨警报", "签收率未达20%，异常状态！"),
-        (5, 7, 50, "🚨警报", "签收率未达50%，异常状态！"),
-        (7, 9, 80, "🚨警报", "签收率未达80%，异常状态！"),
+        (1, 3, 1, "☁️注意", "未达1%"),
+        (3, 5, 20, "🌧️注意", "未达20%"),
+        (5, 7, 50, "⛈️注意", "未达50%"),
+        (7, 9, 80, "❄️注意", "未达80%"),
     ]
 
     for start, end, threshold, icon, message in qsl_warnings:
         if start <= interval_time <= end and qsl <= threshold:
-            sum_up_text += f"\n{icon} {message}"
-            qsl_flag = True
+            sum_up_text += f"\n{icon}：签收率为{swl}%，{message}"
+            # qsl_flag = True
             break
     else:
-        sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，继续跟进！"
-
-    if interval_time > 9 and qsl >= 98:
-        sum_up_text += f"\n☀️间隔第{interval_time}{actual_interval}天，签收率为{qsl}%，签收率优秀！"
+        if qsl >= 98:
+            sum_up_text += f"\n☀️签收率为{qsl}%，优秀！"
+        else:
+            sum_up_text += f"\n☀️签收率为{qsl}%，达标！"
 
     text += "\n----------------------总结&建议----------------------"
     if swl < 100:
@@ -1372,14 +1375,17 @@ if __name__ == '__main__':
     go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间11_925.xlsx")
     go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间12_725.xlsx")
     go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间13_669.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间14_691.xlsx")
 
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间11_330.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间12_273.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间13_402.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间14_171.xlsx")
 
     go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间11_341.xlsx")
     go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间12_247.xlsx")
     go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间13_269.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间14_298.xlsx")
 
     # # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
