@@ -27,6 +27,7 @@ class RowName:
     Tracking_No = 'Tracking No./物流跟踪号'
     Courier = 'Courier/快递'
     OutboundTime = "Creation time/创建时间"
+    OutboundTime2 = "OutboundTime/出库时间"
     Warehouse = "Warehouse/仓库"
     Client = "Client/客户"
     CreationWaveTime = "Create wave time/生成波次时间"
@@ -120,7 +121,7 @@ def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
             if not tracking_no.isdigit() or not tracking_no.startswith(("92", "93", "94")) or "_" in tracking_no:
                 irregular_number_map[tracking_no] = CourierStateMapValue.irregular_no_tracking
 
-        print("find_irregular_tracking_numbers 方法执行完成")
+        # print("find_irregular_tracking_numbers 方法执行完成")
         return irregular_number_map
 
     except Exception as e:
@@ -627,7 +628,7 @@ def check_and_add_courier_column(file_path):
             data[RowName.SfDateInterval] = ""
         # 保存修改后的文件
         data.to_excel(file_path, index=False, engine='openpyxl')
-        print("check_and_add_courier_column 方法执行完成")
+        # print("check_and_add_courier_column 方法执行完成")
     except Exception as e:
         print(f"发生错误: {e}")
 
@@ -689,6 +690,60 @@ def get_unpaid_platform_tracking_map(file_path):
 
     # 返回结果字典
     return platform_tracking_map
+
+
+def get_shipment_received_numbers(filepath, gz_time):
+    # 加载 Excel 文件
+    workbook = load_workbook(filename=filepath, data_only=True)
+
+    # 获取第一个工作表
+    sheet = workbook.active
+
+    # 读取表头（第一行），并构建列名到索引的映射
+    header = [cell.value for cell in sheet[1]]
+
+    # 确保所有必要的列都存在
+    required_columns = [RowName.Courier, RowName.SfDateInterval, RowName.OutboundTime2, RowName.Tracking_No]
+
+    # 获取每个必要列的索引（列索引从 0 开始）
+    column_indices = {}
+    for col in required_columns:
+        if col not in header:
+            missing_cols = set(required_columns) - set(header)
+            raise ValueError(f"Excel 文件缺少必要的列: {missing_cols}")
+        column_indices[col] = header.index(col)
+
+    # 存储符合条件的跟踪号
+    tracking_numbers = []
+
+    # 遍历数据行（从第二行开始）
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        courier = row[column_indices[RowName.Courier]]
+        sf_date_interval = row[column_indices[RowName.SfDateInterval]]
+        outbound_time = row[column_indices[RowName.OutboundTime2]]
+        tracking_no = row[column_indices[RowName.Tracking_No]]
+
+        # 筛选条件：Courier == 'tracking' 且 SfDateInterval == '0'
+        if courier == "tracking" and sf_date_interval == 0:
+
+            # try:
+            # 解析并计算日期间隔
+            parsed_outbound_time = datetime.strptime(outbound_time, "%Y-%m-%d %H:%M:%S")
+            formatted_date = parsed_outbound_time.strftime("%Y/%m/%d")
+            interval_days = (datetime.strptime(gz_time, "%Y/%m/%d") -
+                             datetime.strptime(formatted_date, "%Y/%m/%d")).days
+
+            # 如果间隔为 2 天，添加到结果列表
+            if interval_days >= 2 and tracking_no is not None:
+                tracking_numbers.append(tracking_no)
+
+        # except (ValueError, TypeError) as e:
+        #     日期解析错误或数据错误时跳过
+        # print(f"日期解析错误: {e}, 跟踪号: {tracking_no}")
+        # continue
+
+    # 返回唯一的跟踪号列表
+    return list(set(tracking_numbers))
 
 
 def convert_inch_to_cm(value_in_inch):
@@ -1005,7 +1060,18 @@ def go(analyse_obj, xlsx_path):
             unpaid_text += f"\n"
     text += unpaid_text
 
-    data_map[CellKey.special_information] = irregular_number_text + unpaid_text
+    text += "\n----------------------shipment_received详情----------------------"
+    shipment_received_text = ""
+    shipment_received_interval2_list = get_shipment_received_numbers(xlsx_path, gz_time)
+    change_shipment_received_count = len(shipment_received_interval2_list)
+    if (change_shipment_received_count > 0):
+        shipment_received_text = "\nshipment_received物流跟踪号："
+        for ele in shipment_received_interval2_list:
+            shipment_received_text += f"\n"
+            shipment_received_text += ele
+    text += shipment_received_text
+
+    data_map[CellKey.special_information] = irregular_number_text + unpaid_text + shipment_received_text
 
     text += "\n----------------------SKU分布----------------------"
     sku_distribution, sku_no_track_distribution, sku_no_tracking_distribution, sku_pre_ship_distribution, \
@@ -1074,6 +1140,7 @@ def go(analyse_obj, xlsx_path):
     no_tracking_countl = round2((no_tracking_count_int / total_count_int) * 100)
     tracking_countl = round2((tracking_count_int / total_count_int) * 100)
     tracking_zero_countl = round2((tracking_zero_count_int / total_count_int) * 100)
+    change_shipment_received_countl = round2((change_shipment_received_count / total_count_int) * 100)
 
     kj_counts = kj_count(output_file)
 
@@ -1088,12 +1155,13 @@ def go(analyse_obj, xlsx_path):
         f"\ndelivered：（{delivered_count_int}, {qsl}%）"
         f"\nunpaid：（{unpaid_count_int}, {unpaidl}%）"
         f"\ntracking：（{tracking_count_int}, {tracking_countl}%）"
-        f"\nshipment_received：（{tracking_zero_count_int}, {tracking_zero_countl}%）"
+        # f"\nshipment_received：（{tracking_zero_count_int}, {tracking_zero_countl}%）"
+        f"\nshipment_received：（{change_shipment_received_count}, {change_shipment_received_countl}%）"
         f"\nno_tracking：（{no_tracking_count_int}, {no_tracking_countl}%）"
         f"\nnot_yet：（{not_yet_count_int}, {not_yetl}%）"
         f"\npre_ship：（{pre_ship_count_int}, {pre_shipl}%）"
         f"\nirregular_no_tracking：（{irregular_no_tracking_count_int}, {irregular_no_trackingl}%）"
-        f"\n{irregular_number_text + unpaid_text}"
+        f"\n{irregular_number_text + unpaid_text + shipment_received_text}"
     )
     data_map[CellKey.wl] = wl
 
@@ -1226,7 +1294,8 @@ def go(analyse_obj, xlsx_path):
     # 写入飞书在线文档
     tat = get_token()
     if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
-        lists = f"({total_count},{swl}%)"
+        lists = f"上网：({total_count},{swl}%)"
+        lists += f"\n提货单未上网：({change_shipment_received_count},{change_shipment_received_countl}%)"
         lists += f"\n{warehouse_text}"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
         if (swl_flag):
@@ -1348,14 +1417,14 @@ if __name__ == '__main__':
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间13_669.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间14_691.xlsx")
 
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间1_199.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间3_807.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间4_547.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间5_263.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间6_303.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间7_228.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间8_316.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间9_739.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间1_199.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间3_807.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间4_547.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间5_263.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间6_303.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间7_228.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间8_316.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间9_739.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间10_424.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间11_330.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间12_273.xlsx")
