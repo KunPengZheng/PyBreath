@@ -433,7 +433,8 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
                 key_counter[key_value] += 1
                 if courier_status is not None:
                     # 判断是否是 "无轨迹"
-                    if pattern.search(str(courier_status)) or (courier_status == "tracking" and sf_date_value == 0):
+                    # if pattern.search(str(courier_status)) or (courier_status == "tracking" and sf_date_value == 0):
+                    if pattern.search(str(courier_status)):
                         key_no_track_counter[key_value] += 1
 
         return key_counter, key_no_track_counter
@@ -441,77 +442,6 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
     except Exception as e:
         print(f"发生错误: {e}")
         return Counter(), Counter()
-
-
-def count_distribution_and_no_track2(file_path, key_column, courier_column=RowName.Courier):
-    """
-    通用函数，统计指定列的分布情况及其对应 "无轨迹"、"delivered"、"unpaid" 的数量。
-    :param file_path: Excel 文件路径
-    :param key_column: 需要统计的列名
-    :param courier_column: 快递列名
-    :return: 各值的总数和各个状态的数量的 Counter 对象
-    """
-    try:
-        workbook = load_workbook(file_path, data_only=True)
-        sheet = workbook.active
-        headers = [cell.value for cell in sheet[1]]
-
-        if key_column not in headers or courier_column not in headers:
-            raise ValueError(f"列名 '{key_column}' 或 '{courier_column}' 不存在！")
-
-        key_index = headers.index(key_column) + 1
-        courier_index = headers.index(courier_column) + 1
-
-        # 正则表达式匹配无轨迹、已送达、未支付状态
-        pattern_no_track = re.compile(Pattern.no_track, re.IGNORECASE)
-        pattern_no_tracking = re.compile(r"no_tracking", re.IGNORECASE)
-        pattern_pre_ship = re.compile(r"pre_ship", re.IGNORECASE)
-        pattern_not_yet = re.compile(r"not_yet", re.IGNORECASE)
-
-        pattern_delivered = re.compile(r"delivered", re.IGNORECASE)
-        pattern_unpaid = re.compile(r"unpaid", re.IGNORECASE)
-
-        # 计数器
-        key_counter = Counter()  # 统计每个key的总数
-        key_no_track_counter = Counter()
-        key_no_tracking_counter = Counter()
-        key_pre_ship_counter = Counter()
-        key_not_yet_counter = Counter()
-
-        key_delivered_counter = Counter()
-        key_unpaid_counter = Counter()
-
-        # 遍历每一行，统计各个状态的数量
-        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
-            key_value = row[key_index - 1]
-            courier_status = row[courier_index - 1]
-
-            if key_value is not None:
-                key_counter[key_value] += 1  # 统计总数
-
-                if courier_status is not None and pattern_no_track.search(str(courier_status)):
-                    key_no_track_counter[key_value] += 1
-
-                if courier_status is not None and pattern_no_tracking.search(str(courier_status)):
-                    key_no_tracking_counter[key_value] += 1
-
-                if courier_status is not None and pattern_pre_ship.search(str(courier_status)):
-                    key_pre_ship_counter[key_value] += 1
-
-                if courier_status is not None and pattern_not_yet.search(str(courier_status)):
-                    key_not_yet_counter[key_value] += 1
-
-                if courier_status is not None and pattern_delivered.search(str(courier_status)):
-                    key_delivered_counter[key_value] += 1
-
-                if courier_status is not None and pattern_unpaid.search(str(courier_status)):
-                    key_unpaid_counter[key_value] += 1
-
-        return key_counter, key_no_track_counter, key_no_tracking_counter, key_pre_ship_counter, key_not_yet_counter, key_delivered_counter, key_unpaid_counter
-
-    except Exception as e:
-        print(f"发生错误: {e}")
-        return Counter(), Counter(), Counter(), Counter(), Counter(), Counter(), Counter()
 
 
 def count_distribution_and_no_track3(file_path, key_column, courier_column=RowName.Courier,
@@ -911,7 +841,7 @@ def generate_distribution_report2(distribution, no_track_distribution, sku_no_tr
         unpaid_count = sku_unpaid_distribution.get(entity, 0)
         tracking_sf_zero_count = tracking_sf_zero_distribution.get(entity, 0)
 
-        swl = round2(100 - ((int(no_track_count + tracking_sf_zero_count) / int(count)) * 100))  # 计算上网率
+        swl = round2(100 - ((int(no_track_count) / int(count)) * 100))  # 计算上网率
         in_data = get_in(xlsx_path, entity)
         length_ = in_data['Length']
         width_ = in_data['Width']
@@ -923,8 +853,8 @@ def generate_distribution_report2(distribution, no_track_distribution, sku_no_tr
         # 生成报告内容
         if (swl != 100.0):
             # strs = f"\n{entity}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{swl}%"
-            strs = f"\n{entity}：（{count}, {no_track_count + tracking_sf_zero_count}, {swl}%）,（{no_tracking_count}, {pre_ship_count}, " \
-                   f"{not_yet_count}, {tracking_sf_zero_count}, {delivered_count}, {unpaid_count}）,（{kjCount}, {length_}*{width_}*{height_}*{unit_}）"
+            strs = f"\n{entity}：（{count}, {no_track_count}, {swl}%）,（{no_tracking_count}, {pre_ship_count}, " \
+                   f"{not_yet_count}, {delivered_count}, {unpaid_count}）,（{kjCount}, {length_}*{width_}*{height_}*{unit_}）"
             strs2 = f"\n{entity}：({count},{swl}%)"
             report_text += strs
             report_text2 += strs2
@@ -934,11 +864,11 @@ def generate_distribution_report2(distribution, no_track_distribution, sku_no_tr
             lowest_swl = swl
             lowest_entities.clear()  # 清空数据
             lowest_entities[entity] = {"entity": entity, "count": count,
-                                       "no_track_count": (no_track_count + tracking_sf_zero_count), "swl": swl,
+                                       "no_track_count": (no_track_count), "swl": swl,
                                        "strs": strs}
         elif swl == lowest_swl:
             lowest_entities[entity] = {"entity": entity, "count": count,
-                                       "no_track_count": (no_track_count + tracking_sf_zero_count), "swl": swl,
+                                       "no_track_count": (no_track_count), "swl": swl,
                                        "strs": strs}
 
     resultList = []
