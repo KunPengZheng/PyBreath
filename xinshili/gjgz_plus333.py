@@ -150,7 +150,7 @@ def update_courier_status1(filepath, maps, wl=RowName.Tracking_No):
 
 
 def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
-                             request_interval: float = 30.0):
+                             request_interval: float = 60.0):
     data = pd.read_excel(filepath)
 
     if column_name not in data.columns:
@@ -1045,7 +1045,7 @@ def go(analyse_obj, xlsx_path):
 
     text += "\n----------------------时间----------------------"
     text += f"\n更新时间: {Update_Time}"
-    text += f"\n出库日期：{Outbound_Time}"
+    text += f"\n创建日期：{Outbound_Time}"
     text += f"\n跟踪日期：{gz_time}"
     text += f"\n间隔时间：{interval_time}"
     data_map[CellKey.Outbound_Time] = Outbound_Time
@@ -1127,9 +1127,12 @@ def go(analyse_obj, xlsx_path):
     irregular_no_tracking_count_int = int(irregular_no_tracking_count)
     no_tracking_count_int = int(no_tracking_count)
     tracking_count_int = int(tracking_count)
+    no_track_count = no_track_count_int + tracking_zero_count_int  # 真正的未上网数
+    track_count = total_count_int - no_track_count  # 真正的上网数
+    real_tracking_count = tracking_count_int - tracking_zero_count_int
 
     # 计算百分比
-    swl = round2(100 - ((no_track_count_int + tracking_zero_count_int) / total_count_int * 100))
+    swl = round2(100 - ((no_track_count) / total_count_int * 100))
     wswl = round2(100 - swl)
     qsl = round2((delivered_count_int / total_count_int) * 100)
     unpaidl = round2((unpaid_count_int / total_count_int) * 100)
@@ -1137,7 +1140,7 @@ def go(analyse_obj, xlsx_path):
     pre_shipl = round2((pre_ship_count_int / total_count_int) * 100)
     irregular_no_trackingl = round2((irregular_no_tracking_count_int / total_count_int) * 100)
     no_tracking_countl = round2((no_tracking_count_int / total_count_int) * 100)
-    tracking_countl = round2(((tracking_count_int - tracking_zero_count_int) / total_count_int) * 100)
+    tracking_countl = round2(((real_tracking_count) / total_count_int) * 100)
     tracking_zero_countl = round2((tracking_zero_count_int / total_count_int) * 100)
 
     kj_counts = kj_count(output_file)
@@ -1147,12 +1150,12 @@ def go(analyse_obj, xlsx_path):
         f"\n订单总数：{total_count_int}"
         f"\nKJ订单总数：{kj_counts}"
         f"\n"
-        f"\n上网：（{tracking_count_int - tracking_zero_count_int}, {swl}%）"
-        f"\n未上网：（{no_track_count_int + tracking_zero_count_int}, {wswl}%）"
+        f"\n上网：（{track_count}, {swl}%）"
+        f"\n未上网：（{no_track_count}, {wswl}%）"
         f"\n"
         f"\ndelivered：（{delivered_count_int}, {qsl}%）"
         f"\nunpaid：（{unpaid_count_int}, {unpaidl}%）"
-        f"\ntracking：（{tracking_count_int - tracking_zero_count_int}, {tracking_countl}%）"
+        f"\ntracking：（{real_tracking_count}, {tracking_countl}%）"
         f"\ntracking_zero：（{tracking_zero_count_int}, {tracking_zero_countl}%）"
         f"\nno_tracking：（{no_tracking_count_int}, {no_tracking_countl}%）"
         f"\nnot_yet：（{not_yet_count_int}, {not_yetl}%）"
@@ -1220,8 +1223,9 @@ def go(analyse_obj, xlsx_path):
 
     # 上网率判断
     warning_levels = [
-        (0, 30, "☁️注意", "未达30%！", "#F8F1D3"),
-        (1, 70, "🌧️异常", "未达70%！", "#E3C49C"),
+        (0, 30, "🧑‍🍳", "继续观察👀", "#F8F1D3"),
+        (1, 30, "☁️注意", "未达30%！", "#F8F1D3"),
+        (2, 70, "🌧️异常", "未达70%！", "#E3C49C"),
         (3, 97, "❄️警报", "未达97%！", "#F1C1BD"),
     ]
 
@@ -1231,13 +1235,21 @@ def go(analyse_obj, xlsx_path):
         if interval_time == days and swl < threshold:
             sum_up_text += f"\n{icon}：上网率为{swl}%，{message}"
             swl_flag = True
-            bg = color
+            if (interval_time >= 2):
+                bg = color
             break
     else:  # ✅ 只有 for 没有 break 时才会执行
-        if (swl >= 99):
-            sum_up_text += f"\n☀️上网率为{swl}%，优秀"
+        if (interval_time >= 4):
+            if (swl >= 99):
+                sum_up_text += f"\n☀️上网率为{swl}%，优秀🌈"
+            elif (swl >= 97 and swl <= 98):
+                sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
+            else:
+                sum_up_text += f"\n⚡️：上网率为{swl}%，异常🏷️"
+                bg = "#F1C1BD"
+                swl_flag = True
         else:
-            sum_up_text += f"\n☀️上网率为{swl}%，达标"
+            sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
 
     # 签收率判断
     qsl_warnings = [
@@ -1254,9 +1266,9 @@ def go(analyse_obj, xlsx_path):
             break
     else:
         if qsl >= 98:
-            sum_up_text += f"\n☀️签收率为{qsl}%，优秀！"
+            sum_up_text += f"\n☀️签收率为{qsl}%，优秀！🌈"
         else:
-            sum_up_text += f"\n☀️签收率为{qsl}%，达标！"
+            sum_up_text += f"\n☀️签收率为{qsl}%，达标！✅"
 
     text += "\n----------------------总结&建议----------------------"
     if swl < 100:
@@ -1334,37 +1346,54 @@ def automatic(dir_path, analyse_obj):
         dirs: 当前文件夹下的子文件夹列表
         files: 当前文件夹下的文件列表
         """
-        # print(f"当前文件夹: {root}")
-        # print(f"子文件夹: {dirs}")
-        # print(f"文件: {files}")
-        # print("--------")
         pattern = r"^创建时间\d+_\d+\.xlsx$"  # 正则表达式
         for ele in files:
             if re.match(pattern, ele):
                 xlsx_path = f"{root}/{ele}"
                 print(f"匹配的文件: {xlsx_path}")
+                output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
                 try:
-                    # total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
-                    # tracking_zero_count = count_tracking_with_sf_date_equality(xlsx_path)
-                    # total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
-                    #
-                    # if total_count == 0:
-                    #     swl = 0
-                    # else:
-                    #     swl = round2(100 - ((int(no_track_count + tracking_zero_count) / int(total_count)) * 100))
-                    #
-                    # if total_count == 0:
-                    #     qsl = 0
-                    # else:
-                    #     qsl = round2((int(delivered_count) / int(total_count)) * 100)
-                    #
+                    total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
+
+                    patterns = {
+                        "no_track": Pattern.no_track,
+                        "delivered": Pattern.delivered,
+                    }
+
+                    count_dict = count_pattern_and_tracking_with_sf_date(output_file, RowName.Courier,
+                                                                         RowName.SfDateInterval, patterns)
+
+                    no_track_count = count_dict["no_track"]
+                    delivered_count = count_dict["delivered"]
+                    tracking_zero_count = count_dict["sfDateInterval"]
+
+                    total_count_int = int(total_count)
+                    no_track_count_int = int(no_track_count)
+                    tracking_zero_count_int = int(tracking_zero_count)
+                    delivered_count_int = int(delivered_count)
+                    track_count_int = no_track_count_int + tracking_zero_count_int
+
+                    if total_count_int == 0:
+                        swl = 0
+                    else:
+                        swl = round2(100 - ((track_count_int / total_count_int) * 100))
+
+                    if total_count_int == 0:
+                        qsl = 0
+                    else:
+                        qsl = round2((delivered_count_int / total_count_int) * 100)
+
                     # if swl < 99 or qsl < 98:
-                    go(analyse_obj, xlsx_path)
+                    if swl < 99:
+                        delete_file(output_file)
+                        go(analyse_obj, xlsx_path)
                 except ZeroDivisionError:
                     print(f"警告：{xlsx_path} 的 total_count 为 0，跳过计算。")
+                    delete_file(output_file)
                     go(analyse_obj, xlsx_path)  # 仍然执行 go 但避免除零错误
                 except Exception as e:
                     print(f"处理 {xlsx_path} 时发生错误: {e}")
+                    delete_file(output_file)
                     go(analyse_obj, xlsx_path)
 
 
@@ -1372,20 +1401,39 @@ if __name__ == '__main__':
     # # 手动
     # go(None, None)
 
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间11_925.xlsx")
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间12_725.xlsx")
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间13_669.xlsx")
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间14_691.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间1_846.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间2_157.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间3_1242.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间4_144.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间5_1133.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间6_753.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间7_730.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间8_245.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间9_304.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间10_1869.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间11_925.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间12_725.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间13_669.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间14_691.xlsx")
 
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间1_199.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间3_807.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间4_547.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间5_263.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间6_303.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间7_228.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间8_316.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间9_739.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间10_424.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间11_330.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间12_273.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间13_402.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间14_171.xlsx")
 
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间11_341.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间12_247.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间13_269.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间14_298.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间11_341.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间12_247.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间13_269.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间14_298.xlsx")
 
     # # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
