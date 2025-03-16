@@ -1119,6 +1119,8 @@ def go(analyse_obj, xlsx_path):
     # 先进行一次计算，并缓存结果
     total_count_int = int(total_count)
     no_track_count_int = int(no_track_count)
+    track_count_int = total_count_int - no_track_count_int
+
     tracking_zero_count_int = int(tracking_zero_count)
     delivered_count_int = int(delivered_count)
     unpaid_count_int = int(unpaid_count)
@@ -1127,12 +1129,12 @@ def go(analyse_obj, xlsx_path):
     irregular_no_tracking_count_int = int(irregular_no_tracking_count)
     no_tracking_count_int = int(no_tracking_count)
     tracking_count_int = int(tracking_count)
-    no_track_count = no_track_count_int + tracking_zero_count_int  # 真正的未上网数
-    track_count = total_count_int - no_track_count  # 真正的上网数
-    real_tracking_count = tracking_count_int - tracking_zero_count_int
+    # real_no_track_count = no_track_count_int + tracking_zero_count_int  # 真正的未上网数
+    # real_track_count = total_count_int - no_track_count  # 真正的上网数
+    # real_tracking_count = tracking_count_int - tracking_zero_count_int
 
     # 计算百分比
-    swl = round2(100 - ((no_track_count) / total_count_int * 100))
+    swl = round2(100 - ((no_track_count_int) / total_count_int * 100))
     wswl = round2(100 - swl)
     qsl = round2((delivered_count_int / total_count_int) * 100)
     unpaidl = round2((unpaid_count_int / total_count_int) * 100)
@@ -1140,7 +1142,7 @@ def go(analyse_obj, xlsx_path):
     pre_shipl = round2((pre_ship_count_int / total_count_int) * 100)
     irregular_no_trackingl = round2((irregular_no_tracking_count_int / total_count_int) * 100)
     no_tracking_countl = round2((no_tracking_count_int / total_count_int) * 100)
-    tracking_countl = round2(((real_tracking_count) / total_count_int) * 100)
+    tracking_countl = round2((tracking_count_int / total_count_int) * 100)
     tracking_zero_countl = round2((tracking_zero_count_int / total_count_int) * 100)
 
     kj_counts = kj_count(output_file)
@@ -1150,13 +1152,13 @@ def go(analyse_obj, xlsx_path):
         f"\n订单总数：{total_count_int}"
         f"\nKJ订单总数：{kj_counts}"
         f"\n"
-        f"\n上网：（{track_count}, {swl}%）"
-        f"\n未上网：（{no_track_count}, {wswl}%）"
+        f"\n上网：（{track_count_int}, {swl}%）"
+        f"\n未上网：（{no_track_count_int}, {wswl}%）"
         f"\n"
         f"\ndelivered：（{delivered_count_int}, {qsl}%）"
         f"\nunpaid：（{unpaid_count_int}, {unpaidl}%）"
-        f"\ntracking：（{real_tracking_count}, {tracking_countl}%）"
-        f"\ntracking_zero：（{tracking_zero_count_int}, {tracking_zero_countl}%）"
+        f"\ntracking：（{tracking_count_int}, {tracking_countl}%）"
+        f"\nshipment_received：（{tracking_zero_count_int}, {tracking_zero_countl}%）"
         f"\nno_tracking：（{no_tracking_count_int}, {no_tracking_countl}%）"
         f"\nnot_yet：（{not_yet_count_int}, {not_yetl}%）"
         f"\npre_ship：（{pre_ship_count_int}, {pre_shipl}%）"
