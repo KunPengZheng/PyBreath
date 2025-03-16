@@ -1354,40 +1354,40 @@ def automatic(dir_path, analyse_obj):
                 print(f"匹配的文件: {xlsx_path}")
                 output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
                 try:
-                    total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
-
-                    patterns = {
-                        "no_track": Pattern.no_track,
-                        "delivered": Pattern.delivered,
-                    }
-
-                    count_dict = count_pattern_and_tracking_with_sf_date(output_file, RowName.Courier,
-                                                                         RowName.SfDateInterval, patterns)
-
-                    no_track_count = count_dict["no_track"]
-                    delivered_count = count_dict["delivered"]
-                    tracking_zero_count = count_dict["sfDateInterval"]
-
-                    total_count_int = int(total_count)
-                    no_track_count_int = int(no_track_count)
-                    tracking_zero_count_int = int(tracking_zero_count)
-                    delivered_count_int = int(delivered_count)
-                    track_count_int = no_track_count_int + tracking_zero_count_int
-
-                    if total_count_int == 0:
-                        swl = 0
-                    else:
-                        swl = round2(100 - ((track_count_int / total_count_int) * 100))
-
-                    if total_count_int == 0:
-                        qsl = 0
-                    else:
-                        qsl = round2((delivered_count_int / total_count_int) * 100)
-
-                    # if swl < 99 or qsl < 98:
-                    if swl < 99:
-                        delete_file(output_file)
-                        go(analyse_obj, xlsx_path)
+                    # total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
+                    #
+                    # patterns = {
+                    #     "no_track": Pattern.no_track,
+                    #     "delivered": Pattern.delivered,
+                    # }
+                    #
+                    # count_dict = count_pattern_and_tracking_with_sf_date(output_file, RowName.Courier,
+                    #                                                      RowName.SfDateInterval, patterns)
+                    #
+                    # no_track_count = count_dict["no_track"]
+                    # delivered_count = count_dict["delivered"]
+                    # tracking_zero_count = count_dict["sfDateInterval"]
+                    #
+                    # total_count_int = int(total_count)
+                    # no_track_count_int = int(no_track_count)
+                    # tracking_zero_count_int = int(tracking_zero_count)
+                    # delivered_count_int = int(delivered_count)
+                    # track_count_int = no_track_count_int + tracking_zero_count_int
+                    #
+                    # if total_count_int == 0:
+                    #     swl = 0
+                    # else:
+                    #     swl = round2(100 - ((track_count_int / total_count_int) * 100))
+                    #
+                    # if total_count_int == 0:
+                    #     qsl = 0
+                    # else:
+                    #     qsl = round2((delivered_count_int / total_count_int) * 100)
+                    #
+                    # # if swl < 99 or qsl < 98:
+                    # if swl < 99:
+                    #     delete_file(output_file)
+                    go(analyse_obj, xlsx_path)
                 except ZeroDivisionError:
                     print(f"警告：{xlsx_path} 的 total_count 为 0，跳过计算。")
                     delete_file(output_file)
