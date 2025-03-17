@@ -80,13 +80,13 @@ class CellKey:
 @dataclass(frozen=True)
 class Pattern:
     no_track = r"not_yet|pre_ship|irregular_no_tracking|no_tracking"
-    delivered = r"delivered"
-    unpaid = r"unpaid"
-    not_yet = r"not_yet"
-    irregular_no_tracking = r"irregular_no_tracking"
-    pre_ship = r"pre_ship"
-    no_tracking = r"no_tracking"
-    tracking = r"tracking"
+    delivered = r"^delivered$"
+    unpaid = r"^unpaid$"
+    not_yet = r"^not_yet$"
+    irregular_no_tracking = r"^irregular_no_tracking$"
+    pre_ship = r"^pre_ship$"
+    no_tracking = r"^no_tracking$"
+    tracking = r"^tracking$"
 
 
 def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
@@ -471,12 +471,12 @@ def count_distribution_and_no_track3(file_path, key_column, courier_column=RowNa
 
         # 正则表达式匹配无轨迹、已送达、未支付状态
         pattern_no_track = re.compile(Pattern.no_track, re.IGNORECASE)
-        pattern_no_tracking = re.compile(r"no_tracking", re.IGNORECASE)
-        pattern_pre_ship = re.compile(r"pre_ship", re.IGNORECASE)
-        pattern_not_yet = re.compile(r"not_yet", re.IGNORECASE)
+        pattern_no_tracking = re.compile(Pattern.no_track, re.IGNORECASE)
+        pattern_pre_ship = re.compile(Pattern.pre_ship, re.IGNORECASE)
+        pattern_not_yet = re.compile(Pattern.not_yet, re.IGNORECASE)
 
-        pattern_delivered = re.compile(r"delivered", re.IGNORECASE)
-        pattern_unpaid = re.compile(r"unpaid", re.IGNORECASE)
+        pattern_delivered = re.compile(Pattern.delivered, re.IGNORECASE)
+        pattern_unpaid = re.compile(Pattern.unpaid, re.IGNORECASE)
 
         # 计数器
         key_counter = Counter()  # 统计每个key的总数
@@ -1277,8 +1277,14 @@ def go(analyse_obj, xlsx_path):
             # qsl_flag = True
             break
     else:
-        if qsl >= 98:
-            sum_up_text += f"\n☀️签收率为{qsl}%，优秀！🌈"
+        if (interval_time >= 10):
+            if (qsl >= 95):
+                sum_up_text += f"\n☀️签收率为{qsl}%，优秀！🌈"
+            elif (qsl >= 90 and qsl <= 94):
+                sum_up_text += f"\n☀️签收率为{qsl}%，达标！✅"
+            else:
+                sum_up_text += f"\n⚡️异常：️签收率为{qsl}%，未达️90%"
+                # qsl_flag = True
         else:
             sum_up_text += f"\n☀️签收率为{qsl}%，达标！✅"
 
@@ -1428,6 +1434,7 @@ if __name__ == '__main__':
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间12_725.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间13_669.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间14_691.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间6_753_副本.xlsx")
 
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间1_199.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间3_807.xlsx")
@@ -1437,12 +1444,12 @@ if __name__ == '__main__':
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间7_228.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间8_316.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间9_739.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间10_424.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间11_330.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间12_273.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间13_402.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间14_171.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间15_446.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间10_424.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间11_330.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间12_273.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间13_402.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间14_171.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间15_446.xlsx")
 
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间10_579.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间11_341.xlsx")
