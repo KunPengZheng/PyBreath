@@ -142,6 +142,9 @@ def update_courier_status1(filepath, maps, wl=RowName.Tracking_No):
         for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
             # 获取当前行的物流跟踪号
             current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
+            # **处理 NoneType，转换为字符串 "None"**
+            if current_tracking_no is None:
+                current_tracking_no = "None"
             # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
             if current_tracking_no == tracking_no:
                 sheet.cell(row=row, column=courier_col, value=status)
