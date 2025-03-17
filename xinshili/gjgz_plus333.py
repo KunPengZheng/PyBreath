@@ -1153,15 +1153,26 @@ def go(analyse_obj, xlsx_path):
         f"\n上网：（{track_count_int}, {swl}%）"
         f"\n未上网：（{no_track_count_int}, {wswl}%）"
         f"\n"
-        f"\ndelivered：（{delivered_count_int}, {qsl}%）"
-        f"\nunpaid：（{unpaid_count_int}, {unpaidl}%）"
+
+        f"\n上网状态细分："
         f"\ntracking：（{tracking_count_int}, {tracking_countl}%）"
-        # f"\nshipment_received：（{tracking_zero_count_int}, {tracking_zero_countl}%）"
-        f"\nshipment_received：（{change_shipment_received_count}, {change_shipment_received_countl}%）"
-        f"\nno_tracking：（{no_tracking_count_int}, {no_tracking_countl}%）"
-        f"\nnot_yet：（{not_yet_count_int}, {not_yetl}%）"
+        f"\ndelivered：（{delivered_count_int}, {qsl}%）"
+        f"\n"
+
+        f"\n未上网状态细分："
         f"\npre_ship：（{pre_ship_count_int}, {pre_shipl}%）"
-        f"\nirregular_no_tracking：（{irregular_no_tracking_count_int}, {irregular_no_trackingl}%）"
+        f"\nnot_yet：（{not_yet_count_int}, {not_yetl}%）"
+        f"\nunpaid：（{unpaid_count_int}, {unpaidl}%）"
+        f"\nirregular_number：（{irregular_no_tracking_count_int}, {irregular_no_trackingl}%）"
+        f"\nother_no_tracking：（{no_tracking_count_int}, {no_tracking_countl}%）"
+        f"\n"
+
+        # 接口无法获取过往物流状态，所以无法得出该订单是否使用了提货单。但是如果当天物流状态为shipment_received且(更新时间 - 出库时间 >= 2天)则一定为提货单且该订单物流异常
+        f"\n提货单异常："
+        # f"\n🔔提示：（满足'更新时间 - 出库时间 >= 2天' 且 流状态停留在shipment_received状态）"
+        # f"\nshipment_received：（{tracking_zero_count_int}, {tracking_zero_countl}%）"
+        f"\nstay_shipment_received：（{change_shipment_received_count}, {change_shipment_received_countl}%）"
+
         f"\n{irregular_number_text + unpaid_text + shipment_received_text}"
     )
     data_map[CellKey.wl] = wl
@@ -1226,8 +1237,8 @@ def go(analyse_obj, xlsx_path):
     warning_levels = [
         (0, 30, "🧑‍🍳", "继续观察👀", "#F8F1D3"),
         (1, 30, "☁️注意", "未达30%！", "#F8F1D3"),
-        (2, 70, "🌧️异常", "未达70%！", "#E3C49C"),
-        (3, 97, "❄️警报", "未达97%！", "#F1C1BD"),
+        (2, 70, "🌧️注意", "未达70%！", "#E3C49C"),
+        (3, 97, "❄️异常", "未达97%！", "#F1C1BD"),
     ]
 
     sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
@@ -1246,7 +1257,7 @@ def go(analyse_obj, xlsx_path):
             elif (swl >= 97 and swl <= 98):
                 sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
             else:
-                sum_up_text += f"\n⚡️：上网率为{swl}%，异常🏷️"
+                sum_up_text += f"\n⚡️异常：上网率为{swl}%，未达️97%"
                 bg = "#F1C1BD"
                 swl_flag = True
         else:
