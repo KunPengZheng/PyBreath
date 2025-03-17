@@ -576,12 +576,13 @@ def analyze_time_segments(file_path, data_map, time_column, courier_column, sf_d
             total_count = len(entries)
             no_track_count = sum(
                 1 for _, courier_status, sf_date_value in entries
-                if pattern_no_track.match(str(courier_status or "")) or (
-                        courier_status == "tracking" and sf_date_value == 0)
+                # if pattern_no_track.match(str(courier_status or "")) or (courier_status == "tracking" and sf_date_value == 0)
+                if pattern_no_track.match(str(courier_status or ""))
             )
             segmentswl = round(100 - ((no_track_count / total_count) * 100), 2) if total_count else 0
 
-            segment_info = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {(segment_start + timedelta(minutes=3)).strftime('%y-%m-%d %H:%M')}：（{total_count}, {no_track_count}, {segmentswl}%）"
+            # segment_info = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {(segment_start + timedelta(minutes=3)).strftime('%y-%m-%d %H:%M')}：（{total_count}, {no_track_count}, {segmentswl}%）"
+            segment_info = f"\n{segment_start.strftime('%y-%m-%d %H:%M')} - {(segment_start + timedelta(minutes=3)).strftime('%y-%m-%d %H:%M')}：（{total_count}, {segmentswl}%）"
             segment_statistics[segment_start] = {
                 "total_count": total_count,
                 "no_track_count": no_track_count,
