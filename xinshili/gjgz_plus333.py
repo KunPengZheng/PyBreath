@@ -1054,11 +1054,11 @@ def go(analyse_obj, xlsx_path):
         for key, value in result_map.items():
             value1 = value["tracking_number"]
             value2 = value["kj"]
-            if (analyse_obj == ClientConstants.sanrio):
-                unpaid_text += f"\n平台单号：{key}, 物流跟踪号：{value1}, 是否kj：{value2}"
-            else:
-                unpaid_text += f"\n物流跟踪号：{value1}, 是否kj：{value2}"
-            unpaid_text += f"\n"
+            # if (analyse_obj == ClientConstants.sanrio):
+            #     unpaid_text += f"\n平台单号：{key}, 物流跟踪号：{value1}, 是否kj：{value2}"
+            # else:
+            #     unpaid_text += f"\n物流跟踪号：{value1}, 是否kj：{value2}"
+            unpaid_text += f"\n物流跟踪号：{value1}, 是否kj：{value2}"
     text += unpaid_text
 
     text += "\n----------------------shipment_received详情----------------------"
@@ -1431,11 +1431,14 @@ if __name__ == '__main__':
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间12_273.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间13_402.xlsx")
     go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间14_171.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间15_446.xlsx")
 
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间10_579.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间11_341.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间12_247.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间13_269.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间14_298.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间15_318.xlsx")
 
     # # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
