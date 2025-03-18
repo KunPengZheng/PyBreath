@@ -29,6 +29,7 @@ class ClientConstants:
     md_flld = "md_flld"
     cksj = "cksj"
     cjsj = "cjsj"
+    khhz = "khhz"
 
 
 FsOrderSheetMap = {
@@ -51,6 +52,7 @@ ClientMapConstants = {
     ClientConstants.mx_dg: {MapFields.detail: "334FDH", MapFields.brief: "QvGf9H"},
     ClientConstants.md_fc: {MapFields.detail: "P0sVEI", MapFields.brief: "d9tS9E"},
     ClientConstants.md_flld: {MapFields.brief: "ot68bY"},
+    ClientConstants.khhz: "Q7LQzA",
 }
 
 
@@ -70,7 +72,8 @@ def get_map_url(analyse_obj):
             analyse_obj == ClientConstants.mz_xsd or \
             analyse_obj == ClientConstants.mx_dg or \
             analyse_obj == ClientConstants.md_fc or \
-            analyse_obj == ClientConstants.md_flld:
+            analyse_obj == ClientConstants.md_flld or \
+            analyse_obj == ClientConstants.khhz:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.values_spreadsheets_write_way}"
         return url
@@ -159,6 +162,41 @@ def brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg):
                 }
             }
         ]
+    }
+
+    # values_prepend 需要使用post请求方式，values需要使用put请求方式
+    r2 = requests.put(url, data=json.dumps(post_data), headers=header)
+    print(r2.json())  # 输出来判断写入是否成功
+
+
+def khhz_sheet_value(tat, lists, ck_time, analyse_obj):
+    """
+    客户汇总表
+    """
+    url = get_map_url(analyse_obj)
+
+    header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
+
+    row_nums = get_row_for_specific_date(ck_time, start_row=3)
+
+    column_start_nums = ""
+    column_end_nums = ""
+    if analyse_obj == ClientConstants.zbw:
+        column_start_nums = "B"
+        column_end_nums = "F"
+    elif analyse_obj == ClientConstants.sanrio:
+        column_start_nums = "H"
+        column_end_nums = "L"
+    elif analyse_obj == ClientConstants.xyl:
+        column_start_nums = "N"
+        column_end_nums = "R"
+    else:
+        raise Exception("使用raise抛出一个异常")
+
+    post_data = {
+        "valueRange": {
+            "range": f"{ClientMapConstants[ClientConstants.khhz]}!{column_start_nums}{row_nums}:{column_end_nums}{row_nums}",
+            "values": [lists]}
     }
 
     # values_prepend 需要使用post请求方式，values需要使用put请求方式

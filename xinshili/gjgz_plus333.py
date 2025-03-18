@@ -11,7 +11,7 @@ import time
 import gc
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants, detail_sheet_bg, \
-    brief_sheet_bg
+    brief_sheet_bg, khhz_sheet_value
 from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.usps_utils import track
 from xinshili.utils import round2, getYmd, delete_file, is_us_weekend, get_weekday, get_american_holiday, \
@@ -1315,6 +1315,14 @@ def go(analyse_obj, xlsx_path):
     # 写入飞书在线文档
     tat = get_token()
     if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
+        khhz_sheet_value(tat, [
+            total_count_int,
+            f"（{no_track_count_int}, {wswl}%）",
+            f"（{change_shipment_received_count}, {change_shipment_received_countl}%）",
+            f"（{delivered_count_int}, {qsl}%）",
+            f"（{unpaid_count_int}, {unpaidl}%）",
+        ], ck_time, analyse_obj)
+
         lists = f"上网：({total_count},{swl}%)"
         lists += f"\n提货单未上网：({change_shipment_received_count},{change_shipment_received_countl}%)"
         lists += f"\n{warehouse_text}"
