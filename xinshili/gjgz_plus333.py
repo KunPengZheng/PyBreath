@@ -474,7 +474,7 @@ def count_distribution_and_no_track3(file_path, key_column, courier_column=RowNa
 
         # 正则表达式匹配无轨迹、已送达、未支付状态
         pattern_no_track = re.compile(Pattern.no_track, re.IGNORECASE)
-        pattern_no_tracking = re.compile(Pattern.no_track, re.IGNORECASE)
+        pattern_no_tracking = re.compile(Pattern.no_tracking, re.IGNORECASE)
         pattern_pre_ship = re.compile(Pattern.pre_ship, re.IGNORECASE)
         pattern_not_yet = re.compile(Pattern.not_yet, re.IGNORECASE)
 
@@ -861,7 +861,7 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
         no_track_count = no_track_distribution.get(entity, 0)
         swl = round2(100 - ((no_track_count / count) * 100))  # 计算上网率
         # 使用 f-string 格式化输出文本
-        report_text.append(f"\n{entity}：({count},{swl}%)")
+        report_text.append(f"\n{entity}：({count}, {no_track_count}, {swl}%)")
 
         # 判断是否是最低的上网率
         if swl < lowest_swl:
@@ -1445,7 +1445,7 @@ if __name__ == '__main__':
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间12_725.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间13_669.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间14_691.xlsx")
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间6_753_副本.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间17_1569.xlsx")
 
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间1_199.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间3_807.xlsx")
@@ -1473,14 +1473,14 @@ if __name__ == '__main__':
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3", ClientConstants.zbw)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3", ClientConstants.zbw)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.1", ClientConstants.sanrio)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3", ClientConstants.sanrio)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3", ClientConstants.sanrio)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
     # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.2", ClientConstants.xyl)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3", ClientConstants.xyl)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3", ClientConstants.xyl)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg", ClientConstants.mx_dg)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc", ClientConstants.md_fc)
