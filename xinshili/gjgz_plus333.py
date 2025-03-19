@@ -853,6 +853,7 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
     :return: 生成的分布报告文本
     """
     report_text = []
+    report_text2 = []
     lowest_swl = 101  # 初始化为一个比 100 大的值，用于比较
     lowest_entity = ""  # 保存最低上网率的实体信息
 
@@ -862,6 +863,7 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
         swl = round2(100 - ((no_track_count / count) * 100))  # 计算上网率
         # 使用 f-string 格式化输出文本
         report_text.append(f"\n{entity}：({count}, {no_track_count}, {swl}%)")
+        report_text2.append(f"\n{entity}：({count}, {swl}%)")
 
         # 判断是否是最低的上网率
         if swl < lowest_swl:
@@ -870,7 +872,7 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
 
     # 将结果存储到 data_map 中
     data_map[data_map_key] = "".join(report_text)  # 使用 join 合并字符串，减少内存消耗
-    return "".join(report_text), lowest_entity
+    return "".join(report_text), lowest_entity, "".join(report_text2)
 
 
 def generate_distribution_report2(distribution, no_track_distribution, sku_no_tracking_distribution,
@@ -1185,21 +1187,24 @@ def go(analyse_obj, xlsx_path):
 
     # 避免重复读取 Excel 文件
     warehouse_count, warehouse_no_track_count = dimension_distribution(output_file, key_column=RowName.Warehouse)
-    warehouse_text, lowest_warehouse = generate_distribution_report(warehouse_count, warehouse_no_track_count,
-                                                                    data_map, CellKey.warehouse_condition)
+    warehouse_text, lowest_warehouse, warehouse_text2 = generate_distribution_report(warehouse_count,
+                                                                                     warehouse_no_track_count,
+                                                                                     data_map,
+                                                                                     CellKey.warehouse_condition)
     text += "\n----------------------仓库分布----------------------" + warehouse_text
 
     store_count, store_no_track_count = dimension_distribution(output_file, key_column=RowName.Client)
-    store_text, lowest_store = generate_distribution_report(store_count, store_no_track_count,
-                                                            data_map, CellKey.store_condition)
+    store_text, lowest_store, store_text2 = generate_distribution_report(store_count, store_no_track_count,
+                                                                         data_map, CellKey.store_condition)
     text += "\n----------------------店铺分布----------------------" + store_text
 
     shipping_service_count, shipping_service_no_track_count = dimension_distribution(output_file,
                                                                                      key_column=RowName.ShippingService)
-    shipping_service_text, lowest_shipping_service = generate_distribution_report(shipping_service_count,
-                                                                                  shipping_service_no_track_count,
-                                                                                  data_map,
-                                                                                  CellKey.shipping_service_condition)
+    shipping_service_text, lowest_shipping_service, shipping_service_text2 = generate_distribution_report(
+        shipping_service_count,
+        shipping_service_no_track_count,
+        data_map,
+        CellKey.shipping_service_condition)
     text += "\n----------------------物流渠道分布----------------------" + shipping_service_text
 
     time_segment_text, lowest_segment = analyze_time_segments(output_file, data_map,
@@ -1325,7 +1330,7 @@ def go(analyse_obj, xlsx_path):
 
         lists = f"上网：({total_count},{swl}%)"
         lists += f"\n提货单未上网：({change_shipment_received_count},{change_shipment_received_countl}%)"
-        lists += f"\n{warehouse_text}"
+        lists += f"\n{warehouse_text2}"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
         if (swl_flag):
             brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
