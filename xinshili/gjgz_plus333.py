@@ -1269,7 +1269,7 @@ def go(analyse_obj, xlsx_path):
         if (interval_time >= 4):
             if (swl >= 99):
                 sum_up_text += f"\n☀️上网率为{swl}%，优秀🌈"
-            elif (swl >= 97 and swl <= 98):
+            elif (swl >= 97 and swl < 99):
                 sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
             else:
                 sum_up_text += f"\n⚡️异常：上网率为{swl}%，未达️97%"
