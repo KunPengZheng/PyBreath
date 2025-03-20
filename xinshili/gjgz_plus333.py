@@ -1295,7 +1295,7 @@ def go(analyse_obj, xlsx_path):
         if (interval_time >= 10):
             if (qsl >= 95):
                 sum_up_text += f"\n☀️签收率为{qsl}%，优秀！🌈"
-            elif (qsl >= 90 and qsl <= 94):
+            elif (qsl >= 90 and qsl < 95):
                 sum_up_text += f"\n☀️签收率为{qsl}%，达标！✅"
             else:
                 sum_up_text += f"\n⚡️异常：️签收率为{qsl}%，未达️90%"
