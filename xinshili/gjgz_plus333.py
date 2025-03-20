@@ -737,8 +737,15 @@ def get_shipment_received_numbers(filepath, gz_time):
             interval_days = (datetime.strptime(gz_time, "%Y/%m/%d") -
                              datetime.strptime(formatted_date, "%Y/%m/%d")).days
 
+            is_usweekend = is_us_weekend(formatted_date)
+            actual_interval = 0
+            if is_usweekend == 6:  # 6是中国周日，美国周六
+                actual_interval = 2
+            elif is_usweekend == 0:  # 0是中国周一，美国周日
+                actual_interval = 1
+
             # 如果间隔为 2 天，添加到结果列表
-            if interval_days >= 2 and tracking_no is not None:
+            if (interval_days - actual_interval) >= 2 and tracking_no is not None:
                 tracking_numbers.append(tracking_no)
 
         # except (ValueError, TypeError) as e:
