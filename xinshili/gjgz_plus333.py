@@ -1310,15 +1310,15 @@ def go(analyse_obj, xlsx_path):
     data_map[CellKey.sum_up] = sum_up_text
 
     # 异常状态记录
-    if swl_flag or qsl_flag:
-        if swl_flag and qsl_flag:
-            data_map[CellKey.exception] = "上网率&签收率 异常\n（签收率目前无法量化，只为提醒⏰）"
-        elif swl_flag:
-            data_map[CellKey.exception] = "上网率异常"
-        elif qsl_flag:
-            data_map[CellKey.exception] = "签收率异常\n（签收率目前无法量化，只为提醒⏰）"
-    else:
-        data_map[CellKey.exception] = ""
+    exception_text = ""
+    if (swl_flag):
+        exception_text += "上网率异常"
+    if (qsl_flag):
+        exception_text += "\n签收率异常（签收率目前无法量化，只为提醒⏰）"
+    if (unpaid_count_int > 0):
+        bg = "#A684F0"
+        exception_text += "\nunpaid 异常"
+    data_map[CellKey.exception] = exception_text
 
     # 删除去重文件
     delete_file(output_file)
@@ -1382,6 +1382,8 @@ def go(analyse_obj, xlsx_path):
 
 
 def automatic(dir_path, analyse_obj):
+    is_morning = (datetime.now().hour) < 12
+    gz_time = datetime.strptime(getYmd(), "%Y/%m/%d")
     for root, dirs, files in os.walk(dir_path):
         """
         root: 当前文件夹路径
@@ -1395,39 +1397,80 @@ def automatic(dir_path, analyse_obj):
                 print(f"匹配的文件: {xlsx_path}")
                 output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
                 try:
-                    # total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
-                    #
-                    # patterns = {
-                    #     "no_track": Pattern.no_track,
-                    #     "delivered": Pattern.delivered,
-                    # }
-                    #
-                    # count_dict = count_pattern_and_tracking_with_sf_date(output_file, RowName.Courier,
-                    #                                                      RowName.SfDateInterval, patterns)
-                    #
-                    # no_track_count = count_dict["no_track"]
-                    # delivered_count = count_dict["delivered"]
-                    # tracking_zero_count = count_dict["sfDateInterval"]
-                    #
-                    # total_count_int = int(total_count)
-                    # no_track_count_int = int(no_track_count)
-                    # tracking_zero_count_int = int(tracking_zero_count)
-                    # delivered_count_int = int(delivered_count)
-                    # track_count_int = no_track_count_int + tracking_zero_count_int
-                    #
-                    # if total_count_int == 0:
-                    #     swl = 0
-                    # else:
-                    #     swl = round2(100 - ((track_count_int / total_count_int) * 100))
-                    #
-                    # if total_count_int == 0:
-                    #     qsl = 0
-                    # else:
-                    #     qsl = round2((delivered_count_int / total_count_int) * 100)
-                    #
-                    # # if swl < 99 or qsl < 98:
-                    # if swl < 99:
-                    #     delete_file(output_file)
+
+                    shipment_received_interval2_list = get_shipment_received_numbers(xlsx_path, gz_time)
+                    change_shipment_received_count = len(shipment_received_interval2_list)
+
+                    # 同一单会有多个sku，多个sku会生成多行数据，分析sku的时候不能去重，其它的需要去重
+                    total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
+
+                    patterns = {
+                        "no_track": Pattern.no_track,
+                        "delivered": Pattern.delivered,
+                        "unpaid": Pattern.unpaid,
+                        "not_yet": Pattern.not_yet,
+                        "pre_ship": Pattern.pre_ship,
+                        "irregular_no_tracking": Pattern.irregular_no_tracking,
+                        "no_tracking": Pattern.no_tracking,
+                        "tracking": Pattern.tracking
+                    }
+
+                    count_dict = count_pattern_and_tracking_with_sf_date(output_file, RowName.Courier,
+                                                                         RowName.SfDateInterval, patterns)
+
+                    no_track_count = count_dict["no_track"]
+                    delivered_count = count_dict["delivered"]
+                    unpaid_count = count_dict["unpaid"]
+                    not_yet_count = count_dict["not_yet"]
+                    pre_ship_count = count_dict["pre_ship"]
+                    irregular_no_tracking_count = count_dict["irregular_no_tracking"]
+                    no_tracking_count = count_dict["no_tracking"]
+                    tracking_count = count_dict["tracking"]
+                    tracking_zero_count = count_dict["sfDateInterval"]
+
+                    # 先进行一次计算，并缓存结果
+                    total_count_int = int(total_count)
+                    no_track_count_int = int(no_track_count)
+                    track_count_int = total_count_int - no_track_count_int
+
+                    tracking_zero_count_int = int(tracking_zero_count)
+                    delivered_count_int = int(delivered_count)
+                    unpaid_count_int = int(unpaid_count)
+                    not_yet_count_int = int(not_yet_count)
+                    pre_ship_count_int = int(pre_ship_count)
+                    irregular_no_tracking_count_int = int(irregular_no_tracking_count)
+                    no_tracking_count_int = int(no_tracking_count)
+                    tracking_count_int = int(tracking_count)
+                    # real_no_track_count = no_track_count_int + tracking_zero_count_int  # 真正的未上网数
+                    # real_track_count = total_count_int - no_track_count  # 真正的上网数
+                    # real_tracking_count = tracking_count_int - tracking_zero_count_int
+
+                    # 计算百分比
+                    swl = round2(100 - ((no_track_count_int) / total_count_int * 100))
+                    wswl = round2(100 - swl)
+                    qsl = round2((delivered_count_int / total_count_int) * 100)
+                    unpaidl = round2((unpaid_count_int / total_count_int) * 100)
+                    not_yetl = round2((not_yet_count_int / total_count_int) * 100)
+                    pre_shipl = round2((pre_ship_count_int / total_count_int) * 100)
+                    irregular_no_trackingl = round2((irregular_no_tracking_count_int / total_count_int) * 100)
+                    no_tracking_countl = round2((no_tracking_count_int / total_count_int) * 100)
+                    tracking_countl = round2((tracking_count_int / total_count_int) * 100)
+                    tracking_zero_countl = round2((tracking_zero_count_int / total_count_int) * 100)
+                    change_shipment_received_countl = round2((change_shipment_received_count / total_count_int) * 100)
+
+                    ck_time = get_days_difference(output_file)
+                    interval_time = (gz_time - datetime.strptime(ck_time, "%Y/%m/%d")).days
+
+                    delete_file(output_file)
+                    if (is_morning and interval_time == 1):  # 早上跑昨天的
+                        go(analyse_obj, xlsx_path)
+                    else:
+                        if (interval_time >= 12):
+                            if (qsl < 95):
+                                go(analyse_obj, xlsx_path)
+                        else:
+                            if (swl < 98):
+                                go(analyse_obj, xlsx_path)
                     go(analyse_obj, xlsx_path)
                 except ZeroDivisionError:
                     print(f"警告：{xlsx_path} 的 total_count 为 0，跳过计算。")
