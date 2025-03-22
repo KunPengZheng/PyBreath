@@ -1,14 +1,14 @@
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import os
 import re
 
 import pandas as pd
 from openpyxl import load_workbook
 
-from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants
+from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants, brief_sheet_bg
 from xinshili.gjgz_plus111 import check_and_add_courier_column, RowName, extract_and_process_data, \
     update_courier_status, CourierStateMapKey, count_pattern_state, Pattern
-from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2
+from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend
 
 
 def extract_path_before_csv(file_path):
@@ -145,6 +145,16 @@ def go(input_path):
     fs_text = ""
     ck_time = get_days_difference(xlsx_path)
     gz_time = getYmd()
+    interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
+    is_usweekend = is_us_weekend(ck_time)
+    date_obj = datetime.strptime(ck_time, "%Y/%m/%d").date()
+    previous_day = date_obj - timedelta(days=1)
+    actual_interval = 0
+    if is_usweekend == 6:  # 6是中国周日，美国周六
+        actual_interval = interval_time - 2
+    elif is_usweekend == 0:  # 0是中国周一，美国周日
+        actual_interval = interval_time - 1
+
     text += f"打单日期：{ck_time}"
     text += f"\n跟踪日期：{gz_time}"
 
@@ -184,8 +194,43 @@ def go(input_path):
             fs_text += f"\n（单号：{key}, 快递单号：{value}）"
     print(text)
 
+    sum_up_text = ""
+    swl_flag = False
+    qsl_flag = False
+    bg = "#ffffff"
+
+    # 上网率判断
+    warning_levels = [
+        (0, 30, "🧑‍🍳", "继续观察👀", "#F8F1D3"),
+        (1, 30, "☁️注意", "未达30%！", "#F8F1D3"),
+        (2, 70, "🌧️注意", "未达70%！", "#E3C49C"),
+        (3, 97, "❄️异常", "未达97%！", "#F1C1BD"),
+    ]
+
+    sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
+    for days, threshold, icon, message, color in warning_levels:
+        if interval_time == days and swl < threshold:
+            sum_up_text += f"\n{icon}：上网率为{swl}%，{message}"
+            swl_flag = True
+            if (interval_time >= 2):
+                bg = color
+            break
+    else:  # ✅ 只有 for 没有 break 时才会执行
+        if (interval_time >= 4):
+            if (swl >= 99):
+                sum_up_text += f"\n☀️上网率为{swl}%，优秀🌈"
+            elif (swl >= 97 and swl < 99):
+                sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
+            else:
+                sum_up_text += f"\n⚡️异常：上网率为{swl}%，未达️97%"
+                bg = "#F1C1BD"
+                swl_flag = True
+        else:
+            sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
+
     tat = get_token()
     brief_sheet_value(tat, [fs_text], ck_time, gz_time, ClientConstants.md_flld)
+    brief_sheet_bg(tat, ck_time, gz_time, ClientConstants.md_flld, "#F1C1BD")
 
 
 def automatic(dir_path):
@@ -212,7 +257,13 @@ if __name__ == '__main__':
     # output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
     # merge_xlsx_files(file1, file2, output_file)
 
-    # go(None)
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间15_113.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间13_88.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间12_91.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间10_43.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间8_27.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间16_87.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间17_38.xlsx")
 
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.2")
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3")
