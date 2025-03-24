@@ -230,7 +230,7 @@ def go(input_path):
 
     tat = get_token()
     brief_sheet_value(tat, [fs_text], ck_time, gz_time, ClientConstants.md_flld)
-    brief_sheet_bg(tat, ck_time, gz_time, ClientConstants.md_flld, "#F1C1BD")
+    # brief_sheet_bg(tat, ck_time, gz_time, ClientConstants.md_flld, "#F1C1BD")
 
 
 def automatic(dir_path):
@@ -263,7 +263,9 @@ if __name__ == '__main__':
     # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间10_43.xlsx")
     # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间8_27.xlsx")
     # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间16_87.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间17_38.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间17_38.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间21_66.xlsx")
 
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3")
+
