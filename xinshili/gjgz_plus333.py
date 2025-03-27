@@ -189,83 +189,76 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
     # 按组划分数据
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
 
-    # 使用线程池来并发请求每组数据
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        # 提交任务
-        futures = {executor.submit(track, group): group for group in grouped_items}
+    # 顺序执行每组数据的处理
+    for group in grouped_items:
+        try:
+            # 直接调用 track 函数，处理每一组数据
+            track1 = track(group)
+            print(f"处理第 {grouped_items.index(group) + 1} 组，共 {len(group)} 条数据")
 
-        # 遍历所有的任务（每组数据的请求）
-        for future in concurrent.futures.as_completed(futures):
-            group = futures[future]  # 获取当前完成的任务的 group 数据
-            try:
-                track1 = future.result()  # 获取请求结果
-                print(f"处理第 {grouped_items.index(group) + 1} 组，共 {len(group)} 条数据")
-
-                # 对返回的数据进行处理
-                for package_id, info in track1['data'].items():
-                    # 判断错误类型并分类
-                    if info.get('err'):
-                        if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
-                            results_map[CourierStateMapKey.not_yet_map][package_id] = CourierStateMapValue.not_yet
-                        elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
-                            results_map[CourierStateMapKey.pre_ship_map][package_id] = CourierStateMapValue.pre_ship
-                        else:
-                            results_map[CourierStateMapKey.no_tracking_map][
-                                package_id] = CourierStateMapValue.no_tracking
-
-                        results_map[CourierStateMapKey.possession_sf_date_map][package_id] = ""
-                        results_map[CourierStateMapKey.latest_event_sf_date_map][package_id] = ""
-                        results_map[CourierStateMapKey.sf_date_equality_map][package_id] = 0
+            # 对返回的数据进行处理
+            for package_id, info in track1['data'].items():
+                # 判断错误类型并分类
+                if info.get('err'):
+                    if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
+                        results_map[CourierStateMapKey.not_yet_map][package_id] = CourierStateMapValue.not_yet
+                    elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
+                        results_map[CourierStateMapKey.pre_ship_map][package_id] = CourierStateMapValue.pre_ship
                     else:
-                        if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
-                                info.get('statusLong'):
-                            results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
-                        elif "Delivered" in info.get('statusCategory'):
-                            results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
-                        elif "Delivered to Agent" in info.get('statusCategory'):
-                            results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
-                        else:
-                            results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
+                        results_map[CourierStateMapKey.no_tracking_map][package_id] = CourierStateMapValue.no_tracking
 
-                        latestEventSfDateTimeStr = info.get("latestEventSfDateTime")
-                        possessionSfDateTimeStr = info.get("possessionSfDateTime")
-                        statusShortStr = info.get("statusShort")
+                    results_map[CourierStateMapKey.possession_sf_date_map][package_id] = ""
+                    results_map[CourierStateMapKey.latest_event_sf_date_map][package_id] = ""
+                    results_map[CourierStateMapKey.sf_date_equality_map][package_id] = 0
+                else:
+                    if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
+                            info.get('statusLong'):
+                        results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
+                    elif "Delivered" in info.get('statusCategory'):
+                        results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                    elif "Delivered to Agent" in info.get('statusCategory'):
+                        results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                    else:
+                        results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
 
-                        latestEventMatch = re.search(r"\d{4}-\d{2}-\d{2}", str(latestEventSfDateTimeStr))
-                        possessionEventMatch = re.search(r"\d{4}-\d{2}-\d{2}", str(possessionSfDateTimeStr))
+                    latestEventSfDateTimeStr = info.get("latestEventSfDateTime")
+                    possessionSfDateTimeStr = info.get("possessionSfDateTime")
+                    statusShortStr = info.get("statusShort")
 
-                        latestEventSfDateTimeGroup = latestEventMatch.group() if latestEventMatch else ""
-                        possessionSfDateTimeGroup = possessionEventMatch.group() if possessionEventMatch else ""
+                    latestEventMatch = re.search(r"\d{4}-\d{2}-\d{2}", str(latestEventSfDateTimeStr))
+                    possessionEventMatch = re.search(r"\d{4}-\d{2}-\d{2}", str(possessionSfDateTimeStr))
 
-                        if (latestEventSfDateTimeGroup == ""):
-                            date1 = ""
-                        else:
-                            date1 = datetime.strptime(latestEventSfDateTimeGroup, "%Y-%m-%d")
+                    latestEventSfDateTimeGroup = latestEventMatch.group() if latestEventMatch else ""
+                    possessionSfDateTimeGroup = possessionEventMatch.group() if possessionEventMatch else ""
 
-                        if (possessionSfDateTimeGroup == ""):
-                            date2 = ""
-                        else:
-                            date2 = datetime.strptime(possessionSfDateTimeGroup, "%Y-%m-%d")
+                    if (latestEventSfDateTimeGroup == ""):
+                        date1 = ""
+                    else:
+                        date1 = datetime.strptime(latestEventSfDateTimeGroup, "%Y-%m-%d")
 
-                        if (latestEventSfDateTimeGroup == "" or possessionSfDateTimeGroup == ""):
-                            days_diff = 0
-                        else:
-                            days_diff = (date1 - date2).days
+                    if (possessionSfDateTimeGroup == ""):
+                        date2 = ""
+                    else:
+                        date2 = datetime.strptime(possessionSfDateTimeGroup, "%Y-%m-%d")
 
-                        # 表示不是
-                        if (days_diff == 0 and statusShortStr != 'Shipment Received, Package Acceptance Pending'):
-                            days_diff = 99
+                    if (latestEventSfDateTimeGroup == "" or possessionSfDateTimeGroup == ""):
+                        days_diff = 0
+                    else:
+                        days_diff = (date1 - date2).days
 
-                        results_map[CourierStateMapKey.possession_sf_date_map][package_id] = possessionSfDateTimeGroup
-                        results_map[CourierStateMapKey.latest_event_sf_date_map][
-                            package_id] = latestEventSfDateTimeGroup
-                        results_map[CourierStateMapKey.sf_date_equality_map][package_id] = int(days_diff)
+                    # 表示不是
+                    if (days_diff == 0 and statusShortStr != 'Shipment Received, Package Acceptance Pending'):
+                        days_diff = 99
 
-                # 等待指定的间隔时间，避免请求频率过高
-                time.sleep(request_interval)
+                    results_map[CourierStateMapKey.possession_sf_date_map][package_id] = possessionSfDateTimeGroup
+                    results_map[CourierStateMapKey.latest_event_sf_date_map][package_id] = latestEventSfDateTimeGroup
+                    results_map[CourierStateMapKey.sf_date_equality_map][package_id] = int(days_diff)
 
-            except Exception as e:
-                print(f"处理组 {grouped_items.index(group) + 1} 时发生错误: {e}")
+            # 等待指定的间隔时间，避免请求频率过高
+            time.sleep(request_interval)
+
+        except Exception as e:
+            print(f"处理组 {grouped_items.index(group) + 1} 时发生错误: {e}")
 
     return results_map
 
@@ -1501,7 +1494,8 @@ if __name__ == '__main__':
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间13_669.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间14_691.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间15_605.xlsx")
-    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间17_1569.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间24_1568.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间25_768.xlsx")
 
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间1_199.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间3_807.xlsx")
@@ -1518,6 +1512,8 @@ if __name__ == '__main__':
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间14_171.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间15_446.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间17_769.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间24_680.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间25_195.xlsx")
 
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间1_384.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间2_2.xlsx")
@@ -1536,6 +1532,8 @@ if __name__ == '__main__':
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间15_318.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间16_13.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间17_692.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间24_558.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间25_295.xlsx")
 
     # # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
