@@ -1140,6 +1140,7 @@ def go(analyse_obj, xlsx_path):
     if xlsx_path is None:
         xlsx_path = input("请输入文件的绝对路径：")
 
+    process_tracking_no(xlsx_path)
     check_and_add_courier_column(xlsx_path)
 
     irregular_number_map = find_irregular_tracking_numbers(xlsx_path)
