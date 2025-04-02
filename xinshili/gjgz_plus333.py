@@ -750,6 +750,53 @@ def get_shipment_received_numbers(filepath, gz_time):
     return list(set(tracking_numbers))
 
 
+def get_filtered_count(filepath, gz_time, target_column, target_value):
+    # 读取 Excel 文件
+    df = pd.read_excel(filepath, dtype=str)
+
+    # 确保需要的列存在
+    required_columns = {"Courier/快递", "SfDateInterval/SF消息间隔", "OutboundTime/出库时间", target_column}
+    if not required_columns.issubset(df.columns):
+        raise ValueError(f"Excel 文件缺少必要的列: {required_columns - set(df.columns)}")
+
+    # 过滤指定列 `target_column` 的值为 `target_value`
+    filtered_df = df[df[target_column] == target_value]
+
+    # 进一步筛选条件：
+    filtered_df = filtered_df[
+        (filtered_df["Courier/快递"] == "tracking") &
+        (filtered_df["SfDateInterval/SF消息间隔"] == "0")
+        ]
+
+    # 解析 "OutboundTime/出库时间" 并计算时间间隔
+    def check_outbound_time(outbound_time):
+        try:
+            # interval_days = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(outbound_time,
+            #                                                                             "%Y-%m-%d %H:%M:%S")).days
+
+            parsed_outbound_time = datetime.strptime(outbound_time, "%Y-%m-%d %H:%M:%S")
+            formatted_date = parsed_outbound_time.strftime("%Y/%m/%d")
+            # 跟踪时间 - 出库时间
+            interval_days = (datetime.strptime(gz_time, "%Y/%m/%d") -
+                             datetime.strptime(formatted_date, "%Y/%m/%d")).days
+
+            is_usweekend = is_us_weekend(formatted_date)
+            actual_interval = 0
+            if is_usweekend == 6:  # 6是中国周日，美国周六
+                actual_interval = 2
+            elif is_usweekend == 0:  # 0是中国周一，美国周日
+                actual_interval = 1
+
+            return (interval_days - actual_interval) >= 2  # 计算时间间隔是否 >= 2
+        except ValueError:
+            return False  # 解析失败则跳过
+
+    filtered_df = filtered_df[filtered_df["OutboundTime/出库时间"].apply(check_outbound_time)]
+
+    # 返回符合条件的数据数量
+    return len(filtered_df)
+
+
 def convert_inch_to_cm(value_in_inch):
     """
     将英寸转换为厘米
@@ -796,29 +843,96 @@ def get_in(file_path, sku_to_match):
     return result
 
 
-def sku_kj_count(file_path, sku_value, sku_column='SKU', shipping_service_column='Shipping service/物流渠道',
-                 recipient_column='Recipient/收件人'):
+# def sku_kj_count(file_path, sku_value, sku_column='SKU', shipping_service_column='Shipping service/物流渠道',
+#                  recipient_column='Recipient/收件人'):
+#     # 读取 Excel 文件
+#     data = pd.read_excel(file_path)
+#
+#     # 确保必要的列存在
+#     if sku_column not in data.columns or shipping_service_column not in data.columns or recipient_column not in data.columns:
+#         raise ValueError(f"文件中缺少必要的列，请检查列名是否正确")
+#
+#     # 筛选出 SKU 列为指定内容，且满足以下两种情况之一：
+#     # 1. 'Shipping service/物流渠道' 为 '上传物流面单(Upload_Shipping_Label)' 且 'Recipient/收件人' 为 'KJ'
+#     # 2. 'Shipping service/物流渠道' 不为 '上传物流面单(Upload_Shipping_Label)'
+#     filtered_data = data[
+#         (data[sku_column] == sku_value) &  # 筛选 SKU 列为指定值
+#         (
+#                 ((data[shipping_service_column] == '上传物流面单(Upload_Shipping_Label)') & (
+#                         data[recipient_column] == 'KJ')) |  # 满足第一个条件
+#                 (data[shipping_service_column] != '上传物流面单(Upload_Shipping_Label)')  # 满足第二个条件
+#         )
+#         ]
+#
+#     # 返回符合条件的行数
+#     return len(filtered_data)
+
+def temu_count(file_path, sku_value,
+               sku_column='SKU',
+               shipping_service_column='Platform Number/平台单号',
+               courier_column='Courier/快递'):
     # 读取 Excel 文件
-    data = pd.read_excel(file_path)
+    data = pd.read_excel(file_path, dtype=str)  # 确保数据按字符串读取，避免 NaN 影响筛选
 
     # 确保必要的列存在
-    if sku_column not in data.columns or shipping_service_column not in data.columns or recipient_column not in data.columns:
-        raise ValueError(f"文件中缺少必要的列，请检查列名是否正确")
+    required_columns = {sku_column, shipping_service_column, courier_column}
+    if not required_columns.issubset(data.columns):
+        raise ValueError(f"文件中缺少必要的列: {required_columns - set(data.columns)}")
 
-    # 筛选出 SKU 列为指定内容，且满足以下两种情况之一：
-    # 1. 'Shipping service/物流渠道' 为 '上传物流面单(Upload_Shipping_Label)' 且 'Recipient/收件人' 为 'KJ'
-    # 2. 'Shipping service/物流渠道' 不为 '上传物流面单(Upload_Shipping_Label)'
+    # 初步筛选 SKU 列符合条件的数据
+    filtered_data = data[(data[sku_column] == sku_value) & (data[shipping_service_column].str.startswith("PO-"))]
+
+    # 编译正则模式
+    compiled_pattern = re.compile(Pattern.no_track, re.IGNORECASE)
+
+    # 进一步筛选 'Courier/快递' 列符合 Pattern.no_track 正则的数据
+    matched_data = filtered_data[filtered_data[courier_column].str.match(compiled_pattern, na=False)]
+
+    # 返回两个值：（初步筛选的数据数量，进一步匹配 'Courier/快递' 的订单数量）
+    return len(filtered_data), len(matched_data)
+
+
+def sku_kj_count(file_path, sku_value,
+                 sku_column='SKU',
+                 shipping_service_column='Shipping service/物流渠道',
+                 recipient_column='Recipient/收件人',
+                 courier_column='Courier/快递'):
+    """
+    计算符合条件的 SKU 订单总数，并返回匹配 'Courier/快递' 正则的数据数量
+    :param file_path: Excel 文件路径
+    :param sku_value: 要筛选的 SKU 值
+    :param sku_column: SKU 列名
+    :param shipping_service_column: 物流渠道列名
+    :param recipient_column: 收件人列名
+    :param courier_column: 快递列名
+    :return: (符合 SKU 条件的订单数量, 进一步匹配 'Courier/快递' 的订单数量)
+    """
+    # 读取 Excel 文件
+    data = pd.read_excel(file_path, dtype=str)  # 确保数据按字符串读取，避免 NaN 影响筛选
+
+    # 确保必要的列存在
+    required_columns = {sku_column, shipping_service_column, recipient_column, courier_column}
+    if not required_columns.issubset(data.columns):
+        raise ValueError(f"文件中缺少必要的列: {required_columns - set(data.columns)}")
+
+    # 初步筛选 SKU 列符合条件的数据
     filtered_data = data[
-        (data[sku_column] == sku_value) &  # 筛选 SKU 列为指定值
+        (data[sku_column] == sku_value) &
         (
-                ((data[shipping_service_column] == '上传物流面单(Upload_Shipping_Label)') & (
-                        data[recipient_column] == 'KJ')) |  # 满足第一个条件
-                (data[shipping_service_column] != '上传物流面单(Upload_Shipping_Label)')  # 满足第二个条件
+                ((data[shipping_service_column] == '上传物流面单(Upload_Shipping_Label)') &
+                 (data[recipient_column] == 'KJ')) |
+                (data[shipping_service_column] != '上传物流面单(Upload_Shipping_Label)')
         )
         ]
 
-    # 返回符合条件的行数
-    return len(filtered_data)
+    # 编译正则模式
+    compiled_pattern = re.compile(Pattern.no_track, re.IGNORECASE)
+
+    # 进一步筛选 'Courier/快递' 列符合 Pattern.no_track 正则的数据
+    matched_data = filtered_data[filtered_data[courier_column].str.match(compiled_pattern, na=False)]
+
+    # 返回两个值：（初步筛选的数据数量，进一步匹配 'Courier/快递' 的订单数量）
+    return len(filtered_data), len(matched_data)
 
 
 def kj_count(file_path, shipping_service_column='Shipping service/物流渠道', recipient_column='Recipient/收件人'):
@@ -837,13 +951,34 @@ def kj_count(file_path, shipping_service_column='Shipping service/物流渠道',
             data[recipient_column] == 'KJ')
 
     # 综合筛选符合任一条件的行
-    filtered_data = data[condition1 | condition2]
+    kj_counts = data[condition1 | condition2]
+
+    # 进一步筛选 'Courier/快递' 列符合 Pattern.no_track 正则的数据
+    kj_no_track_count = kj_counts[
+        kj_counts[RowName.Courier].str.match(re.compile(Pattern.no_track, re.IGNORECASE), na=False)]
+    kj_tracking_count = kj_counts[
+        kj_counts[RowName.Courier].str.match(re.compile(Pattern.tracking, re.IGNORECASE), na=False)]
+    kj_delivered_count = kj_counts[
+        kj_counts[RowName.Courier].str.match(re.compile(Pattern.delivered, re.IGNORECASE), na=False)]
+    kj_pre_ship_count = kj_counts[
+        kj_counts[RowName.Courier].str.match(re.compile(Pattern.pre_ship, re.IGNORECASE), na=False)]
+    kj_not_yet_count = kj_counts[
+        kj_counts[RowName.Courier].str.match(re.compile(Pattern.not_yet, re.IGNORECASE), na=False)]
+    kj_unpaid_count = kj_counts[
+        kj_counts[RowName.Courier].str.match(re.compile(Pattern.unpaid, re.IGNORECASE), na=False)]
+    kj_irregular_number_count = kj_counts[
+        kj_counts[RowName.Courier].str.match(re.compile(Pattern.irregular_no_tracking, re.IGNORECASE), na=False)]
+    kj_no_tracking_count = kj_counts[
+        kj_counts[RowName.Courier].str.match(re.compile(Pattern.no_tracking, re.IGNORECASE), na=False)]
 
     # 返回符合条件的行数
-    return len(filtered_data)
+    return len(kj_counts), len(kj_no_track_count), len(kj_tracking_count), len(kj_delivered_count), \
+        len(kj_pre_ship_count), len(kj_not_yet_count), len(kj_unpaid_count), len(kj_irregular_number_count), \
+        len(kj_no_tracking_count)
 
 
-def generate_distribution_report(distribution, no_track_distribution, data_map, data_map_key):
+def generate_distribution_report(xlsx_path, kj_column, gz_time, distribution, no_track_distribution, data_map,
+                                 data_map_key):
     """
     通用的分布报告生成函数
     :param distribution: 订单分布字典
@@ -861,14 +996,27 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
     for entity, count in distribution.items():
         no_track_count = no_track_distribution.get(entity, 0)
         swl = round2(100 - ((no_track_count / count) * 100))  # 计算上网率
+        kjCount, kj_no_track_count = sku_kj_count(xlsx_path, entity, sku_column=kj_column)
+        kjSwl = 0
+        if (kjCount > 0):
+            kjSwl = round2(100 - ((kj_no_track_count / kjCount) * 100))
+
+        temuCount, temu_no_track_count = temu_count(xlsx_path, entity, sku_column=kj_column)
+        temuSwl = 0
+        if (temuCount > 0):
+            temuSwl = round2(100 - ((temu_no_track_count / temuCount) * 100))
+
+        shipment_received_interval2_count = get_filtered_count(xlsx_path, gz_time, kj_column, entity)
+
         # 使用 f-string 格式化输出文本
-        report_text.append(f"\n{entity}：({count}, {no_track_count}, {swl}%)")
+        report_text.append(
+            f"\n{entity}：({count}, {no_track_count}, {swl}%), ({kjCount}, {kj_no_track_count}, {kjSwl}%), ({temuCount}, {temu_no_track_count}, {temuSwl}%), ({shipment_received_interval2_count})")
         report_text2.append(f"\n{entity}：({count}, {swl}%)")
 
         # 判断是否是最低的上网率
         if swl < lowest_swl:
             lowest_swl = swl
-            lowest_entity = f"\n{entity}：（{count}, {no_track_count}, {swl}%）"
+            lowest_entity = f"\n{entity}：（{count}, {no_track_count}, {swl}%）, ({kjCount}, {kj_no_track_count}, {kjSwl}%), ({temuCount}, {temu_no_track_count}, {temuSwl}%), ({shipment_received_interval2_count})"
 
     # 将结果存储到 data_map 中
     data_map[data_map_key] = "".join(report_text)  # 使用 join 合并字符串，减少内存消耗
@@ -878,7 +1026,7 @@ def generate_distribution_report(distribution, no_track_distribution, data_map, 
 def generate_distribution_report2(distribution, no_track_distribution, sku_no_tracking_distribution,
                                   sku_pre_ship_distribution, sku_not_yet_distribution, sku_delivered_distribution,
                                   sku_unpaid_distribution, tracking_sf_zero_distribution,
-                                  data_map, data_map_key, interval_time, xlsx_path):
+                                  data_map, data_map_key, interval_time, xlsx_path, gz_time):
     """
     通用的分布报告生成函数，统计订单分布、无轨迹订单、计算上网率，并找出最低上网率的所有实体
     :param distribution: 订单分布字典
@@ -908,14 +1056,27 @@ def generate_distribution_report2(distribution, no_track_distribution, sku_no_tr
         width_ = in_data['Width']
         height_ = in_data['Height']
         unit_ = in_data['Unit']
-        kjCount = sku_kj_count(xlsx_path, entity)
+        sizes = f"{length_}*{width_}*{height_}*{unit_}"
+
+        kjCount, kj_no_track_count = sku_kj_count(xlsx_path, entity)
+        kjSwl = 0
+        if (kjCount > 0):
+            kjSwl = round2(100 - ((kj_no_track_count / kjCount) * 100))
+
+        temuCount, temu_no_track_count = temu_count(xlsx_path, entity)
+        temuSwl = 0
+        if (temuCount > 0):
+            temuSwl = round2(100 - ((temu_no_track_count / temuCount) * 100))
+
+        shipment_received_interval2_count = get_filtered_count(xlsx_path, gz_time, RowName.SKU, entity)
 
         strs = ""
         # 生成报告内容
-        if (swl != 100.0):
+        if (swl != 100.0 or unpaid_count > 0 or shipment_received_interval2_count > 0):
             # strs = f"\n{entity}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{swl}%"
             strs = f"\n{entity}：（{count}, {no_track_count}, {swl}%）,（{no_tracking_count}, {pre_ship_count}, " \
-                   f"{not_yet_count}, {delivered_count}, {unpaid_count}）,（{kjCount}, {length_}*{width_}*{height_}*{unit_}）"
+                   f"{not_yet_count}, {delivered_count}, {unpaid_count}）,（{kjCount}, {kj_no_track_count}, {kjSwl}%）, ({temuCount}, {temu_no_track_count}, {temuSwl}%), ({shipment_received_interval2_count})"
+            # f"{not_yet_count}, {delivered_count}, {unpaid_count}）,（{kjCount}, {kj_no_track_count}, {kjSwl}%）,（{shipment_received_interval2_count}, {sizes}）"
             strs2 = f"\n{entity}：({count},{swl}%)"
             report_text += strs
             report_text2 += strs2
@@ -1087,7 +1248,7 @@ def go(analyse_obj, xlsx_path):
         sku_distribution, sku_no_track_distribution, sku_no_tracking_distribution, sku_pre_ship_distribution,
         sku_not_yet_distribution, sku_delivered_distribution, sku_unpaid_distribution, key_tracking_sf_zero_counter,
         data_map, CellKey.sku_condition,
-        interval_time, xlsx_path
+        interval_time, xlsx_path, gz_time
     )
     text += sku_text
 
@@ -1148,28 +1309,60 @@ def go(analyse_obj, xlsx_path):
     tracking_zero_countl = round2((tracking_zero_count_int / total_count_int) * 100)
     change_shipment_received_countl = round2((change_shipment_received_count / total_count_int) * 100)
 
-    kj_counts = kj_count(output_file)
+    kj_counts, kj_no_track_count, kj_tracking_count, kj_delivered_count, kj_pre_ship_count, kj_not_yet_count, \
+        kj_unpaid_count, kj_irregular_number_count, kj_no_tracking_count = kj_count(output_file)
+
+    kj_swl = 0
+    kj_wswl = 0
+    kj_track_count = kj_counts - kj_no_track_count
+    if (track_count_int > 0):
+        kj_swl = round2((kj_track_count / track_count_int) * 100)
+    if (no_track_count_int > 0):
+        kj_wswl = round2((kj_no_track_count / no_track_count_int) * 100)
+
+    kj_tracking_swl = 0
+    kj_delivered_swl = 0
+    kj_pre_ship_swl = 0
+    kj_not_yet_swl = 0
+    kj_unpaid_swl = 0
+    kj_irregular_number_swl = 0
+    kj_other_no_tracking_swl = 0
+
+    if (tracking_count_int > 0):
+        kj_tracking_swl = round2((kj_tracking_count / tracking_count_int) * 100)
+    if (delivered_count_int > 0):
+        kj_delivered_swl = round2((kj_delivered_count / delivered_count_int) * 100)
+    if (pre_ship_count_int > 0):
+        kj_pre_ship_swl = round2((kj_pre_ship_count / pre_ship_count_int) * 100)
+    if (not_yet_count_int > 0):
+        kj_not_yet_swl = round2((kj_not_yet_count / not_yet_count_int) * 100)
+    if (unpaid_count_int > 0):
+        kj_unpaid_swl = round2((kj_unpaid_count / unpaid_count_int) * 100)
+    if (irregular_no_tracking_count_int > 0):
+        kj_irregular_number_swl = round2((kj_irregular_number_count / irregular_no_tracking_count_int) * 100)
+    if (no_tracking_count_int > 0):
+        kj_other_no_tracking_swl = round2((kj_no_tracking_count / no_tracking_count_int) * 100)
 
     # 构建字符串
     wl = (
         f"\n订单总数：{total_count_int}"
         f"\nKJ订单总数：{kj_counts}"
         f"\n"
-        f"\n上网：（{track_count_int}, {swl}%）"
-        f"\n未上网：（{no_track_count_int}, {wswl}%）"
+        f"\n上网：（{track_count_int}, {swl}%）,（{kj_track_count}, {kj_swl}%）"
+        f"\n未上网：（{no_track_count_int}, {wswl}%）,（{kj_no_track_count}, {kj_wswl}%）"
         f"\n"
 
         f"\n上网状态细分："
-        f"\ntracking：（{tracking_count_int}, {tracking_countl}%）"
-        f"\ndelivered：（{delivered_count_int}, {qsl}%）"
+        f"\ntracking：（{tracking_count_int}, {tracking_countl}%）,（{kj_tracking_count}, {kj_tracking_swl}%）"
+        f"\ndelivered：（{delivered_count_int}, {qsl}%）,（{kj_delivered_count}, {kj_delivered_swl}%）"
         f"\n"
 
         f"\n未上网状态细分："
-        f"\npre_ship：（{pre_ship_count_int}, {pre_shipl}%）"
-        f"\nnot_yet：（{not_yet_count_int}, {not_yetl}%）"
-        f"\nunpaid：（{unpaid_count_int}, {unpaidl}%）"
-        f"\nirregular_number：（{irregular_no_tracking_count_int}, {irregular_no_trackingl}%）"
-        f"\nother_no_tracking：（{no_tracking_count_int}, {no_tracking_countl}%）"
+        f"\npre_ship：（{pre_ship_count_int}, {pre_shipl}%）,（{kj_pre_ship_count}, {kj_pre_ship_swl}%）"
+        f"\nnot_yet：（{not_yet_count_int}, {not_yetl}%）,（{kj_not_yet_count}, {kj_not_yet_swl}%）"
+        f"\nunpaid：（{unpaid_count_int}, {unpaidl}%）,（{kj_unpaid_count}, {kj_unpaid_swl}%）"
+        f"\nirregular_number：（{irregular_no_tracking_count_int}, {irregular_no_trackingl}%）,（{kj_irregular_number_count}, {kj_irregular_number_swl}%）"
+        f"\nother_no_tracking：（{no_tracking_count_int}, {no_tracking_countl}%）,（{kj_no_tracking_count}, {kj_other_no_tracking_swl}%）"
         f"\n"
 
         # 接口无法获取过往物流状态，所以无法得出该订单是否使用了提货单。但是如果当天物流状态为shipment_received且(更新时间 - 出库时间 >= 2天)则一定为提货单且该订单物流异常
@@ -1178,7 +1371,8 @@ def go(analyse_obj, xlsx_path):
         # f"\nshipment_received：（{tracking_zero_count_int}, {tracking_zero_countl}%）"
         f"\nstay_shipment_received：（{change_shipment_received_count}, {change_shipment_received_countl}%）"
 
-        f"\n{irregular_number_text + unpaid_text + shipment_received_text}"
+        # f"\n{irregular_number_text + unpaid_text + shipment_received_text}"
+        f"\n{irregular_number_text + unpaid_text}"
     )
     data_map[CellKey.wl] = wl
 
@@ -1187,20 +1381,25 @@ def go(analyse_obj, xlsx_path):
 
     # 避免重复读取 Excel 文件
     warehouse_count, warehouse_no_track_count = dimension_distribution(output_file, key_column=RowName.Warehouse)
-    warehouse_text, lowest_warehouse, warehouse_text2 = generate_distribution_report(warehouse_count,
+    warehouse_text, lowest_warehouse, warehouse_text2 = generate_distribution_report(output_file,
+                                                                                     RowName.Warehouse,
+                                                                                     gz_time,
+                                                                                     warehouse_count,
                                                                                      warehouse_no_track_count,
                                                                                      data_map,
                                                                                      CellKey.warehouse_condition)
     text += "\n----------------------仓库分布----------------------" + warehouse_text
 
     store_count, store_no_track_count = dimension_distribution(output_file, key_column=RowName.Client)
-    store_text, lowest_store, store_text2 = generate_distribution_report(store_count, store_no_track_count,
+    store_text, lowest_store, store_text2 = generate_distribution_report(output_file, RowName.Client, gz_time,
+                                                                         store_count, store_no_track_count,
                                                                          data_map, CellKey.store_condition)
     text += "\n----------------------店铺分布----------------------" + store_text
 
     shipping_service_count, shipping_service_no_track_count = dimension_distribution(output_file,
                                                                                      key_column=RowName.ShippingService)
     shipping_service_text, lowest_shipping_service, shipping_service_text2 = generate_distribution_report(
+        output_file, RowName.ShippingService, gz_time,
         shipping_service_count,
         shipping_service_no_track_count,
         data_map,
@@ -1228,10 +1427,12 @@ def go(analyse_obj, xlsx_path):
     actual_interval = ""
     if is_usweekend == 6:  # 6是中国周日，美国周六
         sum_up_text = "美国时间：周六（和中国相差13-16个小时）\n"
-        actual_interval = "（-2）"
+        # actual_interval = "（-2）"
+        actual_interval = 2
     elif is_usweekend == 0:  # 0是中国周一，美国周日
         sum_up_text = "美国时间：周日（相差13-16个小时）\n"
-        actual_interval = "（-1）"
+        # actual_interval = "（-1）"
+        actual_interval = 1
 
     # if (len(irregular_number_list) > 0):
     #     sum_up_text += f"存在不规则单号：{irregular_number_list}"
@@ -1249,7 +1450,8 @@ def go(analyse_obj, xlsx_path):
         (3, 97, "❄️异常", "未达97%！", "#F1C1BD"),
     ]
 
-    sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
+    # sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
+    sum_up_text += f"\n间隔第{interval_time - actual_interval}天"
 
     for days, threshold, icon, message, color in warning_levels:
         if interval_time == days and swl < threshold:
@@ -1304,13 +1506,21 @@ def go(analyse_obj, xlsx_path):
 
     # 异常状态记录
     exception_text = ""
+    bgFlag = False
     if (swl_flag):
         exception_text += "上网率异常"
+        bgFlag = True
     if (qsl_flag):
         exception_text += "\n签收率异常（签收率目前无法量化，只为提醒⏰）"
+        bgFlag = True
     if (unpaid_count_int > 0):
         bg = "#A684F0"
         exception_text += "\nunpaid 异常"
+        bgFlag = True
+    if (change_shipment_received_count > 0):
+        bg = "#B3D600"
+        exception_text += "\n提货单未更新轨迹（>=2天） 异常"
+        bgFlag = True
     data_map[CellKey.exception] = exception_text
 
     # 删除去重文件
@@ -1332,12 +1542,12 @@ def go(analyse_obj, xlsx_path):
         lists += f"\n提货单未上网：({change_shipment_received_count},{change_shipment_received_countl}%)"
         lists += f"\n{warehouse_text2}"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-        if (swl_flag):
+        if (bgFlag):
             brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
     else:
         lists = f"({total_count},{swl}%)"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-        if (swl_flag):
+        if (bgFlag):
             brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
 
     if analyse_obj == ClientConstants.mz_xsd or \
@@ -1354,7 +1564,7 @@ def go(analyse_obj, xlsx_path):
             data_map[CellKey.exception],
         ], ck_time, analyse_obj)
 
-        if (swl_flag):
+        if (bgFlag):
             detail_sheet_bg(tat, ck_time, analyse_obj, bg)
     else:
         detail_sheet_value(tat, [
@@ -1370,7 +1580,7 @@ def go(analyse_obj, xlsx_path):
             data_map[CellKey.exception],
         ], ck_time, analyse_obj)
 
-        if (swl_flag):
+        if (bgFlag):
             detail_sheet_bg(tat, ck_time, analyse_obj, bg)
 
 
@@ -1477,7 +1687,7 @@ def automatic(dir_path, analyse_obj):
 
 if __name__ == '__main__':
     # 手动
-    go(None, None)
+    # go(None, None)
 
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间1_846.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间2_157.xlsx")
@@ -1496,6 +1706,13 @@ if __name__ == '__main__':
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间15_605.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间24_1568.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间25_768.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间17_1569.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间18_1124.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间19_884.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间20_938.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间21_933.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间22_862.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间1_399.xlsx")
 
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间1_199.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间3_807.xlsx")
@@ -1514,6 +1731,11 @@ if __name__ == '__main__':
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间17_769.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间24_680.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间25_195.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间18_234.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间19_316.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间20_298.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间21_305.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3/创建时间22_238.xlsx")
 
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间1_384.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间2_2.xlsx")
@@ -1534,6 +1756,11 @@ if __name__ == '__main__':
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间17_692.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间24_558.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间25_295.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间18_318.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间19_286.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间20_340.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间21_280.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间22_308.xlsx")
 
     # # 自动
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
@@ -1553,3 +1780,5 @@ if __name__ == '__main__':
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd/2025.3", ClientConstants.mz_xsd)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg/2025.3", ClientConstants.mx_dg)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc/2025.3", ClientConstants.md_fc)
+
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/test.xlsx")
