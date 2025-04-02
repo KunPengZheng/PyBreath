@@ -602,6 +602,24 @@ def analyze_time_segments(file_path, data_map, time_column, courier_column, sf_d
         return "", ""
 
 
+def process_tracking_no(file_path: str):
+    # 读取 Excel 文件
+    data = pd.read_excel(file_path, dtype=str)  # 将数据全部读取为字符串类型
+
+    # 确保 'Tracking No./物流跟踪号' 列存在
+    if 'Tracking No./物流跟踪号' not in data.columns:
+        raise ValueError("文件中缺少 'Tracking No./物流跟踪号' 列")
+
+    # 处理 'Tracking No./物流跟踪号' 列：去除空格并确保每个值是字符串，兼容 None 或空值
+    data['Tracking No./物流跟踪号'] = data['Tracking No./物流跟踪号'].apply(
+        lambda x: str(x).replace(" ", "") if x is not None and pd.notna(x) else "")
+
+    # 保存处理后的数据
+    data.to_excel(file_path, index=False, engine='openpyxl')
+
+    return data
+
+
 def check_and_add_courier_column(file_path):
     """
     检查 Excel 文件是否存在 '快递' 列，如果没有，则在最后一列添加该列。
