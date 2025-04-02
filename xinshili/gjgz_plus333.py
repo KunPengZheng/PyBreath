@@ -1443,7 +1443,7 @@ def go(analyse_obj, xlsx_path):
     """
 
     sum_up_text = ""
-    actual_interval = ""
+    actual_interval = 0
     if is_usweekend == 6:  # 6是中国周日，美国周六
         sum_up_text = "美国时间：周六（和中国相差13-16个小时）\n"
         # actual_interval = "（-2）"
