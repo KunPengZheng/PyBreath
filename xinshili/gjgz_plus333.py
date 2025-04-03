@@ -1028,13 +1028,13 @@ def generate_distribution_report(xlsx_path, kj_column, gz_time, distribution, no
 
         # 使用 f-string 格式化输出文本
         report_text.append(
-            f"\n{entity}：({count}, {no_track_count}, {swl}%), ({kjCount}, {kj_no_track_count}, {kjSwl}%), ({temuCount}, {temu_no_track_count}, {temuSwl}%), ({shipment_received_interval2_count})")
+            f"\n{entity}：（{count}, {no_track_count}, {swl}%）,（{kjCount}, {kj_no_track_count}, {kjSwl}%）,（{temuCount}, {temu_no_track_count}, {temuSwl}%）,（{shipment_received_interval2_count}）")
         report_text2.append(f"\n{entity}：({count}, {swl}%)")
 
         # 判断是否是最低的上网率
         if swl < lowest_swl:
             lowest_swl = swl
-            lowest_entity = f"\n{entity}：（{count}, {no_track_count}, {swl}%）, ({kjCount}, {kj_no_track_count}, {kjSwl}%), ({temuCount}, {temu_no_track_count}, {temuSwl}%), ({shipment_received_interval2_count})"
+            lowest_entity = f"\n{entity}：（{count}, {no_track_count}, {swl}%）,（{kjCount}, {kj_no_track_count}, {kjSwl}%）,（{temuCount}, {temu_no_track_count}, {temuSwl}%）,（{shipment_received_interval2_count}）"
 
     # 将结果存储到 data_map 中
     data_map[data_map_key] = "".join(report_text)  # 使用 join 合并字符串，减少内存消耗
@@ -1093,7 +1093,7 @@ def generate_distribution_report2(distribution, no_track_distribution, sku_no_tr
         if (swl != 100.0 or unpaid_count > 0 or shipment_received_interval2_count > 0):
             # strs = f"\n{entity}： 订单总数：{count}；无轨迹数：{no_track_count}；上网率：{swl}%"
             strs = f"\n{entity}：（{count}, {no_track_count}, {swl}%）,（{no_tracking_count}, {pre_ship_count}, " \
-                   f"{not_yet_count}, {delivered_count}, {unpaid_count}）,（{kjCount}, {kj_no_track_count}, {kjSwl}%）, ({temuCount}, {temu_no_track_count}, {temuSwl}%), ({shipment_received_interval2_count})"
+                   f"{not_yet_count}, {delivered_count}, {unpaid_count}）,（{kjCount}, {kj_no_track_count}, {kjSwl}%）,（{temuCount}, {temu_no_track_count}, {temuSwl}%）,（{shipment_received_interval2_count}）"
             # f"{not_yet_count}, {delivered_count}, {unpaid_count}）,（{kjCount}, {kj_no_track_count}, {kjSwl}%）,（{shipment_received_interval2_count}, {sizes}）"
             strs2 = f"\n{entity}：({count},{swl}%)"
             report_text += strs
