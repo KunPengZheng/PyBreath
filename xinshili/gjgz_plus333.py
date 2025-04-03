@@ -1528,18 +1528,18 @@ def go(analyse_obj, xlsx_path):
     bgFlag = False
 
     if (qsl_flag):
-        exception_text += "\n签收率异常（签收率目前无法量化，只为提醒⏰）"
+        exception_text += "\n✍️签收率异常（签收率目前无法量化，只为提醒⏰）"
         bgFlag = True
     if (change_shipment_received_count >= 5):
         bg = "#B3D600"
-        exception_text += "\n提货单未更新轨迹（>=2天） 异常"
+        exception_text += "\n📒提货单未更新轨迹（>=2天） 异常"
         bgFlag = True
     if (swl_flag):
-        exception_text += "上网率异常"
+        exception_text += "\n📦上网率异常"
         bgFlag = True
     if (unpaid_count_int > 0):
         bg = "#A684F0"
-        exception_text += "\nunpaid 异常"
+        exception_text += "\n💰unpaid 异常"
         bgFlag = True
     data_map[CellKey.exception] = exception_text
 
