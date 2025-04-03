@@ -207,7 +207,9 @@ def go(input_path):
         (3, 97, "❄️异常", "未达97%！", "#F1C1BD"),
     ]
 
-    sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
+    # sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
+    sum_up_text += f"\n间隔第{interval_time - actual_interval}天"
+
     for days, threshold, icon, message, color in warning_levels:
         if interval_time == days and swl < threshold:
             sum_up_text += f"\n{icon}：上网率为{swl}%，{message}"
@@ -230,7 +232,7 @@ def go(input_path):
 
     tat = get_token()
     brief_sheet_value(tat, [fs_text], ck_time, gz_time, ClientConstants.md_flld)
-    # brief_sheet_bg(tat, ck_time, gz_time, ClientConstants.md_flld, "#F1C1BD")
+    brief_sheet_bg(tat, ck_time, gz_time, ClientConstants.md_flld, bg)
 
 
 def automatic(dir_path):
@@ -264,7 +266,8 @@ if __name__ == '__main__':
     # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间8_27.xlsx")
     # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间16_87.xlsx")
     # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间17_38.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间21_66.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间21_66.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
 
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3")
