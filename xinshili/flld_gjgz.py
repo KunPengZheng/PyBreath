@@ -230,6 +230,9 @@ def go(input_path):
         else:
             sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
 
+    if (len(unpaid_tracking_data) > 0):
+        bg = "#A684F0"
+
     tat = get_token()
     brief_sheet_value(tat, [fs_text], ck_time, gz_time, ClientConstants.md_flld)
     brief_sheet_bg(tat, ck_time, gz_time, ClientConstants.md_flld, bg)
@@ -271,4 +274,3 @@ if __name__ == '__main__':
 
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3")
-
