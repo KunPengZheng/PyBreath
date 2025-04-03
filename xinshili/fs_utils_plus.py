@@ -169,7 +169,7 @@ def brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg):
     print(r2.json())  # 输出来判断写入是否成功
 
 
-def khhz_sheet_value(tat, lists, ck_time, analyse_obj):
+def khhz_sheet_value(tat, lists, ck_time, analyse_obj, bg):
     """
     客户汇总表
     """
@@ -197,6 +197,23 @@ def khhz_sheet_value(tat, lists, ck_time, analyse_obj):
         "valueRange": {
             "range": f"{ClientMapConstants[ClientConstants.khhz]}!{column_start_nums}{row_nums}:{column_end_nums}{row_nums}",
             "values": [lists]}
+    }
+
+    # values_prepend 需要使用post请求方式，values需要使用put请求方式
+    r2 = requests.put(url, data=json.dumps(post_data), headers=header)
+    print(r2.json())  # 输出来判断写入是否成功
+
+    post_data = {
+        "data": [
+            {
+                "ranges": [
+                    f"{ClientMapConstants[ClientConstants.khhz]}!{column_start_nums}{row_nums}:{column_end_nums}{row_nums}",
+                ],
+                "style": {
+                    "backColor": bg,
+                }
+            }
+        ]
     }
 
     # values_prepend 需要使用post请求方式，values需要使用put请求方式

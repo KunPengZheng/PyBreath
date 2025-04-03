@@ -1526,19 +1526,20 @@ def go(analyse_obj, xlsx_path):
     # 异常状态记录
     exception_text = ""
     bgFlag = False
-    if (swl_flag):
-        exception_text += "上网率异常"
-        bgFlag = True
+
     if (qsl_flag):
         exception_text += "\n签收率异常（签收率目前无法量化，只为提醒⏰）"
-        bgFlag = True
-    if (unpaid_count_int > 0):
-        bg = "#A684F0"
-        exception_text += "\nunpaid 异常"
         bgFlag = True
     if (change_shipment_received_count > 0):
         bg = "#B3D600"
         exception_text += "\n提货单未更新轨迹（>=2天） 异常"
+        bgFlag = True
+    if (swl_flag):
+        exception_text += "上网率异常"
+        bgFlag = True
+    if (unpaid_count_int > 0):
+        bg = "#A684F0"
+        exception_text += "\nunpaid 异常"
         bgFlag = True
     data_map[CellKey.exception] = exception_text
 
@@ -1549,25 +1550,26 @@ def go(analyse_obj, xlsx_path):
     # 写入飞书在线文档
     tat = get_token()
     if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
+
         khhz_sheet_value(tat, [
             total_count_int,
             f"（{no_track_count_int}, {wswl}%）",
             f"（{change_shipment_received_count}, {change_shipment_received_countl}%）",
             f"（{delivered_count_int}, {qsl}%）",
             f"（{unpaid_count_int}, {unpaidl}%）",
-        ], ck_time, analyse_obj)
+        ], ck_time, analyse_obj, bg)
 
         lists = f"上网：({total_count},{swl}%)"
         lists += f"\n提货单未上网：({change_shipment_received_count},{change_shipment_received_countl}%)"
         lists += f"\n{warehouse_text2}"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-        if (bgFlag):
-            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+        # if (bgFlag):
+        brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
     else:
         lists = f"({total_count},{swl}%)"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-        if (bgFlag):
-            brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+        # if (bgFlag):
+        brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
 
     if analyse_obj == ClientConstants.mz_xsd or \
             analyse_obj == ClientConstants.mx_dg or \
@@ -1583,8 +1585,8 @@ def go(analyse_obj, xlsx_path):
             data_map[CellKey.exception],
         ], ck_time, analyse_obj)
 
-        if (bgFlag):
-            detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+        # if (bgFlag):
+        detail_sheet_bg(tat, ck_time, analyse_obj, bg)
     else:
         detail_sheet_value(tat, [
             data_map[CellKey.Outbound_Time],
@@ -1599,8 +1601,8 @@ def go(analyse_obj, xlsx_path):
             data_map[CellKey.exception],
         ], ck_time, analyse_obj)
 
-        if (bgFlag):
-            detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+        # if (bgFlag):
+        detail_sheet_bg(tat, ck_time, analyse_obj, bg)
 
 
 def automatic(dir_path, analyse_obj):
