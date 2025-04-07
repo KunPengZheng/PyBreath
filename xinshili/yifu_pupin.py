@@ -2,6 +2,8 @@ import re
 import os
 from openpyxl import load_workbook
 
+from xinshili.utils import get_filename_with_extension
+
 
 def lenb_minus_len(text):
     """
@@ -158,7 +160,7 @@ def process_replace(filepath, column_a="A", column_b="B", column_c="C", women_bi
     print(f"处理完成，已更新 {filepath}")
 
 
-def rename_files_in_folder(folder_path, index=1):
+def rename_files_in_folder(folder_path, prefix):
     # 获取文件夹中的所有文件
     files = sorted(os.listdir(folder_path))  # 按名称排序，避免乱序
 
@@ -167,28 +169,18 @@ def rename_files_in_folder(folder_path, index=1):
 
         # 确保是文件，而不是文件夹
         if os.path.isfile(old_path):
-            file_extension = os.path.splitext(file)[1]  # 获取文件扩展名
-            new_name = f"{index}{file_extension}"  # 生成新文件名
+            extension = get_filename_with_extension(file)
+            new_name = f"{prefix}{extension}"  # 生成新文件名
             new_path = os.path.join(folder_path, new_name)
-
-            # 避免文件名冲突
-            while os.path.exists(new_path):
-                index += 1
-                new_name = f"{index}{file_extension}"
-                new_path = os.path.join(folder_path, new_name)
-
             os.rename(old_path, new_path)  # 重命名文件
-            print(f"重命名: {file} → {new_name}")
-            index += 1  # 递增索引
 
-
-process_replace("/Users/zkp/Desktop/未命名文件夹/20250303黑色女装标题.xlsx")
-process_replace("/Users/zkp/Desktop/未命名文件夹/20250304黑色女装标题.xlsx")
-process_replace("/Users/zkp/Desktop/未命名文件夹/20250305白色女装标题J041-K080.xlsx")
-process_replace("/Users/zkp/Desktop/未命名文件夹/20250306白色女装标题K081-K100.xlsx")
-process_replace("/Users/zkp/Desktop/未命名文件夹/20250306黑色女装标题L001-L100.xlsx")
-process_replace("/Users/zkp/Desktop/未命名文件夹/20250308白色女装标题.xlsx")
-process_replace("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题.xlsx")
-process_replace("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题H301-H400.xlsx")
+# process_replace("/Users/zkp/Desktop/未命名文件夹/20250303黑色女装标题.xlsx")
+# process_replace("/Users/zkp/Desktop/未命名文件夹/20250304黑色女装标题.xlsx")
+# process_replace("/Users/zkp/Desktop/未命名文件夹/20250305白色女装标题J041-K080.xlsx")
+# process_replace("/Users/zkp/Desktop/未命名文件夹/20250306白色女装标题K081-K100.xlsx")
+# process_replace("/Users/zkp/Desktop/未命名文件夹/20250306黑色女装标题L001-L100.xlsx")
+# process_replace("/Users/zkp/Desktop/未命名文件夹/20250308白色女装标题.xlsx")
+# process_replace("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题.xlsx")
+# process_replace("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题H301-H400.xlsx")
 
 # rename_files_in_folder(r"/Users/zkp/Desktop/0315服装230/图片")
