@@ -29,7 +29,7 @@ def lenb_minus_len(text):
 
 def replace_chinese_symbols(text):
     """
-    替换中文符号为对应的英文符号
+    替换中文符号为对应的英文符号，去除品牌名、敏感内容、非法字符，避免侵权和不适当的内容。
     """
     if not isinstance(text, str):  # 处理 None 或非字符串情况
         return ""
@@ -40,21 +40,71 @@ def replace_chinese_symbols(text):
         "（": "(", "）": ")", "《": "<", "》": ">", "“": "\"", "”": "\"",
         "‘": "'", "’": "'", "：": ":", "；": ";", "￥": "$", "—": "-", "–": "-",
         "m²": "", "｜": "", "®": "", "™": "", "©": "", "2024": "2025", "ö": "",
-        "Lord": "",
-        "Psalm": "",
-        "Disneyland": "",
-        "Jesus": "",
-        "Ukraine": "",
-        "Toy Story": "",
-        "Disney": "",
-        "Mickey": "",
-        "nike": "",
-        "Doraemon": "",
+        "——": "-", "【": "[", "】": "]", "→": "", "↑": "", "↓": "", "＊": "*"
+    }
+
+    rule_words = {
+        # 敏感内容词汇（包含政治、黄赌毒等敏感话题）
+        "pornography", "gambling", "drugs", "violence", "terrorism", "extremism", "hate speech", "racism",
+        "sexism", "corruption", "murder", "scam", "fraud", "politics", "war", "terrorist", "extremist",
+        "hate", "abuse", "pedophile", "child abuse", "illegal", "mafia", "cartel", "gangs", "racist",
+        "xenophobic", "homophobic", "anti-semitic", "rape", "sexual assault", "slavery", "trafficking",
+        "extortion", "harassment", "bullying", "weapon", "death", "murderer", "kidnapping", "explosive"
+
+        # 名人、演员、歌手、政治人物等
+                                                                                            "Barack Obama",
+        "Elvis Presley", "Michael Jackson", "Beyoncé", "Taylor Swift", "Madonna", "Ariana Grande",
+        "Drake", "Justin Bieber", "Kanye West", "Bill Gates", "Steve Jobs", "Oprah Winfrey", "Leonardo DiCaprio",
+        "Brad Pitt", "Angelina Jolie", "Robert Downey Jr.", "Scarlett Johansson", "Tom Hanks", "Will Smith",
+        "Chris Hemsworth",
+        "Johnny Depp", "Meryl Streep", "Dwayne Johnson", "Emma Watson", "Rihanna",
+
+        # 书名、小说
+        "Harry Potter", "The Lord of the Rings", "The Catcher in the Rye", "1984", "To Kill a Mockingbird",
+        "The Great Gatsby", "Pride and Prejudice", "The Da Vinci Code", "Moby-Dick", "War and Peace",
+        "The Hobbit", "The Bible", "The Quran", "Fifty Shades of Grey", "The Hunger Games", "The Chronicles of Narnia",
+        "The Road", "Brave New World",
+
+        # 电影名、系列
+        "Star Wars", "Toy Story", "Avengers", "Spider-Man", "Batman", "Superman", "Iron Man", "Thor", "Hulk",
+        "Captain America", "Black Panther", "Wonder Woman", "The Matrix", "Inception", "Titanic",
+        "The Shawshank Redemption", "Forrest Gump", "The Dark Knight", "Pulp Fiction", "The Godfather",
+        "The Terminator",
+        "Jurassic Park", "The Lion King", "Frozen", "Avatar", "Jurassic World", "The Avengers: Endgame",
+
+        # 视频游戏、动漫等
+        "Super Mario", "Minecraft", "Fortnite", "The Sims", "World of Warcraft", "Pokémon", "Dragon Ball", "Naruto",
+        "One Piece", "Doraemon", "Attack on Titan", "Sailor Moon", "Bleach", "Fairy Tail", "My Hero Academia",
+        "Yu-Gi-Oh", "Dragon Quest", "League of Legends", "Counter-Strike", "Grand Theft Auto", "The Witcher",
+        "Call of Duty", "The Elder Scrolls",
+
+        # 其他
+        "Disney", "Nike", "Apple", "Samsung", "Microsoft", "Google", "Facebook", "Instagram", "Amazon", "YouTube",
+        "WhatsApp", "Twitter", "TikTok", "CocaCola", "Pepsi", "Adidas", "Lamborghini", "Ferrari", "Rolls Royce",
+        "Porsche", "McDonald's", "KFC", "Starbucks", "BMW", "Audi", "Mercedes"
     }
 
     # 使用正则替换，忽略大小写
     for zh_symbol, en_symbol in symbol_map.items():
         text = re.sub(re.escape(zh_symbol), en_symbol, text, flags=re.IGNORECASE)
+
+    for word in rule_words:
+        text = re.sub(re.escape(word), "", text, flags=re.IGNORECASE)
+
+    # 去除不合适的字符，避免非法字符影响文件名
+    text = re.sub(r'[<>:"/\\|?*]', "", text)  # 删除文件名中不允许的字符
+    text = re.sub(r'\s+', " ", text)  # 去除多余的空格
+    text = re.sub(r'^\s+|\s+?$', '', text)  # 去除首尾空白字符
+    text = re.sub(r'\.{2,}', ".", text)  # 将多个连续的句点（..）替换为一个句点
+    # 清理表情符号及特殊字符
+    text = re.sub(r'[^\x00-\x7F]+', '', text)  # 删除非ASCII字符（表情符号、特殊字符）
+    # 去除重复的词汇或无意义的描述
+    text = re.sub(r'\b(\w+)\s+\1\b', r'\1', text)  # 删除重复的单词，例如 "T-shirt T-shirt"
+    # 增强文本一致性（避免无意义的修饰词）
+    text = re.sub(r'(really|very|totally|extremely|incredibly)\s+', "", text)  # 去除多余的程度副词
+
+    # 最后修剪文本，去掉多余的空格
+    text = text.strip()
 
     return text
 
@@ -119,5 +169,3 @@ process_excel("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题.
 process_excel("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题H301-H400.xlsx")
 
 # rename_files_in_folder(r"/Users/zkp/Desktop/0315服装230/图片")
-
-
