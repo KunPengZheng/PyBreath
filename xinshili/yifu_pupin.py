@@ -27,7 +27,7 @@ def lenb_minus_len(text):
     return extra_bytes
 
 
-def replace_chinese_symbols(text):
+def rule_replace(text):
     """
     替换中文符号为对应的英文符号，去除品牌名、敏感内容、非法字符，避免侵权和不适当的内容。
     """
@@ -109,26 +109,39 @@ def replace_chinese_symbols(text):
     return text
 
 
-def process_excel(filepath, column_letter="B", result_column_b="E", result_column_c="D"):
-    """
-    读取 Excel 文件：
-    1. 计算 `LENB(A1) - LEN(A1)` 差值，写入 B 列
-    2. 替换中文符号为英文符号，写入 C 列
-    """
+def process_replace(filepath, column_b="B", column_c="C"):
     workbook = load_workbook(filename=filepath)
     sheet = workbook.active  # 选择默认工作表
 
     for row in range(1, sheet.max_row + 1):  # 遍历所有行
-        cell = sheet[f"{column_letter}{row}"]  # 读取 A 列的单元格
+        cell = sheet[f"{column_b}{row}"]  # 读取 指定列 的单元格
         text = str(cell.value) if cell.value else ""  # 处理空值
 
         # 计算中文字符和符号的字节差值
         # difference = lenb_minus_len(text)
         # sheet[f"{result_column_b}{row}"] = difference
 
-        # 替换中文符号为英文符号
-        replaced_text = replace_chinese_symbols(text)
-        sheet[f"{result_column_c}{row}"] = replaced_text
+        replaced_text = rule_replace(text)
+        sheet[f"{column_b}{row}"] = replaced_text
+        sheet[f"{column_c}{row}"] = replaced_text
+
+    # 保存 Excel
+    workbook.save(filepath)
+    print(f"处理完成，已更新 {filepath}")
+
+
+def process_women_big_size(filepath, column_b="B", column_c="C"):
+    workbook = load_workbook(filename=filepath)
+    sheet = workbook.active  # 选择默认工作表
+
+    for row in range(1, sheet.max_row + 1):  # 遍历所有行
+        cell = sheet[f"{column_b}{row}"]  # 读取 指定列 的单元格
+        text = str(cell.value) if cell.value else ""  # 处理空值
+
+        text += ", L-XXXXL Plus Size"
+        replaced_text = rule_replace(text)
+        sheet[f"{column_b}{row}"] = replaced_text
+        sheet[f"{column_c}{row}"] = replaced_text
 
     # 保存 Excel
     workbook.save(filepath)
@@ -159,13 +172,13 @@ def rename_files_in_folder(folder_path, index=1):
             index += 1  # 递增索引
 
 
-process_excel("/Users/zkp/Desktop/未命名文件夹/20250303黑色女装标题.xlsx")
-process_excel("/Users/zkp/Desktop/未命名文件夹/20250304黑色女装标题.xlsx")
-process_excel("/Users/zkp/Desktop/未命名文件夹/20250305白色女装标题J041-K080.xlsx")
-process_excel("/Users/zkp/Desktop/未命名文件夹/20250306白色女装标题K081-K100.xlsx")
-process_excel("/Users/zkp/Desktop/未命名文件夹/20250306黑色女装标题L001-L100.xlsx")
-process_excel("/Users/zkp/Desktop/未命名文件夹/20250308白色女装标题.xlsx")
-process_excel("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题.xlsx")
-process_excel("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题H301-H400.xlsx")
+process_replace("/Users/zkp/Desktop/未命名文件夹/20250303黑色女装标题.xlsx")
+process_replace("/Users/zkp/Desktop/未命名文件夹/20250304黑色女装标题.xlsx")
+process_replace("/Users/zkp/Desktop/未命名文件夹/20250305白色女装标题J041-K080.xlsx")
+process_replace("/Users/zkp/Desktop/未命名文件夹/20250306白色女装标题K081-K100.xlsx")
+process_replace("/Users/zkp/Desktop/未命名文件夹/20250306黑色女装标题L001-L100.xlsx")
+process_replace("/Users/zkp/Desktop/未命名文件夹/20250308白色女装标题.xlsx")
+process_replace("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题.xlsx")
+process_replace("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题H301-H400.xlsx")
 
 # rename_files_in_folder(r"/Users/zkp/Desktop/0315服装230/图片")
