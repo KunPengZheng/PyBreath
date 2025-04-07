@@ -40,7 +40,7 @@ def replace_chinese_symbols(text):
         "（": "(", "）": ")", "《": "<", "》": ">", "“": "\"", "”": "\"",
         "‘": "'", "’": "'", "：": ":", "；": ";", "￥": "$", "—": "-", "–": "-",
         "m²": "", "｜": "", "®": "", "™": "", "©": "", "2024": "2025", "ö": "",
-        "——": "-", "【": "[", "】": "]", "→": "", "↑": "", "↓": "", "＊": "*"
+        "——": "-", "【": "[", "】": "]", "→": "", "↑": "", "↓": "", "＊": "*",
     }
 
     rule_words = {
@@ -56,8 +56,7 @@ def replace_chinese_symbols(text):
         "Elvis Presley", "Michael Jackson", "Beyoncé", "Taylor Swift", "Madonna", "Ariana Grande",
         "Drake", "Justin Bieber", "Kanye West", "Bill Gates", "Steve Jobs", "Oprah Winfrey", "Leonardo DiCaprio",
         "Brad Pitt", "Angelina Jolie", "Robert Downey Jr.", "Scarlett Johansson", "Tom Hanks", "Will Smith",
-        "Chris Hemsworth",
-        "Johnny Depp", "Meryl Streep", "Dwayne Johnson", "Emma Watson", "Rihanna",
+        "Chris Hemsworth", "Johnny Depp", "Meryl Streep", "Dwayne Johnson", "Emma Watson", "Rihanna", "Lord",
 
         # 书名、小说
         "Harry Potter", "The Lord of the Rings", "The Catcher in the Rye", "1984", "To Kill a Mockingbird",
@@ -81,7 +80,8 @@ def replace_chinese_symbols(text):
         # 其他
         "Disney", "Nike", "Apple", "Samsung", "Microsoft", "Google", "Facebook", "Instagram", "Amazon", "YouTube",
         "WhatsApp", "Twitter", "TikTok", "CocaCola", "Pepsi", "Adidas", "Lamborghini", "Ferrari", "Rolls Royce",
-        "Porsche", "McDonald's", "KFC", "Starbucks", "BMW", "Audi", "Mercedes"
+        "Porsche", "McDonald's", "KFC", "Starbucks", "BMW", "Audi", "Mercedes", "Disneyland", "Disney", "Mickey",
+        "2pcs", "2paces", "outfit", "Long sleeve", "shorts",
     }
 
     # 使用正则替换，忽略大小写
