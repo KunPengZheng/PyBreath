@@ -109,39 +109,49 @@ def rule_replace(text):
     return text
 
 
-def process_replace(filepath, column_b="B", column_c="C"):
+def check_cell_value(value):
+    # 定义正则表达式
+    pattern = r"^[A-Z]\d{2,4}$"
+
+    # 使用正则匹配
+    if re.match(pattern, value):
+        return True  # 匹配成功
+    else:
+        return False  # 不匹配
+
+
+def process_replace(filepath, column_a="A", column_b="B", column_c="C", women_big_size_suffix_flag=False):
     workbook = load_workbook(filename=filepath)
     sheet = workbook.active  # 选择默认工作表
 
     for row in range(1, sheet.max_row + 1):  # 遍历所有行
-        cell = sheet[f"{column_b}{row}"]  # 读取 指定列 的单元格
+        cell = ""
+
+        column_a_is_title = True
+        cell_a = sheet[f"{column_a}{row}"]
+        if (check_cell_value(cell_a)):  # a列是sku列
+            cell = sheet[f"{column_b}{row}"]  # 获取b列
+            column_a_is_title = False
+        else:  # a列是标题列
+            cell = cell_a
+            column_a_is_title = True
+
         text = str(cell.value) if cell.value else ""  # 处理空值
 
         # 计算中文字符和符号的字节差值
         # difference = lenb_minus_len(text)
         # sheet[f"{result_column_b}{row}"] = difference
 
+        if (women_big_size_suffix_flag):
+            text += ", L-XXXXL Plus Size"
         replaced_text = rule_replace(text)
-        sheet[f"{column_b}{row}"] = replaced_text
-        sheet[f"{column_c}{row}"] = replaced_text
 
-    # 保存 Excel
-    workbook.save(filepath)
-    print(f"处理完成，已更新 {filepath}")
-
-
-def process_women_big_size(filepath, column_b="B", column_c="C"):
-    workbook = load_workbook(filename=filepath)
-    sheet = workbook.active  # 选择默认工作表
-
-    for row in range(1, sheet.max_row + 1):  # 遍历所有行
-        cell = sheet[f"{column_b}{row}"]  # 读取 指定列 的单元格
-        text = str(cell.value) if cell.value else ""  # 处理空值
-
-        text += ", L-XXXXL Plus Size"
-        replaced_text = rule_replace(text)
-        sheet[f"{column_b}{row}"] = replaced_text
-        sheet[f"{column_c}{row}"] = replaced_text
+        if (column_a_is_title):
+            sheet[f"{column_a}{row}"] = replaced_text
+            sheet[f"{column_b}{row}"] = replaced_text
+        else:
+            sheet[f"{column_b}{row}"] = replaced_text
+            sheet[f"{column_c}{row}"] = replaced_text
 
     # 保存 Excel
     workbook.save(filepath)
