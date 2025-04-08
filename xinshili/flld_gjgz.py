@@ -119,6 +119,51 @@ def merge_xlsx_files(file1, file2, output_file):
     print(f"两个文件已合并，结果保存到 {output_file}")
 
 
+def xsxs(output_file):
+    patterns = {
+        "no_track": Pattern.no_track,
+        "delivered": Pattern.delivered,
+        "unpaid": Pattern.unpaid,
+        "not_yet": Pattern.not_yet,
+        "pre_ship": Pattern.pre_ship,
+        "irregular_no_tracking": Pattern.irregular_no_tracking,
+        "no_tracking": Pattern.no_tracking,
+        "tracking": Pattern.tracking
+    }
+
+    count_dict = count_pattern_state(output_file, RowName.Courier, patterns)
+
+    no_track_count = count_dict["no_track"]
+    delivered_count = count_dict["delivered"]
+    unpaid_count = count_dict["unpaid"]
+    not_yet_count = count_dict["not_yet"]
+    pre_ship_count = count_dict["pre_ship"]
+    irregular_no_tracking_count = count_dict["irregular_no_tracking"]
+    no_tracking_count = count_dict["no_tracking"]
+    tracking_count = count_dict["tracking"]
+
+    delivered_count_int = int(delivered_count)
+    unpaid_count_int = int(unpaid_count)
+    not_yet_count_int = int(not_yet_count)
+    pre_ship_count_int = int(pre_ship_count)
+    irregular_no_tracking_count_int = int(irregular_no_tracking_count)
+    no_tracking_count_int = int(no_tracking_count)
+    tracking_count_int = int(tracking_count)
+    no_track_count_int = int(no_track_count)
+    total_count_int = no_track_count_int + delivered_count + unpaid_count + tracking_count
+
+    # 计算百分比
+    swl = round2(100 - ((no_track_count_int) / total_count_int * 100))
+    wswl = round2(100 - swl)
+    qsl = round2((delivered_count_int / total_count_int) * 100)
+    unpaidl = round2((unpaid_count_int / total_count_int) * 100)
+    not_yetl = round2((not_yet_count_int / total_count_int) * 100)
+    pre_shipl = round2((pre_ship_count_int / total_count_int) * 100)
+    irregular_no_trackingl = round2((irregular_no_tracking_count_int / total_count_int) * 100)
+    no_tracking_countl = round2((no_tracking_count_int / total_count_int) * 100)
+    tracking_countl = round2((tracking_count_int / total_count_int) * 100)
+
+
 def go(input_path):
     if input_path is None:
         input_path = input("请输入文件的绝对路径：")
@@ -207,18 +252,19 @@ def go(input_path):
         (3, 97, "❄️异常", "未达97%！", "#F1C1BD"),
     ]
 
+    actual_interval_time = interval_time - actual_interval
     # sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
-    sum_up_text += f"\n间隔第{interval_time - actual_interval}天"
+    sum_up_text += f"\n间隔第{actual_interval_time}天"
 
     for days, threshold, icon, message, color in warning_levels:
-        if interval_time == days and swl < threshold:
+        if actual_interval_time == days and swl < threshold:
             sum_up_text += f"\n{icon}：上网率为{swl}%，{message}"
             swl_flag = True
-            if (interval_time >= 2):
+            if (actual_interval_time >= 2):
                 bg = color
             break
     else:  # ✅ 只有 for 没有 break 时才会执行
-        if (interval_time >= 4):
+        if (actual_interval_time >= 4):
             if (swl >= 99):
                 sum_up_text += f"\n☀️上网率为{swl}%，优秀🌈"
             elif (swl >= 97 and swl < 99):
@@ -262,15 +308,11 @@ if __name__ == '__main__':
     # output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
     # merge_xlsx_files(file1, file2, output_file)
 
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间15_113.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间13_88.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间12_91.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间10_43.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间8_27.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间16_87.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间17_38.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3/打单时间21_66.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
 
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3")
