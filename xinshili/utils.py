@@ -5,6 +5,7 @@ import os
 import subprocess
 import pandas as pd
 import holidays
+import platform
 
 
 def get_usd_to_cny_rate():
@@ -20,7 +21,7 @@ def get_usd_to_cny_rate():
     # except Exception as e:
     #     print(f"获取汇率失败：{e}")
     #     return None
-    return 7.29
+    return 7.37
 
 
 def get_yd():
@@ -47,9 +48,19 @@ def delete_file(file_path):
 
 
 def open_dir(folder_path):
-    # 使用 os.system 调用 macOS 的 open 命令
-    # os.system(f"open {folder_path}")
-    subprocess.run(["open", folder_path])
+    system_platform = platform.system()
+
+    try:
+        if system_platform == "Darwin":  # macOS
+            subprocess.run(["open", folder_path])
+        elif system_platform == "Windows":
+            os.startfile(folder_path)
+        elif system_platform == "Linux":
+            subprocess.run(["xdg-open", folder_path])
+        else:
+            print(f"不支持的系统: {system_platform}")
+    except Exception as e:
+        print(f"打开文件夹失败: {e}")
 
 
 def dirname(absolute_path):
