@@ -304,6 +304,32 @@ def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_ma
     print("update_courier_status 方法执行完成")
 
 
+def count_pattern_state(file_path, column_name, patternStr):
+    """
+    统计指定列指定内容的数量
+    """
+    try:
+        workbook = load_workbook(file_path)
+        sheet = workbook.active
+        headers = [cell.value for cell in sheet[1]]
+        if column_name not in headers:
+            raise ValueError(f"列名 '{column_name}' 不存在！")
+        column_index = headers.index(column_name) + 1
+        pattern = re.compile(patternStr, re.IGNORECASE)
+        total_count = 0
+        no_track_count = 0
+        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
+            cell_value = row[column_index - 1]
+            if cell_value is not None:
+                total_count += 1
+                if pattern.search(str(cell_value)):
+                    no_track_count += 1
+        return total_count, no_track_count
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return 0, 0
+
+
 def count_pattern_and_tracking_with_sf_date(file_path, column_name, sfDateInterval_name, patterns):
     """
     统计指定列中多个正则表达式匹配内容的数量，并统计 "Courier/快递" 列内容为 'tracking' 且 "SfDateEquality" 列的内容为 0 的行数。
@@ -1459,28 +1485,29 @@ def go(analyse_obj, xlsx_path):
 
     swl_flag = False
     qsl_flag = False
-    bg = "#ffffff"
+    bg = "#FFFFFF"
 
     # 上网率判断
     warning_levels = [
-        (0, 30, "🧑‍🍳", "继续观察👀", "#F8F1D3"),
+        (0, 30, "🧑‍🍳", "继续观察👀", "#FFFFFF"),
         (1, 30, "☁️注意", "未达30%！", "#F8F1D3"),
         (2, 70, "🌧️注意", "未达70%！", "#E3C49C"),
         (3, 97, "❄️异常", "未达97%！", "#F1C1BD"),
     ]
 
+    actual_interval_time = interval_time - actual_interval
     # sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
-    sum_up_text += f"\n间隔第{interval_time - actual_interval}天"
+    sum_up_text += f"\n间隔第{actual_interval_time}天"
 
     for days, threshold, icon, message, color in warning_levels:
-        if interval_time == days and swl < threshold:
+        if actual_interval_time == days and swl < threshold:
             sum_up_text += f"\n{icon}：上网率为{swl}%，{message}"
             swl_flag = True
-            if (interval_time >= 2):
+            if (actual_interval_time >= 2):
                 bg = color
             break
     else:  # ✅ 只有 for 没有 break 时才会执行
-        if (interval_time >= 4):
+        if (actual_interval_time >= 4):
             if (swl >= 99):
                 sum_up_text += f"\n☀️上网率为{swl}%，优秀🌈"
             elif (swl >= 97 and swl < 99):
@@ -1494,6 +1521,7 @@ def go(analyse_obj, xlsx_path):
 
     # 签收率判断
     qsl_warnings = [
+        (0, 0, 1, "🧑‍🍳", "继续观察👀"),
         (1, 3, 1, "☁️注意", "未达1%"),
         (3, 5, 20, "🌧️注意", "未达20%"),
         (5, 7, 50, "⛈️注意", "未达50%"),
@@ -1501,12 +1529,12 @@ def go(analyse_obj, xlsx_path):
     ]
 
     for start, end, threshold, icon, message in qsl_warnings:
-        if start <= interval_time <= end and qsl <= threshold:
+        if start <= actual_interval_time <= end and qsl <= threshold:
             sum_up_text += f"\n{icon}：签收率为{qsl}%，{message}"
             # qsl_flag = True
             break
     else:
-        if (interval_time >= 10):
+        if (actual_interval_time >= 10):
             if (qsl >= 95):
                 sum_up_text += f"\n☀️签收率为{qsl}%，优秀！🌈"
             elif (qsl >= 90 and qsl < 95):
@@ -1716,33 +1744,20 @@ if __name__ == '__main__':
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间1_399.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间2_515.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间3_699.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间4_559.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间5_443.xlsx")
 
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间1_288.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间2_288.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间3_269.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间4_370.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间5_238.xlsx")
 
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间31_640.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间1_368.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间2_302.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间3_314.xlsx")
-
-    # # 自动
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw", ClientConstants.zbw)
-    # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.1", ClientConstants.zbw)
-    # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.2", ClientConstants.zbw)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3", ClientConstants.zbw)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio", ClientConstants.sanrio)
-    # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.1", ClientConstants.sanrio)
-    # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.2", ClientConstants.sanrio)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3", ClientConstants.sanrio)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl", ClientConstants.xyl)
-    # # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.2", ClientConstants.xyl)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3", ClientConstants.xyl)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd", ClientConstants.mz_xsd)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg", ClientConstants.mx_dg)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc", ClientConstants.md_fc)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mzxsd/2025.3", ClientConstants.mz_xsd)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mxdg/2025.3", ClientConstants.mx_dg)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/mdfc/2025.3", ClientConstants.md_fc)
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间31_640.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间1_368.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间2_302.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间3_314.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间4_380.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间5_390.xlsx")
 
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/test.xlsx")
