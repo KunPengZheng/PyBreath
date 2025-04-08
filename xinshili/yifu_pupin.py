@@ -186,8 +186,7 @@ def rename_files_in_folder(folder_path, prefix):
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250308白色女装标题.xlsx")
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题.xlsx")
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题H301-H400.xlsx")
-# rename_files_in_folder(r"/Users/zkp/Desktop/0315服装230/图片")
-
+# rename_files_in_folder("/Users/zkp/Downloads/20250303黑色男装C1-100/黑色男装", "C")
 
 # process_replace("/Users/zkp/Downloads/副本20250307白色男装标题.xlsx")
 # process_replace("/Users/zkp/Downloads/副本副本0324黑白女装标题H501-H660.xlsx")

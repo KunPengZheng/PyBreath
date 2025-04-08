@@ -278,9 +278,10 @@ class YfTitleFilterTool(QWidget):
             return
         try:
             file_name_with_extension = os.path.basename(self.input_pdf_path)
+            file_dir_path = os.path.dirname(self.input_pdf_path)
             # result_output_file = self.output_file + "/" + file_name_with_extension
             result_output_file = self.input_pdf_path
-            process_replace(result_output_file)
+            process_replace(result_output_file, women_big_size_suffix_flag=is_big_size)
 
             # 创建消息框
             msg_box = QMessageBox(self)
@@ -290,8 +291,9 @@ class YfTitleFilterTool(QWidget):
             msg_box.setStandardButtons(QMessageBox.Ok)
 
             # 绑定自定义逻辑到 OK 按钮点击事件
-            msg_box.accepted.connect(lambda: self.custom_logic_after_merge(file_name_with_extension))
+            msg_box.accepted.connect(lambda: self.custom_logic_after_merge(file_dir_path))
             msg_box.exec_()
+
         except Exception as e:
             QMessageBox.critical(self, "错误", f"过滤过程中发生错误：{str(e)}")
 
@@ -368,7 +370,7 @@ class AddPicPrefixTool(QWidget):
         if not self.line_edit.text():  # 判断 QLineEdit 是否为空
             QMessageBox.critical(self, "错误", "请输入前缀")
         try:
-            result_output_file = self.output_file
+            result_output_file = self.input_folder
             rename_files_in_folder(self.input_folder, self.line_edit.text().strip())
 
             # 创建消息框
