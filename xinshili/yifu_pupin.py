@@ -112,11 +112,14 @@ def rule_replace(text):
 
 
 def check_cell_value(value):
+    # 去除前后空格并统一大小写
+    result = value.strip()
+
     # 定义正则表达式
     pattern = r"^[A-Z]\d{2,4}$"
 
-    # 使用正则匹配
-    if re.match(pattern, value):
+    # 使用正则匹配或以 'i am in bag' 开头（忽略大小写）
+    if re.match(pattern, result) or result.lower().startswith("i am in bag"):
         return True  # 匹配成功
     else:
         return False  # 不匹配
@@ -130,15 +133,15 @@ def process_replace(filepath, column_a="A", column_b="B", column_c="C", women_bi
         cell = ""
 
         column_a_is_title = True
-        cell_a = sheet[f"{column_a}{row}"]
-        if (check_cell_value(cell_a)):  # a列是sku列
-            cell = sheet[f"{column_b}{row}"]  # 获取b列
+        cell_a = sheet[f"{column_a}{row}"].value
+        if (check_cell_value(str(cell_a))):  # a列是sku列
+            cell = sheet[f"{column_b}{row}"].value  # 获取b列
             column_a_is_title = False
         else:  # a列是标题列
             cell = cell_a
             column_a_is_title = True
 
-        text = str(cell.value) if cell.value else ""  # 处理空值
+        text = str(cell) if cell else ""  # 处理空值
 
         # 计算中文字符和符号的字节差值
         # difference = lenb_minus_len(text)
@@ -174,6 +177,7 @@ def rename_files_in_folder(folder_path, prefix):
             new_path = os.path.join(folder_path, new_name)
             os.rename(old_path, new_path)  # 重命名文件
 
+
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250303黑色女装标题.xlsx")
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250304黑色女装标题.xlsx")
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250305白色女装标题J041-K080.xlsx")
@@ -182,5 +186,8 @@ def rename_files_in_folder(folder_path, prefix):
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250308白色女装标题.xlsx")
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题.xlsx")
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250310黑色女装标题H301-H400.xlsx")
-
 # rename_files_in_folder(r"/Users/zkp/Desktop/0315服装230/图片")
+
+
+# process_replace("/Users/zkp/Downloads/副本20250307白色男装标题.xlsx")
+# process_replace("/Users/zkp/Downloads/副本副本0324黑白女装标题H501-H660.xlsx")
