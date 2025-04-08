@@ -242,11 +242,11 @@ def go(input_path):
     sum_up_text = ""
     swl_flag = False
     qsl_flag = False
-    bg = "#ffffff"
+    bg = "#FFFFFF"
 
     # 上网率判断
     warning_levels = [
-        (0, 30, "🧑‍🍳", "继续观察👀", "#F8F1D3"),
+        (0, 30, "🧑‍🍳", "继续观察👀", "#FFFFFF"),
         (1, 30, "☁️注意", "未达30%！", "#F8F1D3"),
         (2, 70, "🌧️注意", "未达70%！", "#E3C49C"),
         (3, 97, "❄️异常", "未达97%！", "#F1C1BD"),
