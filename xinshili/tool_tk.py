@@ -395,35 +395,35 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("XYL-小工具")
-        self.setGeometry(100, 100, 400, 200)
+        self.setGeometry(100, 100, 700, 200)
 
         layout = QVBoxLayout()
 
         # PDF 切分功能入口按钮
         self.pdf_tool_btn = QPushButton("PDF 切分工具", self)
-        self.pdf_tool_btn.setFixedSize(250, 50)
+        self.pdf_tool_btn.setFixedSize(450, 50)
         self.pdf_tool_btn.clicked.connect(self.open_pdf_tool)
         layout.addWidget(self.pdf_tool_btn)
 
         # Excel 合并功能入口按钮
         self.excel_merge_btn = QPushButton("Excel 合并工具", self)
-        self.excel_merge_btn.setFixedSize(250, 50)
+        self.excel_merge_btn.setFixedSize(450, 50)
         self.excel_merge_btn.clicked.connect(self.open_excel_merge_tool)
         layout.addWidget(self.excel_merge_btn)
 
         self.yf_title_filter_btn = QPushButton("标题过滤工具🔧", self)
-        self.yf_title_filter_btn.setFixedSize(250, 50)
+        self.yf_title_filter_btn.setFixedSize(450, 50)
         self.yf_title_filter_btn.clicked.connect(lambda: self.open_yf_title_filter_tool(is_big_size=False))
         layout.addWidget(self.yf_title_filter_btn)
 
         self.yf_title_filter_btn = QPushButton("女装大码-标题添加后缀工具🔧", self)
-        self.yf_title_filter_btn.setFixedSize(250, 50)
+        self.yf_title_filter_btn.setFixedSize(450, 50)
         self.yf_title_filter_btn.clicked.connect(lambda: self.open_yf_title_filter_tool(is_big_size=True))
         layout.addWidget(self.yf_title_filter_btn)
 
         # Excel 合并功能入口按钮
         self.add_pic_prefix_btn = QPushButton("图片名添加前缀工具🔧", self)
-        self.add_pic_prefix_btn.setFixedSize(250, 50)
+        self.add_pic_prefix_btn.setFixedSize(450, 50)
         self.add_pic_prefix_btn.clicked.connect(self.open_add_pic_prefix_tool)
         layout.addWidget(self.add_pic_prefix_btn)
 
