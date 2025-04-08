@@ -3,12 +3,13 @@ import sys
 
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QMessageBox, QLabel
+    QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QMessageBox, QLabel, QLineEdit
 )
 
 from xinshili.excel_combined import merge_based_on_largest_header
 from xinshili.pdf_split import split_pdf, extract_text_from_pdf
 from xinshili.utils import ensure_directory_exists, open_dir
+from xinshili.yifu_pupin import process_replace, rename_files_in_folder
 
 
 # PDF 处理线程
@@ -212,6 +213,181 @@ class ExcelMergeTool(QWidget):
         open_dir(file_path)
 
 
+class YfTitleFilterTool(QWidget):
+
+    def __init__(self, is_big_size):
+        super().__init__()
+        if (is_big_size):
+            self.setWindowTitle("女装大码标题添加后缀工具")
+        else:
+            self.setWindowTitle("标题过滤工具")
+        self.setGeometry(100, 100, 500, 300)
+        self.input_folder = None
+        self.output_file = None
+
+        layout = QVBoxLayout()
+
+        # 选择输入文件夹按钮
+        self.input_btn = QPushButton("选择输入文件", self)
+        self.input_btn.setFixedSize(200, 50)
+        self.input_btn.clicked.connect(self.select_input_folder)
+        layout.addWidget(self.input_btn)
+
+        self.input_label = QLabel("未选择输入文件", self)
+        layout.addWidget(self.input_label)
+
+        # # 选择输出文件按钮
+        # self.output_btn = QPushButton("选择输出目录", self)
+        # self.output_btn.setFixedSize(200, 50)
+        # self.output_btn.clicked.connect(self.select_output_folder)
+        # layout.addWidget(self.output_btn)
+        #
+        # self.output_label = QLabel("未选择输出目录", self)
+        # layout.addWidget(self.output_label)
+
+        # 开始合并按钮
+        self.merge_btn = QPushButton("开始", self)
+        self.merge_btn.setFixedSize(200, 50)
+        self.merge_btn.clicked.connect(lambda: self.merge_excel_files(is_big_size=is_big_size))
+        layout.addWidget(self.merge_btn)
+
+        self.setLayout(layout)
+
+    def select_input_folder(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "选择 标题.xlsx 文件", "", "Excel Files (*.xlsx)")
+        if file_path:
+            self.input_pdf_path = file_path
+            self.input_label.setText(f"已选择文件：{file_path}")
+        else:
+            self.input_label.setText("未选择任何文件")
+
+    def select_output_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "选择输出目录")
+        if folder:
+            self.output_file = folder
+            self.output_label.setText(f"输入目录：{folder}")
+        else:
+            self.output_label.setText("未选择任何文件夹")
+
+    def merge_excel_files(self, is_big_size):
+        # if not self.input_pdf_path or not self.output_file:
+        #     QMessageBox.critical(self, "错误", "请先选择输入文件和输出文件夹！")
+        #     return
+        if not self.input_pdf_path:
+            QMessageBox.critical(self, "错误", "请先选择输入文件！")
+            return
+        try:
+            file_name_with_extension = os.path.basename(self.input_pdf_path)
+            # result_output_file = self.output_file + "/" + file_name_with_extension
+            result_output_file = self.input_pdf_path
+            process_replace(result_output_file)
+
+            # 创建消息框
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Information)
+            msg_box.setWindowTitle("成功")
+            msg_box.setText(f"完成！\n文件已保存到：{result_output_file}")
+            msg_box.setStandardButtons(QMessageBox.Ok)
+
+            # 绑定自定义逻辑到 OK 按钮点击事件
+            msg_box.accepted.connect(lambda: self.custom_logic_after_merge(file_name_with_extension))
+            msg_box.exec_()
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"过滤过程中发生错误：{str(e)}")
+
+    def custom_logic_after_merge(self, file_path):
+        open_dir(file_path)
+
+
+class AddPicPrefixTool(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("图片名添加前缀工具")
+        self.setGeometry(100, 100, 500, 300)
+        self.input_folder = None
+        self.output_file = None
+
+        layout = QVBoxLayout()
+
+        # 选择输入文件夹按钮
+        self.input_btn = QPushButton("选择输入目录", self)
+        self.input_btn.setFixedSize(200, 50)
+        self.input_btn.clicked.connect(self.select_input_folder)
+        layout.addWidget(self.input_btn)
+
+        self.input_label = QLabel("未选择输入目录", self)
+        self.input_label.setFixedSize(500, 50)
+        layout.addWidget(self.input_label)
+
+        # 创建单行输入框
+        self.line_edit = QLineEdit()
+        self.line_edit.setPlaceholderText("请输入前缀")
+        self.line_edit.setFixedSize(100, 50)
+        layout.addWidget(self.line_edit)
+
+        # # 选择输出文件按钮
+        # self.output_btn = QPushButton("选择输出目录", self)
+        # self.output_btn.setFixedSize(200, 50)
+        # self.output_btn.clicked.connect(self.select_output_folder)
+        # layout.addWidget(self.output_btn)
+        #
+        # self.output_label = QLabel("未选择输出目录", self)
+        # layout.addWidget(self.output_label)
+
+        # 开始合并按钮
+        self.merge_btn = QPushButton("开始", self)
+        self.merge_btn.setFixedSize(200, 50)
+        self.merge_btn.clicked.connect(self.merge_excel_files)
+        layout.addWidget(self.merge_btn)
+
+        self.setLayout(layout)
+
+    def select_input_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "选择输入目录")
+        if folder:
+            self.input_folder = folder
+            self.input_label.setText(f"输入目录：{folder}")
+        else:
+            self.input_label.setText("未选择任何文件夹")
+
+    def select_output_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "选择输出目录")
+        if folder:
+            self.output_file = folder
+            self.output_label.setText(f"输入目录：{folder}")
+        else:
+            self.output_label.setText("未选择任何文件夹")
+
+    def merge_excel_files(self):
+        # if not self.input_folder or not self.output_file:
+        #     QMessageBox.critical(self, "错误", "请先选择输入文件夹和输出文件夹！")
+        #     return
+        if not self.input_folder:
+            QMessageBox.critical(self, "错误", "请先选择输入文件夹！")
+            return
+        if not self.line_edit.text():  # 判断 QLineEdit 是否为空
+            QMessageBox.critical(self, "错误", "请输入前缀")
+        try:
+            result_output_file = self.output_file
+            rename_files_in_folder(self.input_folder, self.line_edit.text().strip())
+
+            # 创建消息框
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Information)
+            msg_box.setWindowTitle("成功")
+            msg_box.setText(f"完成！\n文件已保存到：{result_output_file}")
+            msg_box.setStandardButtons(QMessageBox.Ok)
+
+            # 绑定自定义逻辑到 OK 按钮点击事件
+            msg_box.accepted.connect(lambda: self.custom_logic_after_merge(result_output_file))
+            msg_box.exec_()
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"添加前缀过程中发生错误：{str(e)}")
+
+    def custom_logic_after_merge(self, file_path):
+        open_dir(file_path)
+
+
 # 主窗口
 class MainWindow(QWidget):
     def __init__(self):
@@ -223,15 +399,31 @@ class MainWindow(QWidget):
 
         # PDF 切分功能入口按钮
         self.pdf_tool_btn = QPushButton("PDF 切分工具", self)
-        self.pdf_tool_btn.setFixedSize(200, 50)
+        self.pdf_tool_btn.setFixedSize(250, 50)
         self.pdf_tool_btn.clicked.connect(self.open_pdf_tool)
         layout.addWidget(self.pdf_tool_btn)
 
         # Excel 合并功能入口按钮
         self.excel_merge_btn = QPushButton("Excel 合并工具", self)
-        self.excel_merge_btn.setFixedSize(200, 50)
+        self.excel_merge_btn.setFixedSize(250, 50)
         self.excel_merge_btn.clicked.connect(self.open_excel_merge_tool)
         layout.addWidget(self.excel_merge_btn)
+
+        self.yf_title_filter_btn = QPushButton("标题过滤工具🔧", self)
+        self.yf_title_filter_btn.setFixedSize(250, 50)
+        self.yf_title_filter_btn.clicked.connect(lambda: self.open_yf_title_filter_tool(is_big_size=False))
+        layout.addWidget(self.yf_title_filter_btn)
+
+        self.yf_title_filter_btn = QPushButton("女装大码-标题添加后缀工具🔧", self)
+        self.yf_title_filter_btn.setFixedSize(250, 50)
+        self.yf_title_filter_btn.clicked.connect(lambda: self.open_yf_title_filter_tool(is_big_size=True))
+        layout.addWidget(self.yf_title_filter_btn)
+
+        # Excel 合并功能入口按钮
+        self.add_pic_prefix_btn = QPushButton("图片名添加前缀工具🔧", self)
+        self.add_pic_prefix_btn.setFixedSize(250, 50)
+        self.add_pic_prefix_btn.clicked.connect(self.open_add_pic_prefix_tool)
+        layout.addWidget(self.add_pic_prefix_btn)
 
         self.setLayout(layout)
 
@@ -241,6 +433,14 @@ class MainWindow(QWidget):
 
     def open_excel_merge_tool(self):
         self.excel_merge_tool = ExcelMergeTool()
+        self.excel_merge_tool.show()
+
+    def open_yf_title_filter_tool(self, is_big_size):
+        self.excel_merge_tool = YfTitleFilterTool(is_big_size)
+        self.excel_merge_tool.show()
+
+    def open_add_pic_prefix_tool(self):
+        self.excel_merge_tool = AddPicPrefixTool()
         self.excel_merge_tool.show()
 
 
