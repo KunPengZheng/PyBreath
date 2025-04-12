@@ -469,24 +469,30 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
             key_no_track_counter = OrderedDict(sorted(key_no_track_counter.items(), key=lambda x: get_priority(x[0])))
 
         elif key_column == "Client/客户":
-            # 首先提取东谷与美中项，处理它们的排序
-            region_order = ["东谷", "美中"]
+            # 定义区域优先级
+            region_priority = {
+                "东谷": 1,
+                "美西": 1,
+                "美中": 2,
+                "休斯顿": 2,
+                "费城": 3,
+                "美东": 3
+            }
 
             def extract_region_and_suffix(k):
-                # 区域提取
-                if "东谷" in k:
-                    region = "东谷"
-                elif "美中" in k:
-                    region = "美中"
-                else:
-                    region = ""
-                # 提取括号内的后缀
+                # 提取区域
+                region = ""
+                for r in region_priority.keys():
+                    if r in k:
+                        region = r
+                        break
+                # 提取括号内的后缀，并忽略大小写
                 match = re.search(r"\((?:[^()]*)([A-Za-z\-]+)\)", k)
-                suffix = match.group(1) if match else ""
+                suffix = match.group(1).lower() if match else ""
                 return region, suffix
 
             # 分组
-            region_groups = {region: [] for region in region_order}
+            region_groups = {region: [] for region in region_priority.keys()}
             others = []
 
             for k in key_counter:
@@ -496,15 +502,14 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
                 else:
                     others.append((k, ""))
 
-            # 对每个区域（东谷，美中）内的项按后缀进行排序
+            # 处理排序：按区域优先级，然后按后缀排序
             region_sorted_keys = []
 
-            # 东谷部分按原始顺序
-            region_sorted_keys.extend([k for k, _ in region_groups["东谷"]])
-
-            # 美中部分按后缀排序
-            # 对美中区域的后缀进行排序，按照首次出现的顺序
-            region_sorted_keys.extend(sorted(region_groups["美中"], key=lambda x: x[1]))
+            # 遍历区域优先级，进行排序
+            for region in sorted(region_priority, key=lambda r: region_priority[r]):
+                # 对同一区域内的条目按后缀进行排序
+                sorted_by_suffix = sorted(region_groups[region], key=lambda x: x[1])
+                region_sorted_keys.extend([k for k, _ in sorted_by_suffix])
 
             # 添加无法识别地区的
             region_sorted_keys.extend([k for k, _ in others])
@@ -1798,6 +1803,7 @@ if __name__ == '__main__':
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间3_699.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间4_559.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间5_443.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间11_416.xlsx")
 
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间1_288.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间2_288.xlsx")
