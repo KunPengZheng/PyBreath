@@ -31,7 +31,7 @@ def str_strip(filepath: str, column_name: str):
 
 
 def get_unpaid_tracking_data(file_path, courier_column='Courier/快递', waybill_column='单号',
-                             tracking_column='快递单号'):
+                             tracking_column='快递单号', key_value='unpaid'):
     # 读取Excel文件
     data = pd.read_excel(file_path)
 
@@ -40,7 +40,7 @@ def get_unpaid_tracking_data(file_path, courier_column='Courier/快递', waybill
         raise ValueError(f"文件中缺少必要的列，请检查列名是否正确")
 
     # 筛选出 Courier/快递 列内容为 'unpaid' 的数据
-    unpaid_data = data[data[courier_column].str.strip().str.lower() == 'unpaid']
+    unpaid_data = data[data[courier_column].str.strip().str.lower() == key_value]
 
     # 使用 map 存储结果，单号列作为 key，快递单号列作为 value
     result_map = dict(zip(unpaid_data[waybill_column], unpaid_data[tracking_column]))
@@ -178,6 +178,7 @@ def go(input_path):
     update_courier_status(xlsx_path, results[CourierStateMapKey.delivered_map], "快递单号")
     update_courier_status(xlsx_path, results[CourierStateMapKey.no_tracking_map], "快递单号")
     update_courier_status(xlsx_path, results[CourierStateMapKey.tracking_map], "快递单号")
+    update_courier_status(xlsx_path, results[CourierStateMapKey.alert_intercepted_map], "快递单号")
 
     total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
     track_count = total_count - no_track_count
@@ -185,6 +186,7 @@ def go(input_path):
     total_count3, unpaid_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.unpaid)
     total_count4, not_yet_count = count_pattern_state(xlsx_path, RowName.Courier, r"not_yet")
     total_count5, pre_ship_count = count_pattern_state(xlsx_path, RowName.Courier, r"pre_ship")
+    total_count6, alert_intercepted_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert_intercepted)
 
     text = ""
     fs_text = ""
@@ -230,6 +232,10 @@ def go(input_path):
     text += f"\nunpaid：（{unpaid_count}, {unpaid_countl}%）"
     fs_text += f"\nunpaid：（{unpaid_count}, {unpaid_countl}%）"
 
+    alert_intercepted_countl = round2((int(alert_intercepted_count) / int(total_count)) * 100)
+    text += f"\nalert_intercepted：（{alert_intercepted_count}, {alert_intercepted_countl}%）"
+    fs_text += f"\nalert_intercepted：（{alert_intercepted_count}, {alert_intercepted_countl}%）"
+
     unpaid_tracking_data = get_unpaid_tracking_data(xlsx_path)
     if (len(unpaid_tracking_data) > 0):
         text += f"\n-------unpaid详情-------"
@@ -237,6 +243,15 @@ def go(input_path):
         for key, value in unpaid_tracking_data.items():
             text += f"\n（单号：{key}, 快递单号：{value}）"
             fs_text += f"\n（单号：{key}, 快递单号：{value}）"
+
+    alert_intercepted_tracking_data = get_unpaid_tracking_data(xlsx_path, key_value="alert_intercepted")
+    if (len(alert_intercepted_tracking_data) > 0):
+        text += f"\n-------alert_intercepted详情-------"
+        fs_text += f"\n-------alert_intercepted详情-------"
+        for key, value in alert_intercepted_tracking_data.items():
+            text += f"\n（单号：{key}, 快递单号：{value}）"
+            fs_text += f"\n（单号：{key}, 快递单号：{value}）"
+
     print(text)
 
     sum_up_text = ""
@@ -279,6 +294,9 @@ def go(input_path):
     if (len(unpaid_tracking_data) > 0):
         bg = "#A684F0"
 
+    if (len(alert_intercepted_tracking_data) > 0):
+        bg = "#FFF258"
+
     tat = get_token()
     brief_sheet_value(tat, [fs_text], ck_time, gz_time, ClientConstants.md_flld)
     brief_sheet_bg(tat, ck_time, gz_time, ClientConstants.md_flld, bg)
@@ -303,16 +321,16 @@ if __name__ == '__main__':
     # output_path = '/Users/zkp/Downloads/打单时间16_119.xlsx'  # 合并后的文件路径
     # merge_csv_files(file_paths, output_path)
 
-    # file1 = '/Users/zkp/Downloads/table_1.xlsx'  # 请替换为您的第一个 Excel 文件路径
-    # file2 = '/Users/zkp/Downloads/table_12.xlsx'  # 请替换为您的第二个 Excel 文件路径
-    # output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
-    # merge_xlsx_files(file1, file2, output_file)
+    file1 = '/Users/zkp/Downloads/table_1.xlsx'  # 请替换为您的第一个 Excel 文件路径
+    file2 = '/Users/zkp/Downloads/table_12.xlsx'  # 请替换为您的第二个 Excel 文件路径
+    output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
+    merge_xlsx_files(file1, file2, output_file)
 
     # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
 
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3")
