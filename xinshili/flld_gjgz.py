@@ -244,7 +244,7 @@ def go(input_path):
             text += f"\n（单号：{key}, 快递单号：{value}）"
             fs_text += f"\n（单号：{key}, 快递单号：{value}）"
 
-    alert_intercepted_tracking_data = get_unpaid_tracking_data(xlsx_path, key_value="alert_intercepted")
+    alert_intercepted_tracking_data = get_unpaid_tracking_data(xlsx_path, key_value="alert")
     if (len(alert_intercepted_tracking_data) > 0):
         text += f"\n-------alert详情-------"
         fs_text += f"\n-------alert详情-------"
