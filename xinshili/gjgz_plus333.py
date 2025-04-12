@@ -4,11 +4,12 @@ import re
 from openpyxl import load_workbook
 import openpyxl
 import pandas as pd
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, OrderedDict
 from dataclasses import dataclass
 import concurrent.futures
 import time
 import gc
+from natsort import natsorted
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants, detail_sheet_bg, \
     brief_sheet_bg, khhz_sheet_value, khhz_sheet_bg
@@ -425,7 +426,8 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
     :param file_path: Excel 文件路径
     :param key_column: 需要统计的列名
     :param courier_column: 快递列名
-    :return: 各值的总数和 "无轨迹" 数量的 Counter 对象
+    :param sf_date_column: SfDateEquality 列名
+    :return: 各值的总数和 "无轨迹" 数量的 Counter 对象（已排序）
     """
     try:
         workbook = load_workbook(file_path, data_only=True)
@@ -434,19 +436,15 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
         if key_column not in headers or courier_column not in headers or sf_date_column not in headers:
             raise ValueError(f"列名 '{key_column}' 或 '{courier_column}' 或 '{sf_date_column}' 不存在！")
 
-        # 获取列索引（加 1 是因为 Excel 索引从 1 开始）
         key_index = headers.index(key_column) + 1
         courier_index = headers.index(courier_column) + 1
         sf_date_index = headers.index(sf_date_column) + 1
 
-        # 初始化计数器
         key_counter = Counter()
         key_no_track_counter = Counter()
 
-        # 正则表达式和条件
         pattern = re.compile(Pattern.no_track, re.IGNORECASE)
 
-        # 遍历每一行
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
             key_value = row[key_index - 1]
             courier_status = row[courier_index - 1]
@@ -454,11 +452,63 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
 
             if key_value is not None:
                 key_counter[key_value] += 1
-                if courier_status is not None:
-                    # 判断是否是 "无轨迹"
-                    # if pattern.search(str(courier_status)) or (courier_status == "tracking" and sf_date_value == 0):
-                    if pattern.search(str(courier_status)):
-                        key_no_track_counter[key_value] += 1
+                if courier_status is not None and pattern.search(str(courier_status)):
+                    key_no_track_counter[key_value] += 1
+
+        # 排序逻辑
+        if key_column == RowName.Warehouse:
+            priority_order = ["美西", "美中", "美东"]
+
+            def get_priority(k):
+                for idx, keyword in enumerate(priority_order):
+                    if keyword in str(k):
+                        return idx
+                return len(priority_order)
+
+            key_counter = OrderedDict(sorted(key_counter.items(), key=lambda x: get_priority(x[0])))
+            key_no_track_counter = OrderedDict(sorted(key_no_track_counter.items(), key=lambda x: get_priority(x[0])))
+
+        elif key_column == RowName.Client:
+            region_order = ["美西", "美中", "美东"]
+
+            def extract_region_and_suffix(k):
+                region = next((r for r in region_order if r in k), "")
+                # 提取括号中的部分作为后缀，比如 "RSN3001(东谷ZBW)" 提取 "ZBW"
+                match = re.search(r"\((?:[^()]*)([A-Z]+)\)", k)
+                suffix = match.group(1).lower() if match else ""
+                return region, suffix
+
+            # 分组
+            region_groups = {region: [] for region in region_order}
+            others = []
+
+            for k in key_counter:
+                region, suffix = extract_region_and_suffix(k)
+                if region in region_groups:
+                    region_groups[region].append((k, suffix))
+                else:
+                    others.append((k, ""))
+
+            # 对每个区域组根据 suffix 排序
+            sorted_keys = []
+            suffix_order = []
+
+            # 获取所有出现过的 suffix 排序顺序
+            all_suffixes = [sfx for lst in region_groups.values() for _, sfx in lst]
+            suffix_order = sorted(set(all_suffixes), key=lambda x: all_suffixes.index(x))  # 保证顺序稳定
+
+            def sort_by_suffix(kv):
+                return suffix_order.index(kv[1]) if kv[1] in suffix_order else len(suffix_order)
+
+            for region in region_order:
+                sorted_keys.extend([k for k, _ in sorted(region_groups[region], key=sort_by_suffix)])
+
+            # 添加无法识别地区的
+            sorted_keys.extend([k for k, _ in others])
+
+            key_counter = OrderedDict((k, key_counter[k]) for k in sorted_keys if k in key_counter)
+            key_no_track_counter = OrderedDict(
+                (k, key_no_track_counter[k]) for k in sorted_keys if k in key_no_track_counter)
 
         return key_counter, key_no_track_counter
 
@@ -470,20 +520,13 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
 def count_distribution_and_no_track3(file_path, key_column, courier_column=RowName.Courier,
                                      sf_date_column=RowName.SfDateInterval):
     """
-    通用函数，统计指定列的分布情况及其对应 "无轨迹"、"delivered"、"unpaid" 及 "tracking 且 SfDateEquality 为 0" 的数量。
-
-    :param file_path: Excel 文件路径
-    :param key_column: 需要统计的列名
-    :param courier_column: 快递列名
-    :param sf_date_column: SfDateEquality 列名
-    :return: 各值的总数和各个状态的数量的 Counter 对象
+    统计 key_column 分布及对应快递状态的数量（无轨迹、已送达、未支付、tracking 且 SF 为 0），并按自然顺序排序结果。
     """
     try:
         workbook = load_workbook(file_path, data_only=True)
         sheet = workbook.active
         headers = [cell.value for cell in sheet[1]]
 
-        # 确保列名存在
         if key_column not in headers or courier_column not in headers or sf_date_column not in headers:
             raise ValueError(f"列名 '{key_column}'、'{courier_column}' 或 '{sf_date_column}' 不存在！")
 
@@ -491,58 +534,63 @@ def count_distribution_and_no_track3(file_path, key_column, courier_column=RowNa
         courier_index = headers.index(courier_column)
         sf_date_index = headers.index(sf_date_column)
 
-        # 正则表达式匹配无轨迹、已送达、未支付状态
         pattern_no_track = re.compile(Pattern.no_track, re.IGNORECASE)
         pattern_no_tracking = re.compile(Pattern.no_tracking, re.IGNORECASE)
         pattern_pre_ship = re.compile(Pattern.pre_ship, re.IGNORECASE)
         pattern_not_yet = re.compile(Pattern.not_yet, re.IGNORECASE)
-
         pattern_delivered = re.compile(Pattern.delivered, re.IGNORECASE)
         pattern_unpaid = re.compile(Pattern.unpaid, re.IGNORECASE)
 
-        # 计数器
-        key_counter = Counter()  # 统计每个key的总数
+        key_counter = Counter()
         key_no_track_counter = Counter()
         key_no_tracking_counter = Counter()
         key_pre_ship_counter = Counter()
         key_not_yet_counter = Counter()
-
         key_delivered_counter = Counter()
         key_unpaid_counter = Counter()
-        key_tracking_sf_zero_counter = Counter()  # 统计 "Courier/快递" 为 tracking 且 "SfDateEquality" 为 0 的数量
+        key_tracking_sf_zero_counter = Counter()
 
-        # 遍历数据行
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
             key_value = row[key_index]
             courier_status = row[courier_index]
             sf_date_value = row[sf_date_index]
 
             if key_value is not None:
-                key_counter[key_value] += 1  # 统计总数
+                key_str = str(key_value)
+                key_counter[key_str] += 1
 
-                if courier_status is not None and pattern_no_track.search(str(courier_status)):
-                    key_no_track_counter[key_value] += 1
+                if courier_status is not None:
+                    courier_str = str(courier_status)
 
-                if courier_status is not None and pattern_no_tracking.search(str(courier_status)):
-                    key_no_tracking_counter[key_value] += 1
+                    if pattern_no_track.search(courier_str):
+                        key_no_track_counter[key_str] += 1
+                    if pattern_no_tracking.search(courier_str):
+                        key_no_tracking_counter[key_str] += 1
+                    if pattern_pre_ship.search(courier_str):
+                        key_pre_ship_counter[key_str] += 1
+                    if pattern_not_yet.search(courier_str):
+                        key_not_yet_counter[key_str] += 1
+                    if pattern_delivered.search(courier_str):
+                        key_delivered_counter[key_str] += 1
+                    if pattern_unpaid.search(courier_str):
+                        key_unpaid_counter[key_str] += 1
+                    if courier_str.lower() == "tracking" and sf_date_value == 0:
+                        key_tracking_sf_zero_counter[key_str] += 1
 
-                if courier_status is not None and pattern_pre_ship.search(str(courier_status)):
-                    key_pre_ship_counter[key_value] += 1
+        # 使用自然排序对所有 Counter 进行排序并转为 OrderedDict
+        def sort_counter(counter):
+            return OrderedDict((k, counter[k]) for k in natsorted(counter.keys()))
 
-                if courier_status is not None and pattern_not_yet.search(str(courier_status)):
-                    key_not_yet_counter[key_value] += 1
-
-                if courier_status is not None and pattern_delivered.search(str(courier_status)):
-                    key_delivered_counter[key_value] += 1
-
-                if courier_status is not None and pattern_unpaid.search(str(courier_status)):
-                    key_unpaid_counter[key_value] += 1
-
-                # 判断 "Courier/快递" 为 "tracking" 且 "SfDateEquality" 为 0
-                if courier_status == "tracking" and sf_date_value == 0:
-                    key_tracking_sf_zero_counter[key_value] += 1
-
-        return key_counter, key_no_track_counter, key_no_tracking_counter, key_pre_ship_counter, key_not_yet_counter, key_delivered_counter, key_unpaid_counter, key_tracking_sf_zero_counter
+        return (
+            sort_counter(key_counter),
+            sort_counter(key_no_track_counter),
+            sort_counter(key_no_tracking_counter),
+            sort_counter(key_pre_ship_counter),
+            sort_counter(key_not_yet_counter),
+            sort_counter(key_delivered_counter),
+            sort_counter(key_unpaid_counter),
+            sort_counter(key_tracking_sf_zero_counter),
+        )
 
     except Exception as e:
         print(f"发生错误: {e}")
@@ -1558,7 +1606,7 @@ def go(analyse_obj, xlsx_path):
     if (qsl_flag):
         exception_text += "\n✍️签收率异常（签收率目前无法量化，只为提醒⏰）"
         bgFlag = True
-    if (change_shipment_received_count >= 5):
+    if (change_shipment_received_count >= 10):
         bg = "#B3D600"
         exception_text += "\n📒提货单未更新轨迹（>=2天） 异常"
         bgFlag = True
@@ -1576,63 +1624,63 @@ def go(analyse_obj, xlsx_path):
     print(text)
 
     # 写入飞书在线文档
-    tat = get_token()
-    if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
-
-        khhz_sheet_value(tat, [
-            total_count_int,
-            f"（{no_track_count_int}, {wswl}%）",
-            f"（{change_shipment_received_count}, {change_shipment_received_countl}%）",
-            f"（{delivered_count_int}, {qsl}%）",
-            f"（{unpaid_count_int}, {unpaidl}%）",
-        ], ck_time, analyse_obj)
-
-        khhz_sheet_bg(tat, ck_time, analyse_obj, bg)
-
-        lists = f"上网：({total_count},{swl}%)"
-        lists += f"\n提货单未上网：({change_shipment_received_count},{change_shipment_received_countl}%)"
-        lists += f"\n{warehouse_text2}"
-        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-        # if (bgFlag):
-        brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
-    else:
-        lists = f"({total_count},{swl}%)"
-        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-        # if (bgFlag):
-        brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
-
-    if analyse_obj == ClientConstants.mz_xsd or \
-            analyse_obj == ClientConstants.mx_dg or \
-            analyse_obj == ClientConstants.md_fc:
-        detail_sheet_value(tat, [
-            data_map[CellKey.Outbound_Time],
-            data_map[CellKey.update_time],
-            data_map[CellKey.wl],
-            data_map[CellKey.store_condition],
-            data_map[CellKey.time_segment_condition],
-            data_map[CellKey.shipping_service_condition],
-            data_map[CellKey.sum_up],
-            data_map[CellKey.exception],
-        ], ck_time, analyse_obj)
-
-        # if (bgFlag):
-        detail_sheet_bg(tat, ck_time, analyse_obj, bg)
-    else:
-        detail_sheet_value(tat, [
-            data_map[CellKey.Outbound_Time],
-            data_map[CellKey.update_time],
-            data_map[CellKey.wl],
-            data_map[CellKey.warehouse_condition],
-            data_map[CellKey.store_condition],
-            data_map[CellKey.time_segment_condition],
-            data_map[CellKey.shipping_service_condition],
-            data_map[CellKey.sku_condition],
-            data_map[CellKey.sum_up],
-            data_map[CellKey.exception],
-        ], ck_time, analyse_obj)
-
-        # if (bgFlag):
-        detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+    # tat = get_token()
+    # if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
+    #
+    #     khhz_sheet_value(tat, [
+    #         total_count_int,
+    #         f"（{no_track_count_int}, {wswl}%）",
+    #         f"（{change_shipment_received_count}, {change_shipment_received_countl}%）",
+    #         f"（{delivered_count_int}, {qsl}%）",
+    #         f"（{unpaid_count_int}, {unpaidl}%）",
+    #     ], ck_time, analyse_obj)
+    #
+    #     khhz_sheet_bg(tat, ck_time, analyse_obj, bg)
+    #
+    #     lists = f"上网：({total_count},{swl}%)"
+    #     lists += f"\n提货单未上网：({change_shipment_received_count},{change_shipment_received_countl}%)"
+    #     lists += f"\n{warehouse_text2}"
+    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+    #     # if (bgFlag):
+    #     brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+    # else:
+    #     lists = f"({total_count},{swl}%)"
+    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+    #     # if (bgFlag):
+    #     brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+    #
+    # if analyse_obj == ClientConstants.mz_xsd or \
+    #         analyse_obj == ClientConstants.mx_dg or \
+    #         analyse_obj == ClientConstants.md_fc:
+    #     detail_sheet_value(tat, [
+    #         data_map[CellKey.Outbound_Time],
+    #         data_map[CellKey.update_time],
+    #         data_map[CellKey.wl],
+    #         data_map[CellKey.store_condition],
+    #         data_map[CellKey.time_segment_condition],
+    #         data_map[CellKey.shipping_service_condition],
+    #         data_map[CellKey.sum_up],
+    #         data_map[CellKey.exception],
+    #     ], ck_time, analyse_obj)
+    #
+    #     # if (bgFlag):
+    #     detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+    # else:
+    #     detail_sheet_value(tat, [
+    #         data_map[CellKey.Outbound_Time],
+    #         data_map[CellKey.update_time],
+    #         data_map[CellKey.wl],
+    #         data_map[CellKey.warehouse_condition],
+    #         data_map[CellKey.store_condition],
+    #         data_map[CellKey.time_segment_condition],
+    #         data_map[CellKey.shipping_service_condition],
+    #         data_map[CellKey.sku_condition],
+    #         data_map[CellKey.sum_up],
+    #         data_map[CellKey.exception],
+    #     ], ck_time, analyse_obj)
+    #
+    #     # if (bgFlag):
+    #     detail_sheet_bg(tat, ck_time, analyse_obj, bg)
 
 
 def automatic(dir_path, analyse_obj):
@@ -1745,19 +1793,20 @@ if __name__ == '__main__':
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间2_515.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间3_699.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间4_559.xlsx")
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间5_443.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间5_443.xlsx")
 
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间1_288.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间2_288.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间3_269.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间4_370.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间5_238.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间5_238.xlsx")
 
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间31_640.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间1_368.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间2_302.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间3_314.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间4_380.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间5_390.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间5_390.xlsx")
 
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/test.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/test2.xlsx")
