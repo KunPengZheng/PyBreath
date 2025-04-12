@@ -39,7 +39,7 @@ class CourierStateMapKey:
     not_yet_map = "not_yet_map"
     pre_ship_map = "pre_ship_map"
     delivered_map = "delivered_map"
-    alert_intercepted_map = "alert_intercepted_map"
+    alert_map = "alert_map"
 
 
 class CourierStateMapValue:
@@ -49,7 +49,7 @@ class CourierStateMapValue:
     no_tracking = "no_tracking"
     unpaid = "unpaid"
     delivered = "delivered"
-    alert_intercepted = "alert_intercepted"
+    alert = "alert"
     tracking = "tracking"
 
 
@@ -77,7 +77,7 @@ class Pattern:
     no_track = r"not_yet|pre_ship|irregular_no_tracking|no_tracking"
     delivered = r"delivered"
     unpaid = r"unpaid"
-    alert_intercepted = r"alert_intercepted"
+    alert = r"alert"
 
 
 def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
@@ -155,7 +155,7 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
         CourierStateMapKey.not_yet_map: {},
         CourierStateMapKey.pre_ship_map: {},
         CourierStateMapKey.delivered_map: {},
-        CourierStateMapKey.alert_intercepted_map: {},
+        CourierStateMapKey.alert_map: {},
     }
 
     # 将无内容的单元格赋值""空字符串
@@ -205,8 +205,8 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                             results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
                         elif "Delivered to Agent" in info.get('statusCategory'):
                             results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
-                        elif "Alert" in info.get('statusCategory') and "Intercepted" in info.get('statusShort'):
-                            results_map[CourierStateMapKey.alert_intercepted_map][package_id] = CourierStateMapValue.alert_intercepted
+                        elif "Alert" in info.get('statusCategory'):
+                            results_map[CourierStateMapKey.alert_map][package_id] = CourierStateMapValue.alert
                         else:
                             results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
 

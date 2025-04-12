@@ -468,14 +468,21 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
             key_counter = OrderedDict(sorted(key_counter.items(), key=lambda x: get_priority(x[0])))
             key_no_track_counter = OrderedDict(sorted(key_no_track_counter.items(), key=lambda x: get_priority(x[0])))
 
-        elif key_column == RowName.Client:
-            region_order = ["美西", "美中", "美东"]
+        elif key_column == "Client/客户":
+            # 首先提取东谷与美中项，处理它们的排序
+            region_order = ["东谷", "美中"]
 
             def extract_region_and_suffix(k):
-                region = next((r for r in region_order if r in k), "")
-                # 提取括号中的部分作为后缀，比如 "RSN3001(东谷ZBW)" 提取 "ZBW"
-                match = re.search(r"\((?:[^()]*)([A-Z]+)\)", k)
-                suffix = match.group(1).lower() if match else ""
+                # 区域提取
+                if "东谷" in k:
+                    region = "东谷"
+                elif "美中" in k:
+                    region = "美中"
+                else:
+                    region = ""
+                # 提取括号内的后缀
+                match = re.search(r"\((?:[^()]*)([A-Za-z\-]+)\)", k)
+                suffix = match.group(1) if match else ""
                 return region, suffix
 
             # 分组
@@ -489,26 +496,23 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
                 else:
                     others.append((k, ""))
 
-            # 对每个区域组根据 suffix 排序
-            sorted_keys = []
-            suffix_order = []
+            # 对每个区域（东谷，美中）内的项按后缀进行排序
+            region_sorted_keys = []
 
-            # 获取所有出现过的 suffix 排序顺序
-            all_suffixes = [sfx for lst in region_groups.values() for _, sfx in lst]
-            suffix_order = sorted(set(all_suffixes), key=lambda x: all_suffixes.index(x))  # 保证顺序稳定
+            # 东谷部分按原始顺序
+            region_sorted_keys.extend([k for k, _ in region_groups["东谷"]])
 
-            def sort_by_suffix(kv):
-                return suffix_order.index(kv[1]) if kv[1] in suffix_order else len(suffix_order)
-
-            for region in region_order:
-                sorted_keys.extend([k for k, _ in sorted(region_groups[region], key=sort_by_suffix)])
+            # 美中部分按后缀排序
+            # 对美中区域的后缀进行排序，按照首次出现的顺序
+            region_sorted_keys.extend(sorted(region_groups["美中"], key=lambda x: x[1]))
 
             # 添加无法识别地区的
-            sorted_keys.extend([k for k, _ in others])
+            region_sorted_keys.extend([k for k, _ in others])
 
-            key_counter = OrderedDict((k, key_counter[k]) for k in sorted_keys if k in key_counter)
+            # 更新key_counter和key_no_track_counter
+            key_counter = OrderedDict((k, key_counter[k]) for k in region_sorted_keys if k in key_counter)
             key_no_track_counter = OrderedDict(
-                (k, key_no_track_counter[k]) for k in sorted_keys if k in key_no_track_counter)
+                (k, key_no_track_counter[k]) for k in region_sorted_keys if k in key_no_track_counter)
 
         return key_counter, key_no_track_counter
 

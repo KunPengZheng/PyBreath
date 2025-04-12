@@ -178,7 +178,7 @@ def go(input_path):
     update_courier_status(xlsx_path, results[CourierStateMapKey.delivered_map], "快递单号")
     update_courier_status(xlsx_path, results[CourierStateMapKey.no_tracking_map], "快递单号")
     update_courier_status(xlsx_path, results[CourierStateMapKey.tracking_map], "快递单号")
-    update_courier_status(xlsx_path, results[CourierStateMapKey.alert_intercepted_map], "快递单号")
+    update_courier_status(xlsx_path, results[CourierStateMapKey.alert_map], "快递单号")
 
     total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
     track_count = total_count - no_track_count
@@ -186,7 +186,7 @@ def go(input_path):
     total_count3, unpaid_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.unpaid)
     total_count4, not_yet_count = count_pattern_state(xlsx_path, RowName.Courier, r"not_yet")
     total_count5, pre_ship_count = count_pattern_state(xlsx_path, RowName.Courier, r"pre_ship")
-    total_count6, alert_intercepted_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert_intercepted)
+    total_count6, alert_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert)
 
     text = ""
     fs_text = ""
@@ -232,9 +232,9 @@ def go(input_path):
     text += f"\nunpaid：（{unpaid_count}, {unpaid_countl}%）"
     fs_text += f"\nunpaid：（{unpaid_count}, {unpaid_countl}%）"
 
-    alert_intercepted_countl = round2((int(alert_intercepted_count) / int(total_count)) * 100)
-    text += f"\nalert_intercepted：（{alert_intercepted_count}, {alert_intercepted_countl}%）"
-    fs_text += f"\nalert_intercepted：（{alert_intercepted_count}, {alert_intercepted_countl}%）"
+    alert_countl = round2((int(alert_count) / int(total_count)) * 100)
+    text += f"\nalert：（{alert_count}, {alert_countl}%）"
+    fs_text += f"\nalert：（{alert_count}, {alert_countl}%）"
 
     unpaid_tracking_data = get_unpaid_tracking_data(xlsx_path)
     if (len(unpaid_tracking_data) > 0):
@@ -246,8 +246,8 @@ def go(input_path):
 
     alert_intercepted_tracking_data = get_unpaid_tracking_data(xlsx_path, key_value="alert_intercepted")
     if (len(alert_intercepted_tracking_data) > 0):
-        text += f"\n-------alert_intercepted详情-------"
-        fs_text += f"\n-------alert_intercepted详情-------"
+        text += f"\n-------alert详情-------"
+        fs_text += f"\n-------alert详情-------"
         for key, value in alert_intercepted_tracking_data.items():
             text += f"\n（单号：{key}, 快递单号：{value}）"
             fs_text += f"\n（单号：{key}, 快递单号：{value}）"
