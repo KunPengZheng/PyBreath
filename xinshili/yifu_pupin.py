@@ -29,7 +29,7 @@ def lenb_minus_len(text):
     return extra_bytes
 
 
-def rule_replace(text):
+def rule_replace(text, women_big_size_suffix_flag):
     """
     替换中文符号为对应的英文符号，去除品牌名、敏感内容、非法字符，避免侵权和不适当的内容。
     """
@@ -51,10 +51,18 @@ def rule_replace(text):
         "sexism", "corruption", "murder", "scam", "fraud", "politics", "war", "terrorist", "extremist",
         "hate", "abuse", "pedophile", "child abuse", "illegal", "mafia", "cartel", "gangs", "racist",
         "xenophobic", "homophobic", "anti-semitic", "rape", "sexual assault", "slavery", "trafficking",
-        "extortion", "harassment", "bullying", "weapon", "death", "murderer", "kidnapping", "explosive"
+        "extortion", "harassment", "bullying", "weapon", "death", "murderer", "kidnapping", "explosive", "fuck",
+        "Stupid", "fuck", "shit", "bitch", "asshole", "bastard", "damn", "crap", "son of a bitch", "dick", "pussy",
+        "motherfucker", "jackass", "prick", "wanker", "cunt", "twat", "slut", "whore", "retard", "dumbass", "dipshit",
+        "cock", "bollocks", "bugger", "tosser", "douchebag", "nutjob", "numbnuts", "jerk", "moron", "idiot", "freak",
+        "loser", "screw you", "piss off", "get lost", "shut the hell up", "bloody hell", "goddamn", "bullshit",
+        "dickhead", "shithead", "arsehole", "twit", "git", "tool", "scumbag", "douche", "fatass", "crybaby",
+
+        # 特速
+        "child", "baby", "Children", "Kids", "Adolescents", "Teenagers", "Knit Fabric", "Polyester Fabric"
 
         # 名人、演员、歌手、政治人物等
-                                                                                            "Barack Obama",
+                                                                                        "Barack Obama",
         "Elvis Presley", "Michael Jackson", "Beyoncé", "Taylor Swift", "Madonna", "Ariana Grande",
         "Drake", "Justin Bieber", "Kanye West", "Bill Gates", "Steve Jobs", "Oprah Winfrey", "Leonardo DiCaprio",
         "Brad Pitt", "Angelina Jolie", "Robert Downey Jr.", "Scarlett Johansson", "Tom Hanks", "Will Smith",
@@ -85,6 +93,9 @@ def rule_replace(text):
         "Porsche", "McDonald's", "KFC", "Starbucks", "BMW", "Audi", "Mercedes", "Disneyland", "Disney", "Mickey",
         "2pcs", "2paces", "outfit", "Long sleeve", "shorts",
     }
+
+    if (women_big_size_suffix_flag):
+        rule_words.add("plus size")
 
     # 使用正则替换，忽略大小写
     for zh_symbol, en_symbol in symbol_map.items():
@@ -149,7 +160,7 @@ def process_replace(filepath, column_a="A", column_b="B", column_c="C", women_bi
 
         if (women_big_size_suffix_flag):
             text += ", L-XXXXL Plus Size"
-        replaced_text = rule_replace(text)
+        replaced_text = rule_replace(text, women_big_size_suffix_flag)
 
         if (column_a_is_title):
             sheet[f"{column_a}{row}"] = replaced_text
@@ -176,7 +187,6 @@ def rename_files_in_folder(folder_path, prefix):
             new_name = f"{prefix}{extension}"  # 生成新文件名
             new_path = os.path.join(folder_path, new_name)
             os.rename(old_path, new_path)  # 重命名文件
-
 
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250303黑色女装标题.xlsx")
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250304黑色女装标题.xlsx")
