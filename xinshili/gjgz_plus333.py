@@ -11,6 +11,7 @@ import time
 import gc
 from natsort import natsorted
 
+from xinshili.flld_gjgz import call
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants, detail_sheet_bg, \
     brief_sheet_bg, khhz_sheet_value, khhz_sheet_bg
 from xinshili.pd_utils import remove_duplicates_by_column
@@ -1797,26 +1798,44 @@ if __name__ == '__main__':
     # 手动
     # go(None, None)
 
-    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3/创建时间31_1035.xlsx")
-    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间1_399.xlsx")
-    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间2_515.xlsx")
-    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间3_699.xlsx")
-    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间4_559.xlsx")
-    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间5_443.xlsx")
-    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间11_416.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间1_399.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间2_515.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间3_699.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间4_559.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间5_466.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间6_76.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间7_1155.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间8_455.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间9_343.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间10_480.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间11_416.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间12_385.xlsx")
 
-    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间1_288.xlsx")
-    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间2_288.xlsx")
-    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间3_269.xlsx")
-    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间4_370.xlsx")
-    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间5_238.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间1_288.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间2_288.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间3_269.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间4_370.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间7_594.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间7_594.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间8_207.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间9_242.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间10_222.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间11_172.xlsx")
+    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间12_152.xlsx")
 
-    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3/创建时间31_640.xlsx")
-    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间1_368.xlsx")
-    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间2_302.xlsx")
-    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间3_314.xlsx")
-    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间4_380.xlsx")
-    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间5_390.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间1_368.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间2_302.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间3_314.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间4_380.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间5_390.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间7_513.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间8_384.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间9_252.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间10_294.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间11_301.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间12_480.xlsx")
+
+    call()
 
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/test.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/test2.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/test2.xlsx")

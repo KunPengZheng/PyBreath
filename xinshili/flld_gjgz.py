@@ -312,6 +312,20 @@ def automatic(dir_path):
                 go(xlsx_path)
 
 
+def call():
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间7_374.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间8_285.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间9_184.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间10_199.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间11_173.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间12_153.xlsx")
+
+
 if __name__ == '__main__':
     # 示例调用
     # file_paths = [
@@ -321,16 +335,19 @@ if __name__ == '__main__':
     # output_path = '/Users/zkp/Downloads/打单时间16_119.xlsx'  # 合并后的文件路径
     # merge_csv_files(file_paths, output_path)
 
-    file1 = '/Users/zkp/Downloads/table_1.xlsx'  # 请替换为您的第一个 Excel 文件路径
-    file2 = '/Users/zkp/Downloads/table_12.xlsx'  # 请替换为您的第二个 Excel 文件路径
-    output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
-    merge_xlsx_files(file1, file2, output_file)
+    # file1 = '/Users/zkp/Downloads/table_1.xlsx'  # 请替换为您的第一个 Excel 文件路径
+    # file2 = '/Users/zkp/Downloads/table_12.xlsx'  # 请替换为您的第二个 Excel 文件路径
+    # output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
+    # merge_xlsx_files(file1, file2, output_file)
 
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
-
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld")
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.3")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间7_374.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间8_285.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间9_184.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间10_199.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间11_173.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间12_153.xlsx")
