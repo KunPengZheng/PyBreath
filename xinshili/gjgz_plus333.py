@@ -120,7 +120,7 @@ def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
         for row in range(2, sheet.max_row + 1):
             tracking_no = str(sheet.cell(row=row, column=tracking_no_col).value).strip()  # 转换为字符串并去除前后空格
             # 判断是否为不合规单号
-            if not tracking_no.isdigit() or not tracking_no.startswith(("92", "93", "94", "95")) or "_" in tracking_no:
+            if not tracking_no.isdigit() or not tracking_no.startswith(("92", "93", "94")) or "_" in tracking_no:
                 irregular_number_map[tracking_no] = CourierStateMapValue.irregular_no_tracking
 
         # print("find_irregular_tracking_numbers 方法执行完成")
