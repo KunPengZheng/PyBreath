@@ -166,7 +166,9 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
         lambda x: str(x).strip().lower() in ['', CourierStateMapValue.not_yet,
                                              CourierStateMapValue.pre_ship,
                                              CourierStateMapValue.tracking,
-                                             CourierStateMapValue.no_tracking])]
+                                             CourierStateMapValue.no_tracking,
+                                             CourierStateMapValue.alert
+                                             ])]
 
     # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
     items = filtered_data[wl_name].tolist()
