@@ -59,11 +59,10 @@ def rule_replace(text, women_big_size_suffix_flag):
         "dickhead", "shithead", "arsehole", "twit", "git", "tool", "scumbag", "douche", "fatass", "crybaby",
 
         # 特速
-        "child", "baby", "Children", "Kids", "Adolescents", "Teenagers", "Knit Fabric", "Polyester Fabric"
+        "child", "baby", "Children", "Kids", "Adolescents", "Teenagers", "Knit Fabric", "Polyester Fabric", "3D",
 
         # 名人、演员、歌手、政治人物等
-                                                                                        "Barack Obama",
-        "Elvis Presley", "Michael Jackson", "Beyoncé", "Taylor Swift", "Madonna", "Ariana Grande",
+        "Barack Obama", "Elvis Presley", "Michael Jackson", "Beyoncé", "Taylor Swift", "Madonna", "Ariana Grande",
         "Drake", "Justin Bieber", "Kanye West", "Bill Gates", "Steve Jobs", "Oprah Winfrey", "Leonardo DiCaprio",
         "Brad Pitt", "Angelina Jolie", "Robert Downey Jr.", "Scarlett Johansson", "Tom Hanks", "Will Smith",
         "Chris Hemsworth", "Johnny Depp", "Meryl Streep", "Dwayne Johnson", "Emma Watson", "Rihanna", "Lord",
