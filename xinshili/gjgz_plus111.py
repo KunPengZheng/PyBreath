@@ -196,6 +196,8 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                             results_map[CourierStateMapKey.not_yet_map][package_id] = CourierStateMapValue.not_yet
                         elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
                             results_map[CourierStateMapKey.pre_ship_map][package_id] = CourierStateMapValue.pre_ship
+                        elif info.get('err_id') == '-2147219278':  # 无轨迹(unpaid)
+                            results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
                         else:
                             results_map[CourierStateMapKey.no_tracking_map][
                                 package_id] = CourierStateMapValue.no_tracking
