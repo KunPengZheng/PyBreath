@@ -1,9 +1,7 @@
 import os
 import re
 
-from xinshili.gjgz_plus222 import extract_and_process_data, RowName
-from xinshili.gjgz_plus333 import check_and_add_courier_column
-from xinshili.openpyxl_utils import merge_xlsx_files
+from xinshili.gjgz_plus333 import check_and_add_courier_column, RowName
 from xinshili.pd_utils import remove_duplicates_by_column
 import os
 import re
