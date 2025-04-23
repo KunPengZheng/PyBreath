@@ -54,7 +54,6 @@ class CourierStateMapKey:
     sf_date_equality_map = "sf_date_equality_map"
 
 
-
 class CourierStateMapValue:
     irregular_no_tracking = 'irregular_no_tracking'
     not_yet = 'not_yet'
@@ -894,7 +893,7 @@ def get_unpaid_platform_tracking_map(file_path):
         shipping_service = row['Shipping service/物流渠道']
         recipient = row['Recipient/收件人']
         kj_ = (shipping_service == '上传物流面单(Upload_Shipping_Label)' and (
-                recipient == 'KJ' or recipient == 'TK')) or \
+                (recipient == 'KJ') or (recipient == 'TK'))) or \
               (shipping_service != '上传物流面单(Upload_Shipping_Label)')
         platform_tracking_map[platform_number] = {"tracking_number": tracking_number, "kj": kj_}
 
@@ -1137,7 +1136,7 @@ def kj_count(file_path, shipping_service_column='Shipping service/物流渠道',
 
     # 条件2：'Shipping service/物流渠道' 为 '上传物流面单(Upload_Shipping_Label)' 且 'Recipient/收件人' 为 'KJ' 的行
     condition2 = (data[shipping_service_column] == '上传物流面单(Upload_Shipping_Label)') & (
-        (data[recipient_column] == 'KJ' | data[recipient_column] == 'TK'))
+            (data[recipient_column] == 'KJ') | (data[recipient_column] == 'TK'))
 
     # 综合筛选符合任一条件的行
     kj_counts = data[condition1 | condition2]
@@ -1881,10 +1880,7 @@ def automatic(dir_path, analyse_obj):
                     go(analyse_obj, xlsx_path)
 
 
-if __name__ == '__main__':
-    # 手动
-    # go(None, None)
-
+def call2():
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间1_399.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间2_515.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间3_699.xlsx")
@@ -1900,9 +1896,9 @@ if __name__ == '__main__':
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间13_16.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间14_1018.xlsx")
     # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间15_442.xlsx")
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间17_157.xlsx")
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间17_157.xlsx")
     go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间18_757.xlsx")
-    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间19_331.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4/创建时间19_331.xlsx")
 
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间1_288.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间2_288.xlsx")
@@ -1915,7 +1911,7 @@ if __name__ == '__main__':
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间10_222.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间11_172.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间12_152.xlsx")
-    go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间18_142.xlsx")
+    # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间18_142.xlsx")
     # go(ClientConstants.sanrio, "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4/创建时间19_162.xlsx")
 
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间1_368.xlsx")
@@ -1930,12 +1926,15 @@ if __name__ == '__main__':
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间11_301.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间12_480.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间14_443.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间15_286.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间17_262.xlsx")
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间18_229.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间15_286.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间17_262.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间18_229.xlsx")
     # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间19_213.xlsx")
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4/创建时间22_287.xlsx")
 
-    # call()
+# if __name__ == '__main__':
+# 手动
+# go(None, None)
 
-    # go(ClientConstants.xyl, "/Users/zkp/Desktop/test.xlsx")
-    # go(ClientConstants.xyl, "/Users/zkp/Desktop/test2.xlsx")
+# go(ClientConstants.xyl, "/Users/zkp/Desktop/test.xlsx")
+# go(ClientConstants.xyl, "/Users/zkp/Desktop/test2.xlsx")
