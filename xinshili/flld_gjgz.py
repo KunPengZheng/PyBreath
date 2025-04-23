@@ -6,8 +6,8 @@ import pandas as pd
 from openpyxl import load_workbook
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants, brief_sheet_bg
-from xinshili.gjgz_plus111 import check_and_add_courier_column, RowName, extract_and_process_data, \
-    update_courier_status, CourierStateMapKey, count_pattern_state, Pattern
+from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, extract_and_process_data_flld, \
+    update_courier_status_flld, count_pattern_state, CourierStateMapKey, Pattern
 from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend
 
 
@@ -170,15 +170,15 @@ def go(input_path):
     xlsx_path = extract_path_before_csv(input_path)
     str_strip(xlsx_path, "快递单号")
     check_and_add_courier_column(xlsx_path)
-    results = extract_and_process_data(xlsx_path, RowName.Courier, 100, "快递单号")
+    results = extract_and_process_data_flld(xlsx_path, RowName.Courier, 100, "快递单号")
 
-    update_courier_status(xlsx_path, results[CourierStateMapKey.not_yet_map], "快递单号")
-    update_courier_status(xlsx_path, results[CourierStateMapKey.pre_ship_map], "快递单号")
-    update_courier_status(xlsx_path, results[CourierStateMapKey.unpaid_map], "快递单号")
-    update_courier_status(xlsx_path, results[CourierStateMapKey.delivered_map], "快递单号")
-    update_courier_status(xlsx_path, results[CourierStateMapKey.no_tracking_map], "快递单号")
-    update_courier_status(xlsx_path, results[CourierStateMapKey.tracking_map], "快递单号")
-    update_courier_status(xlsx_path, results[CourierStateMapKey.alert_map], "快递单号")
+    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.not_yet_map], "快递单号")
+    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.pre_ship_map], "快递单号")
+    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.unpaid_map], "快递单号")
+    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.delivered_map], "快递单号")
+    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.no_tracking_map], "快递单号")
+    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.tracking_map], "快递单号")
+    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.alert_map], "快递单号")
 
     total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
     track_count = total_count - no_track_count
@@ -313,17 +313,22 @@ def automatic(dir_path):
 
 
 def call():
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间7_374.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间8_285.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间9_184.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间10_199.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间11_173.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间12_153.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间7_374.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间8_285.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间9_184.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间10_199.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间11_173.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间12_153.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间14_251.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间15_156.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间19_80.xlsx")
+    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间21_159.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间22_3.xlsx")
 
 
 if __name__ == '__main__':

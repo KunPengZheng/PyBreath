@@ -11,7 +11,6 @@ import time
 import gc
 from natsort import natsorted
 
-from xinshili.flld_gjgz import call
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants, detail_sheet_bg, \
     brief_sheet_bg, khhz_sheet_value, khhz_sheet_bg
 from xinshili.pd_utils import remove_duplicates_by_column
@@ -49,9 +48,11 @@ class CourierStateMapKey:
     not_yet_map = "not_yet_map"
     pre_ship_map = "pre_ship_map"
     delivered_map = "delivered_map"
+    alert_map = "alert_map"
     possession_sf_date_map = "possession_sf_date_map"
     latest_event_sf_date_map = "latest_event_sf_date_map"
     sf_date_equality_map = "sf_date_equality_map"
+
 
 
 class CourierStateMapValue:
@@ -62,6 +63,7 @@ class CourierStateMapValue:
     unpaid = "unpaid"
     delivered = "delivered"
     tracking = "tracking"
+    alert = "alert"
 
 
 @dataclass(frozen=True)
@@ -89,6 +91,7 @@ class Pattern:
     pre_ship = r"^pre_ship$"
     no_tracking = r"^no_tracking$"
     tracking = r"^tracking$"
+    alert = r"^alert"
 
 
 def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
@@ -266,6 +269,110 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
             print(f"处理组 {grouped_items.index(group) + 1} 时发生错误: {e}")
 
     return results_map
+
+
+def extract_and_process_data_flld(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
+                                  request_interval: float = 30.0):
+    data = pd.read_excel(filepath)
+
+    if column_name not in data.columns:
+        raise ValueError(f"列 '{column_name}' 不存在于 Excel 文件中")
+
+    # 存储结果的 map（字典）
+    results_map = {
+        CourierStateMapKey.tracking_map: {},
+        CourierStateMapKey.no_tracking_map: {},
+        CourierStateMapKey.unpaid_map: {},
+        CourierStateMapKey.not_yet_map: {},
+        CourierStateMapKey.pre_ship_map: {},
+        CourierStateMapKey.delivered_map: {},
+        CourierStateMapKey.alert_map: {},
+    }
+
+    # 将无内容的单元格赋值""空字符串
+    data[column_name] = data[column_name].fillna('')
+
+    # 获取指定内容的数据
+    filtered_data = data[data[column_name].apply(
+        lambda x: str(x).strip().lower() in ['', CourierStateMapValue.not_yet,
+                                             CourierStateMapValue.pre_ship,
+                                             CourierStateMapValue.tracking,
+                                             CourierStateMapValue.no_tracking,
+                                             CourierStateMapValue.alert
+                                             ])]
+
+    # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
+    items = filtered_data[wl_name].tolist()
+
+    # 按组划分数据
+    grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
+
+    # 使用线程池来并发请求每组数据
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        # 提交任务
+        futures = {executor.submit(track, group): group for group in grouped_items}
+
+        # 遍历所有的任务（每组数据的请求）
+        for future in concurrent.futures.as_completed(futures):
+            group = futures[future]  # 获取当前完成的任务的 group 数据
+            try:
+                track1 = future.result()  # 获取请求结果
+                print(f"处理第 {grouped_items.index(group) + 1} 组，共 {len(group)} 条数据")
+
+                # 对返回的数据进行处理
+                for package_id, info in track1['data'].items():
+                    # 判断错误类型并分类
+                    if info.get('err'):
+                        if info.get('err_id') == '-2147219283':  # 无轨迹(Label Created, not yet in system)
+                            results_map[CourierStateMapKey.not_yet_map][package_id] = CourierStateMapValue.not_yet
+                        elif info.get('err_id') == 'pre-ship':  # 无轨迹(pre-ship)
+                            results_map[CourierStateMapKey.pre_ship_map][package_id] = CourierStateMapValue.pre_ship
+                        elif info.get('err_id') == '-2147219278':  # 无轨迹(unpaid)
+                            results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
+                        else:
+                            results_map[CourierStateMapKey.no_tracking_map][
+                                package_id] = CourierStateMapValue.no_tracking
+                    else:
+                        if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
+                                info.get('statusLong'):
+                            results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
+                        elif "Delivered" in info.get('statusCategory'):
+                            results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                        elif "Delivered to Agent" in info.get('statusCategory'):
+                            results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                        elif "Alert" in info.get('statusCategory'):
+                            results_map[CourierStateMapKey.alert_map][package_id] = CourierStateMapValue.alert
+                        else:
+                            results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
+
+                # 等待指定的间隔时间，避免请求频率过高
+                time.sleep(request_interval)
+
+            except Exception as e:
+                print(f"处理组 {grouped_items.index(group) + 1} 时发生错误: {e}")
+
+    return results_map
+
+
+def update_courier_status_flld(filepath, maps, wl=RowName.Tracking_No):
+    wb = openpyxl.load_workbook(filepath)
+    sheet = wb.active  # 默认使用活动工作表
+
+    data = pd.read_excel(filepath)
+    # 获取 'Tracking No./物流跟踪号' 列和 'Courier/快递' 列的索引
+    tracking_no_col = data.columns.get_loc(wl) + 1  # openpyxl索引从1开始
+    courier_col = data.columns.get_loc(RowName.Courier) + 1  # openpyxl索引从1开始
+
+    for tracking_no, status in maps.items():
+        for row in range(2, sheet.max_row + 1):  # 从第二行开始（跳过表头）
+            # 获取当前行的物流跟踪号
+            current_tracking_no = sheet.cell(row=row, column=tracking_no_col).value
+            # 如果找到匹配的物流跟踪号，更新 Courier/快递 列
+            if current_tracking_no == tracking_no:
+                sheet.cell(row=row, column=courier_col, value=status)
+
+    # 保存更新后的文件
+    wb.save(filepath)
 
 
 def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_map=None):
