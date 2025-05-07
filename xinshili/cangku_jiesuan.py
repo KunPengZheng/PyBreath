@@ -27,18 +27,20 @@ def update_courier(file1_path, file2_path, output_path):
     df2 = pd.read_excel(file2_path)
 
     # 提取文件1中需要的列：用于匹配的物流跟踪号、快递信息和消息间隔
-    df1_subset = df1[["Tracking No./物流跟踪号",
-                      "Courier/快递",
-                      "PossessionSfDate/揽收时间",
-                      "LatestEventSfDate/最新事件时间",
-                      "SfDateInterval/SF消息间隔"]]
+    df1_subset = df1[["Tracking No./物流跟踪号", "Courier/快递", "SfDateInterval/SF消息间隔"]]
+
+    # 检查文件1是否包含其他需要的列（可选的列）
+    optional_columns = ["PossessionSfDate/揽收时间", "LatestEventSfDate/最新事件时间"]
+    for col in optional_columns:
+        if col in df1.columns:
+            df1_subset[col] = df1[col]
 
     # 合并两个 DataFrame：以文件2为主表，
     # 通过文件2的“Package 1 Tracking No./物流跟踪号1”与文件1的“Tracking No./物流跟踪号”匹配
     merged_df = pd.merge(
         df2,
         df1_subset,
-        left_on="Package 1 Tracking No./物流跟踪号1",
+        left_on="Package 1\nTracking No./物流跟踪号1",
         right_on="Tracking No./物流跟踪号",
         how="left",
         suffixes=("", "_file1")
@@ -46,15 +48,20 @@ def update_courier(file1_path, file2_path, output_path):
 
     # 将合并后文件1中的“Courier/快递”和“SfDateInterval/SF消息间隔”列数据赋值到文件2对应的列中
     merged_df["Courier/快递"] = merged_df["Courier/快递_file1"]
-    merged_df["PossessionSfDate/揽收时间"] = merged_df["PossessionSfDate/揽收时间_file1"]
-    merged_df["LatestEventSfDate/最新事件时间"] = merged_df["LatestEventSfDate/最新事件时间_file1"]
     merged_df["SfDateInterval/SF消息间隔"] = merged_df["SfDateInterval/SF消息间隔_file1"]
+
+    # 处理可选列：检查是否存在并复制值
+    if "PossessionSfDate/揽收时间_file1" in merged_df.columns:
+        merged_df["PossessionSfDate/揽收时间"] = merged_df["PossessionSfDate/揽收时间_file1"]
+
+    if "LatestEventSfDate/最新事件时间_file1" in merged_df.columns:
+        merged_df["LatestEventSfDate/最新事件时间"] = merged_df["LatestEventSfDate/最新事件时间_file1"]
 
     # 删除合并过程中产生的临时列
     merged_df.drop(columns=["Courier/快递_file1",
+                            "SfDateInterval/SF消息间隔_file1",
                             "PossessionSfDate/揽收时间_file1",
                             "LatestEventSfDate/最新事件时间_file1",
-                            "SfDateInterval/SF消息间隔_file1",
                             "Tracking No./物流跟踪号"],
                    inplace=True)
 
@@ -80,10 +87,14 @@ def me(save_paths, target_dir, pattern_flag=True):
                     except Exception as e:
                         print(f"错误: 无法读取文件 {xlsx_path}，错误信息: {e}")
             else:
+                # 仅处理 .xlsx 或 .xls 文件
+                if not ele.lower().endswith(('.xlsx', '.xls')):
+                    continue  # 跳过非 Excel 文件
+
                 xlsx_path = os.path.join(root, ele)  # 规范路径
                 try:
                     df = pd.read_excel(xlsx_path)  # 读取 Excel 文件
-                    lists.append(df)  # 存入 DataFrame
+                    lists.append(df)  # 存入 DataFrame 列表
                 except Exception as e:
                     print(f"错误: 无法读取文件 {xlsx_path}，错误信息: {e}")
 
@@ -117,39 +128,57 @@ def highlight_courier_column(file_path):
         print("错误: 未找到 'Courier/快递' 列")
         return
     if sf_date_interval_col_index is None:
-        print("错误: 未找到 'SfDateInterval/SF消息间隔' 列")
-        return
+        print("警告: 未找到 'SfDateInterval/SF消息间隔' 列，跳过该列的检查")
+        # 如果没有该列，我们只根据 'Courier/快递' 列进行标记
+        sf_date_interval_col_index = -1  # 设置为 -1，表示不使用这个列
 
     # 遍历列中的每一行，如果满足条件则设置红色背景
     for row in range(2, ws.max_row + 1):  # 从第2行开始（跳过列头）
         courier_cell = ws.cell(row=row, column=courier_col_index)
-        sf_date_interval_cell = ws.cell(row=row, column=sf_date_interval_col_index)
 
-        # 检查 Courier/快递 为特定值并且 SfDateInterval/SF消息间隔 为 0
-        if courier_cell.value in ["pre_ship", "not_yet", "no_tracking"] or \
-                (courier_cell.value == "tracking" and sf_date_interval_cell.value == 0):
-            for col in range(1, ws.max_column + 1):  # 让整行变红
-                ws.cell(row=row, column=col).fill = red_fill
+        # 如果存在 "SfDateInterval/SF消息间隔" 列，并且需要进行比较
+        if sf_date_interval_col_index != -1:
+            sf_date_interval_cell = ws.cell(row=row, column=sf_date_interval_col_index)
+            # 检查 Courier/快递 为特定值并且 SfDateInterval/SF消息间隔 为 0
+            if courier_cell.value in ["pre_ship", "not_yet", "no_tracking"] or \
+                    (courier_cell.value == "tracking" and sf_date_interval_cell.value == 0):
+                for col in range(1, ws.max_column + 1):  # 让整行变红
+                    ws.cell(row=row, column=col).fill = red_fill
+        else:
+            # 如果没有 "SfDateInterval/SF消息间隔" 列，只根据 "Courier/快递" 列进行判断
+            if courier_cell.value in ["pre_ship", "not_yet", "no_tracking"]:
+                for col in range(1, ws.max_column + 1):  # 让整行变红
+                    ws.cell(row=row, column=col).fill = red_fill
 
     # 保存 Excel 文件
     wb.save(file_path)
     print(f"标记完成，已更新 {file_path}")
 
 
-xlsx_zfh = "/Users/zkp/Downloads/副本25年3月自发货_副本.xlsx"
-xlsx_qtkh = "/Users/zkp/Downloads/副本25年3月其他客户_副本.xlsx"
+xlsx_zfh = "/Users/zkp/Documents/副本新引力4月自发货.xlsx"
+xlsx_qtkh = "/Users/zkp/Documents/副本其他客户4月发货.xlsx"
 
 zbw_month_dir = "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3"
 sanrio_month_dir = "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3"
 xyl_month_dir = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3"
-me_dir = "/Users/zkp/Downloads/me/"
+
+zbw_month_dir1 = "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4"
+sanrio_month_dir1 = "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4"
+xyl_month_dir1 = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4"
+
+me_dir = "/Users/zkp/Documents/me/"
 me_file = f"{me_dir}me.xlsx"
 
 # 客户各自的数据合并
 me(f"{me_dir}zbw_me.xlsx", zbw_month_dir)
 me(f"{me_dir}sanrio_me.xlsx", sanrio_month_dir)
 me(f"{me_dir}xyl_me.xlsx", xyl_month_dir)
-# 合并多个客户
+
+me(f"{me_dir}zbw_me1.xlsx", zbw_month_dir1)
+me(f"{me_dir}sanrio_me1.xlsx", sanrio_month_dir1)
+me(f"{me_dir}xyl_me1.xlsx", xyl_month_dir1)
+
+# # 合并多个客户
 me(me_file, me_dir, False)
 
 # 去重
