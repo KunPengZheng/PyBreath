@@ -344,25 +344,7 @@ def automatic(dir_path):
 
 
 def call():
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间7_374.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间8_285.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间9_184.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间10_199.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间11_173.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间12_153.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间14_251.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间15_152.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间16_74.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间17_126.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间18_93.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间19_80.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间21_159.xlsx")
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间22_3.xlsx")
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4")
 
 
 if __name__ == '__main__':
@@ -379,6 +361,4 @@ if __name__ == '__main__':
     # output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
     # merge_xlsx_files(file1, file2, output_file)
 
-    # call()
-
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4")
+    call()
