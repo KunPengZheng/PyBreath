@@ -16,7 +16,7 @@ from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_va
 from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.usps_utils import track
 from xinshili.utils import round2, getYmd, delete_file, is_us_weekend, get_weekday, get_american_holiday, \
-    get_chinese_holiday
+    get_chinese_holiday, natural_key
 
 """
 zbw轨迹跟踪分析
@@ -1777,12 +1777,6 @@ def go(analyse_obj, xlsx_path):
 
         # if (bgFlag):
         detail_sheet_bg(tat, ck_time, analyse_obj, bg)
-
-
-# 自然排序的辅助函数
-def natural_key(s):
-    return [int(text) if text.isdigit() else text.lower()
-            for text in re.split(r'(\d+)', s)]
 
 
 def automatic(dir_path, analyse_obj):
