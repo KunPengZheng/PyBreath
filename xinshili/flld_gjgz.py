@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants, brief_sheet_bg
 from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, extract_and_process_data_flld, \
     update_courier_status_flld, count_pattern_state, CourierStateMapKey, Pattern
-from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend
+from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend, natural_key
 
 
 def extract_path_before_csv(file_path):
@@ -303,29 +303,63 @@ def go(input_path):
 
 
 def automatic(dir_path):
-    for root, dirs, files in os.walk(dir_path):
-        pattern = r"^打单时间\d+_\d+\.xlsx$"  # 正则表达式
-        for ele in files:
-            if re.match(pattern, ele):
-                xlsx_path = f"{root}/{ele}"
-                print(f"匹配的文件: {xlsx_path}")
-                go(xlsx_path)
+    is_morning = (datetime.now().hour) < 12
+
+    pattern = r"^(出库时间|创建时间|打单时间)\d+_\d+\.xlsx$"
+
+    # 获取所有文件（可选地限制为某种类型，如 .xlsx）
+    files = [f for f in os.listdir(dir_path) if f.lower().endswith(('.xlsx', '.xls'))]
+
+    # 按照自然顺序排序
+    files.sort(key=natural_key)
+
+    # 遍历排序后的文件
+    for file in files:
+        if re.match(pattern, file):
+            xlsx_path = os.path.join(dir_path, file)
+            check_and_add_courier_column(xlsx_path)
+
+            total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
+            track_count = total_count - no_track_count
+            total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
+            total_count3, unpaid_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.unpaid)
+            total_count4, not_yet_count = count_pattern_state(xlsx_path, RowName.Courier, r"not_yet")
+            total_count5, pre_ship_count = count_pattern_state(xlsx_path, RowName.Courier, r"pre_ship")
+            total_count6, alert_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert)
+
+            ck_time = get_days_difference(xlsx_path)
+            gz_time = getYmd()
+            interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
+
+            swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+
+            if (is_morning and interval_time == 1):  # 早上跑昨天的
+                # go(xlsx_path)
+                swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+                print("11111", swl, xlsx_path)
+            else:
+                if (swl < 99):
+                    # go(xlsx_path)
+                    print("2222", swl, xlsx_path)
 
 
 def call():
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间7_374.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间8_285.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间9_184.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间10_199.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间11_173.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间12_153.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间14_251.xlsx")
-    # go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间15_156.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间1_50.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间2_53.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间3_46.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间4_58.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间5_208.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间7_374.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间8_285.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间9_184.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间10_199.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间11_173.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间12_153.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间14_251.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间15_152.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间16_74.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间17_126.xlsx")
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间18_93.xlsx")
     go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间19_80.xlsx")
     go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间21_159.xlsx")
     go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4/打单时间22_3.xlsx")
@@ -345,4 +379,6 @@ if __name__ == '__main__':
     # output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
     # merge_xlsx_files(file1, file2, output_file)
 
-    call()
+    # call()
+
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4")
