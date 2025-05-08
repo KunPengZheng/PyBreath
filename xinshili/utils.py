@@ -1,3 +1,5 @@
+import re
+
 import requests
 import calendar
 from datetime import datetime
@@ -39,7 +41,7 @@ def delete_file(file_path):
     try:
         if os.path.exists(file_path):  # 检查文件是否存在
             os.remove(file_path)  # 删除文件
-            print(f"文件 {file_path} 已成功删除")
+            # print(f"文件 {file_path} 已成功删除")
         else:
             print(f"文件 {file_path} 不存在")
     except Exception as e:
@@ -218,3 +220,9 @@ def get_chinese_holiday(date):
     if date in cn_holidays:
         return cn_holidays[date]
     return None
+
+
+# 自然排序的辅助函数
+def natural_key(s):
+    return [int(text) if text.isdigit() else text.lower()
+            for text in re.split(r'(\d+)', s)]
