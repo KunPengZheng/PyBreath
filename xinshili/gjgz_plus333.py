@@ -1797,19 +1797,14 @@ def automatic(dir_path, analyse_obj):
             xlsx_path = os.path.join(dir_path, file)
             print(f"正在处理文件: {xlsx_path}")
 
-            ck_time = get_days_difference(output_file)
+            ck_time = get_days_difference(xlsx_path)
             interval_time = (gz_time - datetime.strptime(ck_time, "%Y/%m/%d")).days
 
-            if is_morning and interval_time == 1:
+            if interval_time == 1:
                 go(analyse_obj, xlsx_path)
             else:
+
                 output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
-
-                process_tracking_no(xlsx_path)
-                check_and_add_courier_column(xlsx_path)
-
-                shipment_received_interval2_list = get_shipment_received_numbers(xlsx_path, getYmd())
-                change_shipment_received_count = len(shipment_received_interval2_list)
 
                 # 同一单会有多个sku，多个sku会生成多行数据，分析sku的时候不能去重，其它的需要去重
                 total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
@@ -1866,7 +1861,6 @@ def automatic(dir_path, analyse_obj):
                 no_tracking_countl = round2((no_tracking_count_int / total_count_int) * 100)
                 tracking_countl = round2((tracking_count_int / total_count_int) * 100)
                 tracking_zero_countl = round2((tracking_zero_count_int / total_count_int) * 100)
-                change_shipment_received_countl = round2((change_shipment_received_count / total_count_int) * 100)
 
                 delete_file(output_file)
 
@@ -1878,6 +1872,10 @@ def call2():
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw)
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio)
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl)
+    # go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/创建时间7_520.xlsx")
+    # go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/创建时间10_161.xlsx")
+
+
 
 
 if __name__ == '__main__':
