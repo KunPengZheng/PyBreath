@@ -80,9 +80,9 @@ def copy_columns_to_k_and_repeat_b_c_to_a_b(
 
 
 # 示例用法（替换路径）
-file1 = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/ef759ea81cdfa1cb6fec129aebe95142/File/Test-Q001-Q100.xlsx"
+file1 = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/24fe1b1c873f588c7b3f70c4efe61bb7/File/上传表格701-800(1).xlsx"
 file2 = "/Users/zkp/Documents/import_created_product_popTemu_副本.xlsx"
-output = "/Users/zkp/Documents/result1111.xlsx"
+output = "/Users/zkp/Documents/result2222.xlsx"
 
 lunbotu = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250514111809/63b0b6df8d9b39be54a6fc8c5b8bc7e7.jpg" \
           "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250514111808/892ab9494fd09b05f95d37d8c52d6aff.jpg" \
