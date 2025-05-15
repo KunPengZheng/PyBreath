@@ -77,17 +77,22 @@ def process_excel_time_column(file_path, output_path):
         return
 
     df["订单创建时间"] = df["订单创建时间"].apply(convert_to_beijing_time)
+
+    # 强制某些列为字符串，防止写入 Excel 后变为数值
+    for col in ["订单号", "收件人邮编"]:
+        if col in df.columns:
+            df[col] = df[col].astype("string")  # 或者 .astype(str).fillna("")
+
     df.to_excel(output_path, index=False)
     print(f"✅ 已转换并保存至：{output_path}")
 
 
 if __name__ == '__main__':
-    scr_path = "/Users/zkp/Documents/订单管理20250514-49-781152108532740096.xlsx"
-    dst_path = "/Users/zkp/Documents/代采出阳单模版.xlsx"
-    output_path = f"/Users/zkp/Documents/{current_time()}_阳单.xlsx"
-
-    # 将 remark_prefix 设置为前缀字符串（可自定义）
-    transfer_and_merge_address(scr_path, dst_path, output_path, order_prefix="-b", remark_prefix="yangdan-")
+    # scr_path = "/Users/zkp/Documents/订单管理20250514-97-781175708892880896.xlsx"
+    # dst_path = "/Users/zkp/Documents/代采出阳单模版.xlsx"
+    # output_path = f"/Users/zkp/Documents/{current_time()}_阳单.xlsx"
+    # transfer_and_merge_address(scr_path, dst_path, output_path, order_prefix="", remark_prefix="daicai-")
 
     # 若需要时间转换功能，可启用下面一行：
-    # process_excel_time_column(output_path, output_path)
+    output_path = f"/Users/zkp/Documents/2025-05-14 15:15:31_阳单 2.xlsx"
+    process_excel_time_column(output_path, output_path)
