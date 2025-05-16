@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def copy_columns_to_k_and_repeat_b_c_to_a_b(
+def copy(
         file1_path,
         file2_path,
         output_path,
@@ -79,22 +79,32 @@ def copy_columns_to_k_and_repeat_b_c_to_a_b(
     print(f"✅ 数据已处理并保存到: {output_path}")
 
 
-# 示例用法（替换路径）
-file1 = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/24fe1b1c873f588c7b3f70c4efe61bb7/File/上传表格701-800(1).xlsx"
-file2 = "/Users/zkp/Documents/import_created_product_popTemu_副本.xlsx"
-output = "/Users/zkp/Documents/result2222.xlsx"
+if __name__ == '__main__':
+    # 示例用法（替换路径）
+    file1 = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/ef759ea81cdfa1cb6fec129aebe95142/File/白色女装P951-P953(2).xlsx"
+    file2 = "/Users/zkp/Documents/import_created_product_popTemu_副本.xlsx"
+    output = "/Users/zkp/Documents/result5555.xlsx"
 
-lunbotu = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250514111809/63b0b6df8d9b39be54a6fc8c5b8bc7e7.jpg" \
-          "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250514111808/892ab9494fd09b05f95d37d8c52d6aff.jpg" \
-          "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250514111808/c6cc4267a5f50099aaded55b3c16ab95.jpg" \
-          "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250514111808/d9432ffd685dabca4657c44c65265601.jpg" \
-          "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250514111809/decb4cabfec356e545a99a098fa8d589.jpeg"
+    lunbotu_white = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101012/616145e8af459c7495758a9aec2e5f37.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101012/db23824b806321f7b39f43137994f780.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101013/54570e517207968339038e80969780b9.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101014/2a1066b0bf75ae5c0ae23e580448c986.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101015/ce1447f258253c875aa2b0b4883b59b1.jpg"
 
-copy_columns_to_k_and_repeat_b_c_to_a_b(
-    file1_path=file1,
-    file2_path=file2,
-    output_path=output,
-    lunbotu=lunbotu,
-    color_value="Black",  # 可变参数
-    stock_quantity=77.1  # 可变参数
-)
+    # lunbotu_black = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101016/98e779932fa49e38c4b95fb57b13393a.jpg" \
+    #                 "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101016/957edc530ac9905385533f9c0f4eb7bc.jpg" \
+    #                 "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101017/bff7b4be4481c5c6e11d2edf1a8d9fc6.jpg" \
+    #                 "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101017/17666fe45e9b5f1254135febbd624721.jpg" \
+    #                 "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101018/d4acb5ca0dce2d7be4fc88a00ce00b44.jpg"
+
+    white = "White"
+    black = "Black"
+
+    copy(
+        file1_path=file1,
+        file2_path=file2,
+        output_path=output,
+        lunbotu=lunbotu_white,
+        color_value=white,  # 可变参数
+        stock_quantity=77.1  # 可变参数
+    )
