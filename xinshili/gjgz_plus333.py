@@ -1785,7 +1785,7 @@ def go(analyse_obj, xlsx_path):
         detail_sheet_bg(tat, ck_time, analyse_obj, bg)
 
 
-def automatic(dir_path, analyse_obj):
+def automatic(dir_path, analyse_obj, ignore=False):
     is_morning = (datetime.now().hour) < 12
     gz_time = datetime.strptime(getYmd(), "%Y/%m/%d")
 
@@ -1803,12 +1803,18 @@ def automatic(dir_path, analyse_obj):
             xlsx_path = os.path.join(dir_path, file)
             print(f"正在处理文件: {xlsx_path}")
 
+            if ignore:
+                go(analyse_obj, xlsx_path)
+                continue
+
             ck_time = get_days_difference(xlsx_path)
             interval_time = (gz_time - datetime.strptime(ck_time, "%Y/%m/%d")).days
 
-            if interval_time == 1:
+            if interval_time == 1 and is_morning:
                 go(analyse_obj, xlsx_path)
             else:
+                if is_morning:
+                    continue
 
                 if (check_and_add_courier_column(xlsx_path)):
                     go(analyse_obj, xlsx_path)
