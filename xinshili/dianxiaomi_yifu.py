@@ -25,9 +25,12 @@ def copy(
 
     repeated_a_values = []
     repeated_b_values = []
+    repeated_d_values = []
+
     for _, row in df1.iterrows():
         repeated_a_values.extend([str(row[2])] * cols_to_copy)  # file1 的 C → A
         repeated_b_values.extend([str(row[1])] * cols_to_copy)  # file1 的 B → C/T/S
+        repeated_d_values.extend([str(row[0])] * cols_to_copy)  # file1 的 A → D
 
     size_labels = ["S", "M", "L", "XL", "XXL", "XXXL", "XXXXL", "XXXXXL", "XXXXXXL"]
     h_values = size_labels[:cols_to_copy]
@@ -48,6 +51,7 @@ def copy(
         val_k = str(k_values[i])
         val_a = repeated_a_values[i] if i < len(repeated_a_values) else ""
         val_b = repeated_b_values[i] if i < len(repeated_b_values) else ""
+        val_d = repeated_d_values[i] if i < len(repeated_d_values) else ""
         val_h = h_values[i % len(h_values)]
 
         if i < len(empty_k_rows):
@@ -59,6 +63,7 @@ def copy(
         df2.at[row_idx, col_A] = val_a  # file1 的 C → A
         df2.at[row_idx, col_B] = val_a  # file1 的 C → B
         df2.at[row_idx, col_C] = val_b  # file1 的 B → C
+        df2.at[row_idx, df2.columns[3]] = val_d  # ✅ file1 的 A → D
         df2.at[row_idx, col_T] = val_b  # file1 的 B → T
         df2.at[row_idx, col_S] = str(val_b) + lunbotu  # file1 的 B + 图片 → S
 
