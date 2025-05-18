@@ -37,6 +37,7 @@ class RowName:
     PossessionSfDate = "PossessionSfDate/揽收时间"
     LatestEventSfDate = "LatestEventSfDate/最新事件时间"
     SfDateInterval = "SfDateInterval/SF消息间隔"
+    UnpaidDate = "UnpaidDate/unpaid记录时间"
 
 
 @dataclass(frozen=True)
@@ -78,6 +79,7 @@ class CellKey:
     shipping_service_condition = "shipping_service_condition"
     special_information = "special_information"
     wl = "wl"
+    unpaid = "unpaid"
 
 
 @dataclass(frozen=True)
@@ -382,37 +384,46 @@ def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_ma
     :param wl: 物流跟踪号列名
     :param column_map: 需要更新的列 {状态映射: 对应的 Excel 列名}
     """
-    # 1. 读取 Excel 文件
     wb = openpyxl.load_workbook(filepath, data_only=True)
     sheet = wb.active
 
-    # 2. 获取列索引
     headers = [cell.value for cell in sheet[1]]
-    tracking_no_col = headers.index(wl) + 1  # 物流单号列
+    tracking_no_col = headers.index(wl) + 1
 
-    # 3. 获取所有需要更新的列索引
+    # 获取所有需要更新的列索引（包含主列 + unpaidDate）
     column_indices = {key: headers.index(col_name) + 1 for key, col_name in column_map.items()}
 
-    # 4. 读取 Excel 中所有 tracking_no，并存储所有匹配的行号
+    # 尝试获取 unpaidDate 列索引（如果有）
+    try:
+        unpaid_date_col_index = headers.index(RowName.UnpaidDate) + 1
+    except ValueError:
+        unpaid_date_col_index = None  # unpaidDate 列不存在
+
+    strftime = datetime.now().strftime("%Y-%m-%d")
+
+    # 提取所有 tracking_no 行号
     tracking_no_rows = {}
-    for row in range(2, sheet.max_row + 1):  # 从第2行（跳过表头）开始
+    for row in range(2, sheet.max_row + 1):
         tracking_no = sheet.cell(row=row, column=tracking_no_col).value
         if tracking_no:
-            if tracking_no not in tracking_no_rows:
-                tracking_no_rows[tracking_no] = []
-            tracking_no_rows[tracking_no].append(row)  # 存所有匹配的行
+            tracking_no_rows.setdefault(tracking_no, []).append(row)
 
-    # 5. 遍历所有需要更新的状态
+    # 遍历所有映射并写入状态
     for state_map, col_name in column_map.items():
         col_index = column_indices[state_map]
         for tracking_no, status in maps_list.get(state_map, {}).items():
             if tracking_no in tracking_no_rows:
-                for row_index in tracking_no_rows[tracking_no]:  # 遍历所有行
+                for row_index in tracking_no_rows[tracking_no]:
                     sheet.cell(row=row_index, column=col_index, value=status)
 
-    # 6. 一次性保存 Excel
+                    # 如果是 unpaid_map，且 unpaidDate 列存在，且单元格为空 → 填写日期
+                    if state_map == CourierStateMapKey.unpaid_map and unpaid_date_col_index:
+                        current_value = sheet.cell(row=row_index, column=unpaid_date_col_index).value
+                        if current_value in [None, "", " "]:
+                            sheet.cell(row=row_index, column=unpaid_date_col_index, value=strftime)
+
     wb.save(filepath)
-    print("update_courier_status 方法执行完成")
+    print("✅ update_courier_status 方法执行完成")
 
 
 def count_pattern_state(file_path, column_name, patternStr):
@@ -800,11 +811,11 @@ def process_tracking_no(file_path: str):
     data = pd.read_excel(file_path, dtype=str)  # 将数据全部读取为字符串类型
 
     # 确保 'Tracking No./物流跟踪号' 列存在
-    if 'Tracking No./物流跟踪号' not in data.columns:
-        raise ValueError("文件中缺少 'Tracking No./物流跟踪号' 列")
+    if RowName.Tracking_No not in data.columns:
+        raise ValueError(f"文件中缺少 '{RowName.Tracking_No}' 列")
 
     # 处理 'Tracking No./物流跟踪号' 列：去除空格并确保每个值是字符串，兼容 None 或空值
-    data['Tracking No./物流跟踪号'] = data['Tracking No./物流跟踪号'].apply(
+    data[RowName.Tracking_No] = data[RowName.Tracking_No].apply(
         lambda x: str(x).replace(" ", "") if x is not None and pd.notna(x) else "")
 
     # 保存处理后的数据
@@ -838,6 +849,9 @@ def check_and_add_courier_column(file_path):
             flag = True
         if RowName.SfDateInterval not in data.columns:
             data[RowName.SfDateInterval] = ""
+            flag = True
+        if RowName.UnpaidDate not in data.columns:
+            data[RowName.UnpaidDate] = ""
             flag = True
         # 保存修改后的文件
         data.to_excel(file_path, index=False, engine='openpyxl')
@@ -1419,7 +1433,8 @@ def go(analyse_obj, xlsx_path):
             #     unpaid_text += f"\n平台单号：{key}, 物流跟踪号：{value1}, 是否kj：{value2}"
             # else:
             #     unpaid_text += f"\n物流跟踪号：{value1}, 是否kj：{value2}"
-            unpaid_text += f"\n物流跟踪号：{value1}, 是否kj：{value2}"
+            # unpaid_text += f"\n物流跟踪号：{value1}, 是否kj：{value2}"
+            unpaid_text += f"\n{value1}"
     text += unpaid_text
 
     text += "\n----------------------shipment_received详情----------------------"
@@ -1567,9 +1582,10 @@ def go(analyse_obj, xlsx_path):
         f"\nstay_shipment_received：（{change_shipment_received_count}, {change_shipment_received_countl}%）"
 
         # f"\n{irregular_number_text + unpaid_text + shipment_received_text}"
-        f"\n{irregular_number_text + unpaid_text}"
+        # f"\n{irregular_number_text + unpaid_text}"
     )
     data_map[CellKey.wl] = wl
+    data_map[CellKey.unpaid] = unpaid_text
 
     text += "\n----------------------轨迹概览----------------------"
     text += wl
@@ -1779,6 +1795,7 @@ def go(analyse_obj, xlsx_path):
             data_map[CellKey.sku_condition],
             data_map[CellKey.sum_up],
             data_map[CellKey.exception],
+            data_map[CellKey.unpaid],
         ], ck_time, analyse_obj)
 
         # if (bgFlag):
@@ -1888,9 +1905,9 @@ def automatic(dir_path, analyse_obj, ignore=False):
 
 
 def call2():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, False)
 
 
 if __name__ == '__main__':
