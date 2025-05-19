@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
 from xinshili.utils import current_time
+import pytz
 
 
 def transfer_and_merge_address(file1_path, file2_path, output_path, order_prefix, remark_prefix):
@@ -50,6 +51,11 @@ def transfer_and_merge_address(file1_path, file2_path, output_path, order_prefix
 
 
 def convert_to_beijing_time(value):
+    # 定义时区
+    la_tz = pytz.timezone("America/Los_Angeles")
+    bj_tz = pytz.timezone("Asia/Shanghai")
+
+    # 解析时间
     if isinstance(value, datetime):
         dt = value
     elif isinstance(value, str):
@@ -65,8 +71,13 @@ def convert_to_beijing_time(value):
     else:
         raise TypeError(f"不支持的时间类型: {type(value)}")
 
-    dt_beijing = dt + timedelta(hours=15)
-    return dt_beijing.strftime("%Y/%m/%d %H:%M:%S")
+    # 加入洛杉矶时区信息（自动识别夏令时/冬令时）
+    dt_la = la_tz.localize(dt)
+
+    # 转换为北京时间
+    dt_bj = dt_la.astimezone(bj_tz)
+
+    return dt_bj.strftime("%Y/%m/%d %H:%M:%S")
 
 
 def process_excel_time_column(file_path, output_path):
@@ -88,11 +99,11 @@ def process_excel_time_column(file_path, output_path):
 
 
 if __name__ == '__main__':
-    # scr_path = "/Users/zkp/Documents/订单管理20250514-97-781175708892880896.xlsx"
-    # dst_path = "/Users/zkp/Documents/代采出阳单模版.xlsx"
-    # output_path = f"/Users/zkp/Documents/{current_time()}_阳单.xlsx"
-    # transfer_and_merge_address(scr_path, dst_path, output_path, order_prefix="", remark_prefix="daicai-")
+    scr_path = "/Users/zkp/Downloads/订单管理20250519-82-782994304947683328.xlsx"
+    dst_path = "/Users/zkp/Documents/代采出阳单模版.xlsx"
+    output_path = f"/Users/zkp/Documents/{current_time()}_阳单.xlsx"
+    transfer_and_merge_address(scr_path, dst_path, output_path, order_prefix="", remark_prefix="daicai-")
 
     # 若需要时间转换功能，可启用下面一行：
-    output_path = f"/Users/zkp/Documents/2025-05-14 15:15:31_阳单 2.xlsx"
-    process_excel_time_column(output_path, output_path)
+    # output_path = f"/Users/zkp/Documents/2025-05-15 15:50:26_阳单 2 2 2.xlsx"
+    # process_excel_time_column(output_path, output_path)
