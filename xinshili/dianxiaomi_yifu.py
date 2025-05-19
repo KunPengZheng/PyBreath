@@ -150,25 +150,15 @@ def handler(src_path):
     if color_flag == Combined.Nones or gender_flag == Combined.Nones:
         raise ValueError(f"文件名不存在 '男女'或'黑白' 等关键字！！！")
 
-    template_path = openpyxl_utils.load_excel_file(
-        utils.current_dir() + "/xlsx/dxm/import_created_product_popTemu.xlsx")
+    # 直接使用路径，不用 openpyxl_utils
+    template_path = utils.current_dir() + "/xlsx/dxm/import_created_product_popTemu.xlsx"
     output = f"/Users/zkp/Desktop/B&Y/dxm/{file_name_with_extension}"
 
     sex_man = ". 2025 Men's T-shirt"
     sex_women = ". 2025 Women's T-shirt"
-    result_sex = ""
-    if color_flag == Combined.Man:
-        result_sex = sex_man
-    else:
-        result_sex = sex_women
+    result_sex = sex_man if gender_flag == Combined.Man else sex_women
 
-    white = "White"
-    black = "Black"
-    result_color = ""
-    if color_flag == Combined.White:
-        result_color = white
-    else:
-        result_color = black
+    result_color = "White" if color_flag == Combined.White else "Black"
 
     lunbotu_white = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101012/616145e8af459c7495758a9aec2e5f37.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101012/db23824b806321f7b39f43137994f780.jpg" \
@@ -181,15 +171,11 @@ def handler(src_path):
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101017/bff7b4be4481c5c6e11d2edf1a8d9fc6.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101017/17666fe45e9b5f1254135febbd624721.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101018/d4acb5ca0dce2d7be4fc88a00ce00b44.jpg"
-    result_lbt = ""
-    if color_flag == Combined.White:
-        result_lbt = lunbotu_white
-    else:
-        result_lbt = lunbotu_black
+    result_lbt = lunbotu_white if color_flag == Combined.White else lunbotu_black
 
     copy(
         file1_path=src_path,
-        file2_path=template_path,
+        file2_path=template_path,  # 现在是字符串路径了 ✅
         output_path=output,
         lunbotu=result_lbt,
         category_keyword=result_sex,
