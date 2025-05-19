@@ -98,10 +98,10 @@ def copy(
             row_idx = len(df2)
             df2.loc[row_idx] = [np.nan] * len(df2.columns)
 
-        normalize_punctuation_spacing(val_a, category_keyword)
+        val_a_result = normalize_punctuation_spacing(val_a, category_keyword)
 
-        df2.at[row_idx, col_A] = val_a  # file1 的 C → A
-        df2.at[row_idx, col_B] = val_a  # file1 的 C → B
+        df2.at[row_idx, col_A] = val_a_result  # file1 的 C → A
+        df2.at[row_idx, col_B] = val_a_result  # file1 的 C → B
         df2.at[row_idx, col_C] = val_b  # file1 的 B → C
         df2.at[row_idx, df2.columns[3]] = val_d  # ✅ file1 的 A → D
         df2.at[row_idx, col_T] = val_b  # file1 的 B → T
@@ -186,5 +186,5 @@ def handler(src_path):
 
 
 if __name__ == '__main__':
-    src = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/24fe1b1c873f588c7b3f70c4efe61bb7/File/白色女装Y401-500上传表格.xlsx"
+    src = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/ef759ea81cdfa1cb6fec129aebe95142/File/白色女装P951-P999(1).xlsx"
     handler(src)
