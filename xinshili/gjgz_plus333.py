@@ -1425,7 +1425,7 @@ def go(analyse_obj, xlsx_path):
     unpaid_text = ""
     result_map = get_unpaid_platform_tracking_map(xlsx_path)
     if (len(result_map) > 0):
-        unpaid_text = "\nunpaid详情："
+        # unpaid_text = "\nunpaid详情："
         for key, value in result_map.items():
             value1 = value["tracking_number"]
             value2 = value["kj"]
@@ -1907,7 +1907,7 @@ def automatic(dir_path, analyse_obj, ignore=False):
 def call2():
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, True)
 
 
 if __name__ == '__main__':
