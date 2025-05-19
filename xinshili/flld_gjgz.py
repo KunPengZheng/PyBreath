@@ -317,34 +317,37 @@ def automatic(dir_path):
     for file in files:
         if re.match(pattern, file):
             xlsx_path = os.path.join(dir_path, file)
-            check_and_add_courier_column(xlsx_path)
 
-            total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
-            track_count = total_count - no_track_count
-            total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
-            total_count3, unpaid_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.unpaid)
-            total_count4, not_yet_count = count_pattern_state(xlsx_path, RowName.Courier, r"not_yet")
-            total_count5, pre_ship_count = count_pattern_state(xlsx_path, RowName.Courier, r"pre_ship")
-            total_count6, alert_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert)
+            go(xlsx_path)
 
-            ck_time = get_days_difference(xlsx_path)
-            gz_time = getYmd()
-            interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
-
-            swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-
-            if (is_morning and interval_time == 1):  # 早上跑昨天的
-                # go(xlsx_path)
-                swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-                print("11111", swl, xlsx_path)
-            else:
-                if (swl < 99):
-                    # go(xlsx_path)
-                    print("2222", swl, xlsx_path)
+            # check_and_add_courier_column(xlsx_path)
+            #
+            # total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
+            # track_count = total_count - no_track_count
+            # total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
+            # total_count3, unpaid_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.unpaid)
+            # total_count4, not_yet_count = count_pattern_state(xlsx_path, RowName.Courier, r"not_yet")
+            # total_count5, pre_ship_count = count_pattern_state(xlsx_path, RowName.Courier, r"pre_ship")
+            # total_count6, alert_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert)
+            #
+            # ck_time = get_days_difference(xlsx_path)
+            # gz_time = getYmd()
+            # interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
+            #
+            # swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+            #
+            # if (is_morning and interval_time == 1):  # 早上跑昨天的
+            #     # go(xlsx_path)
+            #     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+            #     print("11111", swl, xlsx_path)
+            # else:
+            #     if (swl < 99):
+            #         # go(xlsx_path)
+            #         print("2222", swl, xlsx_path)
 
 
 def call():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.4")
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5")
 
 
 if __name__ == '__main__':
@@ -356,9 +359,10 @@ if __name__ == '__main__':
     # output_path = '/Users/zkp/Downloads/打单时间16_119.xlsx'  # 合并后的文件路径
     # merge_csv_files(file_paths, output_path)
 
-    # file1 = '/Users/zkp/Downloads/table_1.xlsx'  # 请替换为您的第一个 Excel 文件路径
-    # file2 = '/Users/zkp/Downloads/table_12.xlsx'  # 请替换为您的第二个 Excel 文件路径
-    # output_file = '/Users/zkp/Downloads/merged_output.xlsx'  # 合并后的 Excel 文件路径
+    # file1 = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5/table_1.xlsx'  # 请替换为您的第一个 Excel 文件路径
+    # file2 = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5/table_1 (1).xlsx'  # 请替换为您的第二个 Excel 文件路径
+    # output_file = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5/merged_output.xlsx'  # 合并后的 Excel 文件路径
     # merge_xlsx_files(file1, file2, output_file)
 
     call()
+
