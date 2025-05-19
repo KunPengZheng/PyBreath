@@ -3,6 +3,7 @@ import pandas as pd
 import re
 from dataclasses import dataclass
 from xinshili import utils, openpyxl_utils
+from xinshili.yifu_pupin import process_replace
 
 
 @dataclass(frozen=True)
@@ -185,6 +186,33 @@ def handler(src_path):
     utils.open_dir(output)
 
 
+def check_column_duplicates(file_path):
+    df = pd.read_excel(file_path, dtype=str)
+    flag = False
+
+    for col_index, col in enumerate(df.columns):
+        duplicated = df[col].duplicated(keep=False)  # 标记所有重复项
+        if duplicated.any():
+            flag = True
+            # print(f"✅ 第 {col_index + 1} 列（列名：{col}）存在重复值。")
+            print(f"✅ 第 {col_index + 1} 列 存在重复值：")
+
+            # 获取重复值及其行号
+            duplicate_values = df.loc[duplicated, col].dropna().unique()
+
+            for val in duplicate_values:
+                row_indices = df[df[col] == val].index.tolist()
+                row_numbers = [i + 2 for i in row_indices]  # Excel 的行号从 2 开始（包含标题）
+                print(f"   🔁 重复行为: {row_numbers}    重复值为: {val}")
+
+    return flag
+
+
 if __name__ == '__main__':
     src = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/ef759ea81cdfa1cb6fec129aebe95142/File/白色女装P951-P999(1).xlsx"
-    handler(src)
+
+    if check_column_duplicates(src):
+        print("⚠️ 源文件的某列存在重复内容，已终止后续处理。")
+    else:
+        print("🎉 源文件所有列均无重复内容")
+        handler(src)
