@@ -1,15 +1,54 @@
 import pandas as pd
 import numpy as np
 
+import pandas as pd
+import re
+
+
+def normalize_punctuation_spacing(file_path, output_path, sex):
+    # 读取 Excel 文件
+    df = pd.read_excel(file_path, dtype=str)
+
+    # 定义要处理的标点符号（常见英文标点）
+    punctuations = [",", "\\.", "!", "\\?", ";", ":"]
+
+    # 构造正则表达式：匹配标点符号后无空格 或 多空格 的情况
+    pattern = re.compile(r"({})(?=\S)|({})\s{{2,}}".format("|".join(punctuations), "|".join(punctuations)))
+
+    def fix_spacing(text):
+        if not isinstance(text, str):
+            return text
+        # 标准化空格（标点后添加一个空格）
+        text = pattern.sub(lambda m: m.group(0)[0] + " ", text)
+
+        # 删除多余的空格（多个空格 → 一个空格）
+        text = re.sub(r'\s{2,}', ' ', text)
+
+        text = text + f", {sex}"
+
+        # 去除开头/结尾空格
+        return text.strip()
+
+    # 只处理 C列
+    if df.shape[1] >= 3:  # 确保有至少3列（C列）
+        df.iloc[:, 2] = df.iloc[:, 2].apply(fix_spacing)
+    else:
+        print("❌ 文件列数不足，无法找到C列。")
+        return
+
+    # 保存到输出文件
+    df.to_excel(output_path, index=False)
+    print(f"✅ 标点处理完成，结果已保存至: {output_path}")
+
 
 def copy(
-        file1_path,
-        file2_path,
-        output_path,
-        lunbotu,
-        color_value="Black",
-        stock_quantity=60
-):
+        file1_path: object,
+        file2_path: object,
+        output_path: object,
+        lunbotu: object,
+        color_value: object = "Black",
+        stock_quantity: object = 60
+) -> object:
     df1 = pd.read_excel(file1_path, header=None, dtype=str)
     df2 = pd.read_excel(file2_path, dtype=str)
 
@@ -86,9 +125,15 @@ def copy(
 
 if __name__ == '__main__':
     # 示例用法（替换路径）
-    file1 = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/ef759ea81cdfa1cb6fec129aebe95142/File/白色女装P951-P953(2).xlsx"
+    file1 = "/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5/副本白色女装Q401-Q550(1).xlsx"
     file2 = "/Users/zkp/Documents/import_created_product_popTemu_副本.xlsx"
-    output = "/Users/zkp/Documents/result5555.xlsx"
+    output = "/Users/zkp/Documents/result6666.xlsx"
+
+    sex_man = "Man"
+
+    sex_women = "Women"
+
+    normalize_punctuation_spacing(file1, file1, sex_women)
 
     lunbotu_white = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101012/616145e8af459c7495758a9aec2e5f37.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101012/db23824b806321f7b39f43137994f780.jpg" \
