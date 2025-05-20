@@ -3,6 +3,7 @@ import pandas as pd
 import re
 from dataclasses import dataclass
 from xinshili import utils
+from xinshili.utils import rename_images_by_filename
 
 
 @dataclass(frozen=True)
@@ -208,8 +209,10 @@ def check_column_duplicates(file_path):
 
 
 if __name__ == '__main__':
-    source_file = input("请输入源表文件的绝对路径：")
+    # src = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/ef759ea81cdfa1cb6fec129aebe95142/File/A4251-A4400"
+    # rename_images_by_filename(src, "A", 4251, 4400)
 
+    source_file = input("请输入源表文件的绝对路径：")
     if check_column_duplicates(source_file):
         print("⚠️ 源文件的某列存在重复内容，已终止后续处理。")
     else:
