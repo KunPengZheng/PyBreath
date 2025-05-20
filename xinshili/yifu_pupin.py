@@ -2,7 +2,7 @@ import re
 import os
 from openpyxl import load_workbook
 
-from xinshili.utils import get_filename_with_extension
+from xinshili.utils import get_filename_with_extension, natural_key
 
 
 def lenb_minus_len(text):
@@ -188,41 +188,7 @@ def rename_files_in_folder(folder_path, prefix):
             os.rename(old_path, new_path)  # 重命名文件
 
 
-def natural_key(s):
-    """
-    用于自然排序的 key 提取函数，比如：
-    'p100 (10).png' → ['p', 100, ' ', 10, '.png']
-    """
-    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
 
-
-def rename_images_by_filename(folder_path, alphabet, start_num, end_num):
-    valid_exts = ('.jpg', '.jpeg', '.png', '.bmp', '.gif')
-
-    image_files = [
-        f for f in os.listdir(folder_path)
-        if f.lower().endswith(valid_exts) and os.path.isfile(os.path.join(folder_path, f))
-    ]
-
-    # 使用自然排序
-    image_files.sort(key=natural_key)
-
-    count = start_num
-    for filename in image_files:
-        if count > end_num:
-            print("📛 图片数量超过命名上限（P300），停止处理。")
-            break
-
-        old_path = os.path.join(folder_path, filename)
-        ext = os.path.splitext(filename)[1].lower()
-        new_filename = f"{alphabet}{count}{ext}"
-        new_path = os.path.join(folder_path, new_filename)
-
-        os.rename(old_path, new_path)
-        print(f"✅ {filename} → {new_filename}")
-        count += 1
-
-    print("🎉 重命名完成。")
 
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250303黑色女装标题.xlsx")
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250304黑色女装标题.xlsx")
@@ -236,7 +202,3 @@ def rename_images_by_filename(folder_path, alphabet, start_num, end_num):
 
 # process_replace("/Users/zkp/Downloads/副本20250307白色男装标题.xlsx")
 # process_replace("/Users/zkp/Downloads/副本副本0324黑白女装标题H501-H660.xlsx")
-
-
-# folder_path = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/24fe1b1c873f588c7b3f70c4efe61bb7/File/主图"
-# rename_images_by_filename(folder_path, "B", 4001, 4100)
