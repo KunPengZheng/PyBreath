@@ -53,6 +53,7 @@ class CourierStateMapKey:
     possession_sf_date_map = "possession_sf_date_map"
     latest_event_sf_date_map = "latest_event_sf_date_map"
     sf_date_equality_map = "sf_date_equality_map"
+    delivered_time_map = "delivered_time_map"
 
 
 class CourierStateMapValue:
@@ -159,6 +160,26 @@ def update_courier_status1(filepath, maps, wl=RowName.Tracking_No):
     wb.save(filepath)
 
 
+def extract_signature_receipt_time(text):
+    # text = "Your item was delivered at the front door or porch at 11:03 am on May 2, 2025 in SANTA ANA, CA 92706."
+
+    # 提取时间和日期部分
+    match = re.search(r'at (\d{1,2}:\d{2} (?:am|pm)) on ([A-Za-z]+ \d{1,2}, \d{4})', text)
+    if match:
+        time_str = match.group(1)  # e.g. '11:03 am'
+        date_str = match.group(2)  # e.g. 'May 2, 2025'
+
+        # 合并并解析成 datetime 对象
+        full_str = f"{date_str} {time_str}"
+        dt = datetime.strptime(full_str, "%B %d, %Y %I:%M %p")
+
+        # 转换为 24 小时格式
+        formatted = dt.strftime("%Y-%m-%d %H:%M:%S")
+        return formatted
+    else:
+        return ""
+
+
 def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
                              request_interval: float = 30.0):
     data = pd.read_excel(filepath)
@@ -177,6 +198,7 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
         CourierStateMapKey.possession_sf_date_map: {},
         CourierStateMapKey.latest_event_sf_date_map: {},
         CourierStateMapKey.sf_date_equality_map: {},
+        CourierStateMapKey.delivered_time_map: {},
     }
 
     # 将无内容的单元格赋值""空字符串
@@ -225,8 +247,12 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                         results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
                     elif "Delivered" in info.get('statusCategory'):
                         results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                        receipt_time = extract_signature_receipt_time(info.get('statusLong'))
+                        results_map[CourierStateMapKey.delivered_time_map][package_id] = receipt_time
                     elif "Delivered to Agent" in info.get('statusCategory'):
                         results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                        receipt_time = extract_signature_receipt_time(info.get('statusLong'))
+                        results_map[CourierStateMapKey.delivered_time_map][package_id] = receipt_time
                     else:
                         results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
 
