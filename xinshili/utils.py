@@ -226,3 +226,38 @@ def get_chinese_holiday(date):
 def natural_key(s):
     return [int(text) if text.isdigit() else text.lower()
             for text in re.split(r'(\d+)', s)]
+
+
+def rename_images_by_filename(folder_path, alphabet, start_num, end_num):
+    """
+    :param folder_path: 图片所在文件夹
+    :param alphabet: 前缀
+    :param start_num: 开始数字
+    :param end_num: 结束数字
+    """
+    valid_exts = ('.jpg', '.jpeg', '.png', '.bmp', '.gif')
+
+    image_files = [
+        f for f in os.listdir(folder_path)
+        if f.lower().endswith(valid_exts) and os.path.isfile(os.path.join(folder_path, f))
+    ]
+
+    # 使用自然排序
+    image_files.sort(key=natural_key)
+
+    count = start_num
+    for filename in image_files:
+        if count > end_num:
+            print("📛 图片数量超过命名上限（P300），停止处理。")
+            break
+
+        old_path = os.path.join(folder_path, filename)
+        ext = os.path.splitext(filename)[1].lower()
+        new_filename = f"{alphabet}{count}{ext}"
+        new_path = os.path.join(folder_path, new_filename)
+
+        os.rename(old_path, new_path)
+        print(f"✅ {filename} → {new_filename}")
+        count += 1
+
+    print("🎉 重命名完成。")
