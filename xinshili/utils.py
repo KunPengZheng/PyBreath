@@ -8,6 +8,7 @@ import subprocess
 import pandas as pd
 import holidays
 import platform
+import uuid
 
 
 def get_usd_to_cny_rate():
@@ -230,10 +231,11 @@ def natural_key(s):
 
 def rename_images_by_filename(folder_path, alphabet, start_num, end_num):
     """
-    :param folder_path: 图片所在文件夹
-    :param alphabet: 前缀
-    :param start_num: 开始数字
-    :param end_num: 结束数字
+    安全批量重命名图片，保持顺序不变，使用 _temp 避免命名冲突
+    :param folder_path: 图片所在文件夹路径
+    :param alphabet: 新文件名前缀
+    :param start_num: 起始编号
+    :param end_num: 结束编号
     """
     valid_exts = ('.jpg', '.jpeg', '.png', '.bmp', '.gif')
 
@@ -242,22 +244,32 @@ def rename_images_by_filename(folder_path, alphabet, start_num, end_num):
         if f.lower().endswith(valid_exts) and os.path.isfile(os.path.join(folder_path, f))
     ]
 
-    # 使用自然排序
+    # 自然排序
     image_files.sort(key=natural_key)
 
-    count = start_num
-    for filename in image_files:
-        if count > end_num:
-            print("📛 图片数量超过命名上限（P300），停止处理。")
-            break
+    if len(image_files) > (end_num - start_num + 1):
+        print(f"📛 图片数量超出编号范围（最多 {end_num - start_num + 1} 张），停止处理。")
+        return
 
+    # 第一步：临时加 "_temp" 后缀
+    temp_names = []
+    for filename in image_files:
         old_path = os.path.join(folder_path, filename)
-        ext = os.path.splitext(filename)[1].lower()
+        name, ext = os.path.splitext(filename)
+        temp_name = f"{name}_temp{ext}"
+        temp_path = os.path.join(folder_path, temp_name)
+        os.rename(old_path, temp_path)
+        temp_names.append(temp_name)
+
+    # 第二步：重命名为目标格式
+    count = start_num
+    for temp_name in temp_names:
+        temp_path = os.path.join(folder_path, temp_name)
+        ext = os.path.splitext(temp_name)[1].lower()
         new_filename = f"{alphabet}{count}{ext}"
         new_path = os.path.join(folder_path, new_filename)
-
-        os.rename(old_path, new_path)
-        print(f"✅ {filename} → {new_filename}")
+        os.rename(temp_path, new_path)
+        print(f"✅ {temp_name} → {new_filename}")
         count += 1
 
     print("🎉 重命名完成。")
