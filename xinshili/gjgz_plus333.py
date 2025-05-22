@@ -1477,7 +1477,6 @@ def go(analyse_obj, xlsx_path):
     unpaid_text = ""
     result_map = get_unpaid_platform_tracking_map(xlsx_path)
     if (len(result_map) > 0):
-        unpaid_text += "\nunpaid详情："
         for group_time, records in result_map.items():
             if group_time is None:
                 if (len(records.items()) > 0):
@@ -1485,9 +1484,11 @@ def go(analyse_obj, xlsx_path):
             else:
                 dt = pd.to_datetime(group_time)
                 unpaid_text += f"\n🕒{dt.strftime('%Y-%m-%d')}"
+
             for platform_number, info in records.items():
                 # print(f"\n平台单号：{platform_number} , 物流跟踪号：{info['tracking_number']}, 是否kj: {info['kj']}")
                 unpaid_text += f"\n{info['tracking_number']}"
+
             unpaid_text += "\n"
 
         # for key, value in result_map.items():
