@@ -153,7 +153,8 @@ def handler(src_path):
 
     # 直接使用路径，不用 openpyxl_utils
     template_path = utils.current_dir() + "/xlsx/dxm/import_created_product_popTemu.xlsx"
-    output = f"/Users/zkp/Desktop/B&Y/dxm/{file_name_with_extension}"
+    output_dir = "/Users/zkp/Desktop/B&Y/dxm/"
+    output = f"{output_dir}{file_name_with_extension}"
 
     sex_man = ". 2025 Men's T-shirt"
     sex_women = ". 2025 Women's T-shirt"
@@ -183,7 +184,7 @@ def handler(src_path):
         color_value=result_color
     )
 
-    utils.open_dir(output)
+    utils.open_dir(output_dir)
 
 
 def check_column_duplicates(file_path):
@@ -209,8 +210,8 @@ def check_column_duplicates(file_path):
 
 
 if __name__ == '__main__':
-    # src = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/ef759ea81cdfa1cb6fec129aebe95142/File/A4251-A4400"
-    # rename_images_by_filename(src, "A", 4251, 4400)
+    # src = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/24fe1b1c873f588c7b3f70c4efe61bb7/File/主图"
+    # rename_images_by_filename(src, "B", 4101, 4200)
 
     source_file = input("请输入源表文件的绝对路径：")
     if check_column_duplicates(source_file):
