@@ -1805,65 +1805,65 @@ def go(analyse_obj, xlsx_path):
     delete_file(output_file)
     print(text)
 
-    # # 写入飞书在线文档
-    # tat = get_token()
-    # if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
-    #
-    #     khhz_sheet_value(tat, [
-    #         total_count_int,
-    #         f"（{no_track_count_int}, {wswl}%）",
-    #         f"（{change_shipment_received_count}, {change_shipment_received_countl}%）",
-    #         f"（{delivered_count_int}, {qsl}%）",
-    #         f"（{unpaid_count_int}, {unpaidl}%）",
-    #     ], ck_time, analyse_obj)
-    #
-    #     khhz_sheet_bg(tat, ck_time, analyse_obj, bg)
-    #
-    #     lists = f"上网：({total_count},{swl}%)"
-    #     lists += f"\n提货单未上网：({change_shipment_received_count},{change_shipment_received_countl}%)"
-    #     lists += f"\n{warehouse_text2}"
-    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-    #     # if (bgFlag):
-    #     brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
-    # else:
-    #     lists = f"({total_count},{swl}%)"
-    #     brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
-    #     # if (bgFlag):
-    #     brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
-    #
-    # if analyse_obj == ClientConstants.mz_xsd or \
-    #         analyse_obj == ClientConstants.mx_dg or \
-    #         analyse_obj == ClientConstants.md_fc:
-    #     detail_sheet_value(tat, [
-    #         data_map[CellKey.Outbound_Time],
-    #         data_map[CellKey.update_time],
-    #         data_map[CellKey.wl],
-    #         data_map[CellKey.store_condition],
-    #         data_map[CellKey.time_segment_condition],
-    #         data_map[CellKey.shipping_service_condition],
-    #         data_map[CellKey.sum_up],
-    #         data_map[CellKey.exception],
-    #     ], ck_time, analyse_obj)
-    #
-    #     # if (bgFlag):
-    #     detail_sheet_bg(tat, ck_time, analyse_obj, bg)
-    # else:
-    #     detail_sheet_value(tat, [
-    #         data_map[CellKey.Outbound_Time],
-    #         data_map[CellKey.update_time],
-    #         data_map[CellKey.wl],
-    #         data_map[CellKey.warehouse_condition],
-    #         data_map[CellKey.store_condition],
-    #         data_map[CellKey.time_segment_condition],
-    #         data_map[CellKey.shipping_service_condition],
-    #         data_map[CellKey.sku_condition],
-    #         data_map[CellKey.sum_up],
-    #         data_map[CellKey.exception],
-    #         data_map[CellKey.unpaid],
-    #     ], ck_time, analyse_obj)
-    #
-    #     # if (bgFlag):
-    #     detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+    # 写入飞书在线文档
+    tat = get_token()
+    if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
+
+        khhz_sheet_value(tat, [
+            total_count_int,
+            f"（{no_track_count_int}, {wswl}%）",
+            f"（{change_shipment_received_count}, {change_shipment_received_countl}%）",
+            f"（{delivered_count_int}, {qsl}%）",
+            f"（{unpaid_count_int}, {unpaidl}%）",
+        ], ck_time, analyse_obj)
+
+        khhz_sheet_bg(tat, ck_time, analyse_obj, bg)
+
+        lists = f"上网：({total_count},{swl}%)"
+        lists += f"\n提货单未上网：({change_shipment_received_count},{change_shipment_received_countl}%)"
+        lists += f"\n{warehouse_text2}"
+        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+        # if (bgFlag):
+        brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+    else:
+        lists = f"({total_count},{swl}%)"
+        brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
+        # if (bgFlag):
+        brief_sheet_bg(tat, ck_time, gz_time, analyse_obj, bg)
+
+    if analyse_obj == ClientConstants.mz_xsd or \
+            analyse_obj == ClientConstants.mx_dg or \
+            analyse_obj == ClientConstants.md_fc:
+        detail_sheet_value(tat, [
+            data_map[CellKey.Outbound_Time],
+            data_map[CellKey.update_time],
+            data_map[CellKey.wl],
+            data_map[CellKey.store_condition],
+            data_map[CellKey.time_segment_condition],
+            data_map[CellKey.shipping_service_condition],
+            data_map[CellKey.sum_up],
+            data_map[CellKey.exception],
+        ], ck_time, analyse_obj)
+
+        # if (bgFlag):
+        detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+    else:
+        detail_sheet_value(tat, [
+            data_map[CellKey.Outbound_Time],
+            data_map[CellKey.update_time],
+            data_map[CellKey.wl],
+            data_map[CellKey.warehouse_condition],
+            data_map[CellKey.store_condition],
+            data_map[CellKey.time_segment_condition],
+            data_map[CellKey.shipping_service_condition],
+            data_map[CellKey.sku_condition],
+            data_map[CellKey.sum_up],
+            data_map[CellKey.exception],
+            data_map[CellKey.unpaid],
+        ], ck_time, analyse_obj)
+
+        # if (bgFlag):
+        detail_sheet_bg(tat, ck_time, analyse_obj, bg)
 
 
 def automatic(dir_path, analyse_obj, ignore=False):
@@ -1969,10 +1969,9 @@ def automatic(dir_path, analyse_obj, ignore=False):
 
 
 def call2():
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, True)
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/创建时间9_297.xlsx")
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, True)
 
 
 if __name__ == '__main__':
