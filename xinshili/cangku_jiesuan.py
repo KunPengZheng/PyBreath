@@ -27,10 +27,10 @@ def update_courier(file1_path, file2_path, output_path):
     df2 = pd.read_excel(file2_path)
 
     # 提取文件1中需要的列：用于匹配的物流跟踪号、快递信息和消息间隔
-    df1_subset = df1[["Tracking No./物流跟踪号", "Courier/快递", "SfDateInterval/SF消息间隔"]]
+    df1_subset = df1[[RowName.Tracking_No, RowName.Courier, RowName.SfDateInterval]]
 
     # 检查文件1是否包含其他需要的列（可选的列）
-    optional_columns = ["PossessionSfDate/揽收时间", "LatestEventSfDate/最新事件时间"]
+    optional_columns = [RowName.PossessionSfDate, RowName.LatestEventSfDate]
     for col in optional_columns:
         if col in df1.columns:
             df1_subset[col] = df1[col]
@@ -40,29 +40,29 @@ def update_courier(file1_path, file2_path, output_path):
     merged_df = pd.merge(
         df2,
         df1_subset,
-        left_on="Package 1\nTracking No./物流跟踪号1",
-        right_on="Tracking No./物流跟踪号",
+        left_on=RowName.Package1_Tracking,
+        right_on=RowName.Tracking_No,
         how="left",
         suffixes=("", "_file1")
     )
 
     # 将合并后文件1中的“Courier/快递”和“SfDateInterval/SF消息间隔”列数据赋值到文件2对应的列中
-    merged_df["Courier/快递"] = merged_df["Courier/快递_file1"]
-    merged_df["SfDateInterval/SF消息间隔"] = merged_df["SfDateInterval/SF消息间隔_file1"]
+    merged_df[RowName.Courier] = merged_df[RowName.Courier_File1]
+    merged_df[RowName.SfDateInterval] = merged_df[RowName.SfDateInterval_File1]
 
     # 处理可选列：检查是否存在并复制值
-    if "PossessionSfDate/揽收时间_file1" in merged_df.columns:
-        merged_df["PossessionSfDate/揽收时间"] = merged_df["PossessionSfDate/揽收时间_file1"]
+    if RowName.PossessionSfDate_File1 in merged_df.columns:
+        merged_df[RowName.PossessionSfDate] = merged_df[RowName.PossessionSfDate_File1]
 
-    if "LatestEventSfDate/最新事件时间_file1" in merged_df.columns:
-        merged_df["LatestEventSfDate/最新事件时间"] = merged_df["LatestEventSfDate/最新事件时间_file1"]
+    if RowName.LatestEventSfDate_File1 in merged_df.columns:
+        merged_df[RowName.LatestEventSfDate] = merged_df[RowName.LatestEventSfDate_File1]
 
     # 删除合并过程中产生的临时列
-    merged_df.drop(columns=["Courier/快递_file1",
-                            "SfDateInterval/SF消息间隔_file1",
-                            "PossessionSfDate/揽收时间_file1",
-                            "LatestEventSfDate/最新事件时间_file1",
-                            "Tracking No./物流跟踪号"],
+    merged_df.drop(columns=[RowName.Courier_File1,
+                            RowName.SfDateInterval_File1,
+                            RowName.PossessionSfDate_File1,
+                            RowName.LatestEventSfDate_File1,
+                            RowName.Tracking_No],
                    inplace=True)
 
     # 将更新后的 DataFrame 保存为新的 Excel 文件
@@ -113,15 +113,15 @@ def highlight_courier_column(file_path):
 
     red_fill = PatternFill(start_color="C0D79B", end_color="C0D79B", fill_type="solid")
 
-    # 找到 "Courier/快递" 列和 "SfDateInterval/SF消息间隔" 列的索引
+    # 找到 RowName.Courier 列和 "SfDateInterval/SF消息间隔" 列的索引
     courier_col_index = None
     sf_date_interval_col_index = None
 
     # 遍历第一行（列头）找到相关列的索引
     for col_num, col_cell in enumerate(ws[1], 1):
-        if col_cell.value == "Courier/快递":
+        if col_cell.value == RowName.Courier:
             courier_col_index = col_num
-        elif col_cell.value == "SfDateInterval/SF消息间隔":
+        elif col_cell.value == RowName.SfDateInterval:
             sf_date_interval_col_index = col_num
 
     if courier_col_index is None:

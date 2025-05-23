@@ -39,6 +39,12 @@ class RowName:
     SfDateInterval = "SfDateInterval/SF消息间隔"
     UnpaidDate = "UnpaidDate/unpaid记录时间"
 
+    Courier_File1 = 'Courier/快递_file1'
+    SfDateInterval_File1 = 'SfDateInterval/SF消息间隔_file1'
+    PossessionSfDate_File1 = 'PossessionSfDate/揽收时间_file1'
+    LatestEventSfDate_File1 = 'LatestEventSfDate/最新事件时间_file1'
+    Package1_Tracking = 'Package 1\nTracking No./物流跟踪号1'
+
 
 @dataclass(frozen=True)
 class CourierStateMapKey:
