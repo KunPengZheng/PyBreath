@@ -1,7 +1,9 @@
 import os
 import re
 import pandas as pd
-from xinshili.gjgz_plus333 import check_and_add_courier_column, RowName, CourierStateMapValue
+from xinshili.gjgz_plus333 import check_and_add_courier_column, RowName, CourierStateMapValue, \
+    find_irregular_tracking_numbers, update_courier_status1, extract_and_process_data, CourierStateMapKey, \
+    update_courier_status
 from xinshili.pd_utils import remove_duplicates_by_column
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
@@ -24,10 +26,13 @@ def update_courier(file1_path, file2_path, output_path):
     df2 = pd.read_excel(file2_path)
 
     # 自动选择 df2 中的匹配列（left_on）
-    if RowName.Package1_Tracking in df2.columns:
-        left_on_col = RowName.Package1_Tracking
-    elif RowName.Tracking_No in df2.columns:
+    flag = True
+    if RowName.Tracking_No in df2.columns:
         left_on_col = RowName.Tracking_No
+        flag = False
+    elif RowName.Package1_Tracking in df2.columns:
+        left_on_col = RowName.Package1_Tracking
+        flag = True
     else:
         raise ValueError(
             f"❌ 文件2中未找到可用的跟踪号列（如 '{RowName.Package1_Tracking}' 或 '{RowName.Tracking_No}'）")
@@ -75,6 +80,7 @@ def update_courier(file1_path, file2_path, output_path):
     merged_df.to_excel(output_path, index=False)
 
     print(f"更新后的文件已保存为 {output_path}")
+    return flag
 
 
 def me(save_paths, target_dir, pattern_flag=True):
@@ -207,7 +213,47 @@ def handle(lists, month_start, month_end):
         check_and_add_courier_column(item)
 
         # 根据指定列匹配，匹配成功后将对应列的内容复制过来
-        update_courier(remove_duplicates_me_file, item, item)
+        flag = update_courier(remove_duplicates_me_file, item, item)
+
+        irregular_number_map = find_irregular_tracking_numbers(item)
+        irregular_number_list = []
+        if irregular_number_map:
+            irregular_number_list = list(irregular_number_map.keys())
+            update_courier_status1(item, irregular_number_map)
+
+        wl_names
+        if flag:
+            wl_names = RowName.Package1_Tracking
+        else:
+            wl_names = RowName.Tracking_No
+
+        results = extract_and_process_data(item, RowName.Courier, 100, wl_name=wl_names, ckjs_flag=True)
+
+        all_maps = {
+            CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
+            CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
+            CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
+            CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
+            CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
+            CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
+            CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
+            CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
+            CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
+        }
+
+        column_mapping = {
+            CourierStateMapKey.not_yet_map: RowName.Courier,
+            CourierStateMapKey.pre_ship_map: RowName.Courier,
+            CourierStateMapKey.unpaid_map: RowName.Courier,
+            CourierStateMapKey.delivered_map: RowName.Courier,
+            CourierStateMapKey.no_tracking_map: RowName.Courier,
+            CourierStateMapKey.tracking_map: RowName.Courier,
+            CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
+            CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
+            CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
+        }
+
+        update_courier_status(item, all_maps, wl=wl_names, column_map=column_mapping)
 
         # 根据指定条件标记背景颜色
         highlight_courier_column(item)
