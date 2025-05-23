@@ -256,5 +256,6 @@ if __name__ == '__main__':
             "/Users/zkp/Downloads/副本ParcelOutbound_20250522171021_副本.xlsx",
         ],
         month_start="3",
-        month_end="4"
+        month_end="4",
+        merge_exit=False
     )
