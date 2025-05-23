@@ -1,11 +1,8 @@
 import os
 import re
-
+import pandas as pd
 from xinshili.gjgz_plus333 import check_and_add_courier_column, RowName, CourierStateMapValue
 from xinshili.pd_utils import remove_duplicates_by_column
-import os
-import re
-import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 
@@ -26,6 +23,15 @@ def update_courier(file1_path, file2_path, output_path):
     df1 = pd.read_excel(file1_path)
     df2 = pd.read_excel(file2_path)
 
+    # 自动选择 df2 中的匹配列（left_on）
+    if RowName.Package1_Tracking in df2.columns:
+        left_on_col = RowName.Package1_Tracking
+    elif RowName.Tracking_No in df2.columns:
+        left_on_col = RowName.Tracking_No
+    else:
+        raise ValueError(
+            f"❌ 文件2中未找到可用的跟踪号列（如 '{RowName.Package1_Tracking}' 或 '{RowName.Tracking_No}'）")
+
     # 提取文件1中需要的列：用于匹配的物流跟踪号、快递信息和消息间隔
     df1_subset = df1[[RowName.Tracking_No, RowName.Courier, RowName.SfDateInterval]]
 
@@ -40,7 +46,7 @@ def update_courier(file1_path, file2_path, output_path):
     merged_df = pd.merge(
         df2,
         df1_subset,
-        left_on=RowName.Package1_Tracking,
+        left_on=left_on_col,
         right_on=RowName.Tracking_No,
         how="left",
         suffixes=("", "_file1")
@@ -107,11 +113,11 @@ def me(save_paths, target_dir, pattern_flag=True):
         print("错误: 没有找到可合并的 Excel 文件")
 
 
-def highlight_courier_column(file_path):
+def highlight_courier_column(file_path, solid_color="C0D79B"):
     wb = load_workbook(file_path)
     ws = wb.active  # 获取当前活动的工作表
 
-    red_fill = PatternFill(start_color="C0D79B", end_color="C0D79B", fill_type="solid")
+    red_fill = PatternFill(start_color=solid_color, end_color=solid_color, fill_type="solid")
 
     # 找到 RowName.Courier 列和 "SfDateInterval/SF消息间隔" 列的索引
     courier_col_index = None
@@ -159,44 +165,61 @@ def highlight_courier_column(file_path):
     print(f"标记完成，已更新 {file_path}")
 
 
-xlsx_zfh = "/Users/zkp/Documents/副本新引力4月自发货.xlsx"
-xlsx_qtkh = "/Users/zkp/Documents/副本其他客户4月发货.xlsx"
+def handle(lists, month_start, month_end):
+    zbw_gjgz_path = "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025."
+    sanrio_gjgz_path = "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025."
+    xyl_gjgz_path = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025."
 
-zbw_month_dir = "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.3"
-sanrio_month_dir = "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.3"
-xyl_month_dir = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.3"
+    zbw_start_month_dir = f"{zbw_gjgz_path}{month_start}"
+    sanrio_start_month_dir = f"{sanrio_gjgz_path}{month_start}"
+    xyl_start_month_dir = f"{xyl_gjgz_path}{month_start}"
 
-zbw_month_dir1 = "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.4"
-sanrio_month_dir1 = "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.4"
-xyl_month_dir1 = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.4"
+    zbw_end_month_dir = f"{zbw_gjgz_path}{month_end}"
+    sanrio_end_month_dir = f"{sanrio_gjgz_path}{month_end}"
+    xyl_end_month_dir = f"{xyl_gjgz_path}{month_end}"
 
-me_dir = "/Users/zkp/Documents/me/"
-me_file = f"{me_dir}me.xlsx"
+    merge_dir = f"/Users/zkp/Desktop/B&Y/仓库结算/merge{month_start}_{month_end}/"
+    merge_file = f"{merge_dir}merge{month_start}_{month_end}.xlsx"
 
-# 客户各自的数据合并
-me(f"{me_dir}zbw_me.xlsx", zbw_month_dir)
-me(f"{me_dir}sanrio_me.xlsx", sanrio_month_dir)
-me(f"{me_dir}xyl_me.xlsx", xyl_month_dir)
+    zbw_merge = "zbw_merge_"
+    sanrio_merge = "sanrio_merge_"
+    xyl_merge = "xyl_merge_"
 
-me(f"{me_dir}zbw_me1.xlsx", zbw_month_dir1)
-me(f"{me_dir}sanrio_me1.xlsx", sanrio_month_dir1)
-me(f"{me_dir}xyl_me1.xlsx", xyl_month_dir1)
+    # 客户各自的数据合并
+    me(f"{merge_dir}{zbw_merge}{month_start}.xlsx", zbw_start_month_dir)
+    me(f"{merge_dir}{sanrio_merge}{month_start}.xlsx", sanrio_start_month_dir)
+    me(f"{merge_dir}{xyl_merge}{month_start}.xlsx", xyl_start_month_dir)
 
-# # 合并多个客户
-me(me_file, me_dir, False)
+    me(f"{merge_dir}{zbw_merge}{month_end}.xlsx", zbw_end_month_dir)
+    me(f"{merge_dir}{sanrio_merge}{month_end}.xlsx", sanrio_end_month_dir)
+    me(f"{merge_dir}{xyl_merge}{month_end}.xlsx", xyl_end_month_dir)
 
-# 去重
-remove_duplicates_me_file = os.path.splitext(me_file)[0] + "_remove_duplicates.xlsx"
-remove_duplicates_by_column(me_file, remove_duplicates_me_file, RowName.Tracking_No)
+    # # 合并多个客户
+    me(merge_file, merge_dir, False)
 
-# 补充缺少的列名
-check_and_add_courier_column(xlsx_zfh)
-check_and_add_courier_column(xlsx_qtkh)
+    # 去重
+    remove_duplicates_me_file = os.path.splitext(merge_file)[0] + "_remove_duplicates.xlsx"
+    remove_duplicates_by_column(merge_file, remove_duplicates_me_file, RowName.Tracking_No)
 
-# 根据指定列匹配，匹配成功后将对应列的内容复制过来
-update_courier(remove_duplicates_me_file, xlsx_zfh, xlsx_zfh)
-update_courier(remove_duplicates_me_file, xlsx_qtkh, xlsx_qtkh)
+    # 遍历每个待更新的文件
+    for item in lists:
+        # 补充缺少的列名
+        check_and_add_courier_column(item)
 
-# 根据指定条件标记背景颜色
-highlight_courier_column(xlsx_zfh)
-highlight_courier_column(xlsx_qtkh)
+        # 根据指定列匹配，匹配成功后将对应列的内容复制过来
+        update_courier(remove_duplicates_me_file, item, item)
+
+        # 根据指定条件标记背景颜色
+        highlight_courier_column(item)
+
+    print("✅ 所有文件处理完毕。")
+
+
+if __name__ == '__main__':
+    handle(
+        xlsx_zfh_list=[
+            "/Users/zkp/Desktop/B&Y/仓库结算/zfh1.xlsx",
+        ],
+        month_start="3",
+        month_end="4"
+    )
