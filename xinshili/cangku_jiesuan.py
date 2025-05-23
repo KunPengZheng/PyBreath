@@ -1,7 +1,7 @@
 import os
 import re
 
-from xinshili.gjgz_plus333 import check_and_add_courier_column, RowName
+from xinshili.gjgz_plus333 import check_and_add_courier_column, RowName, CourierStateMapValue
 from xinshili.pd_utils import remove_duplicates_by_column
 import os
 import re
@@ -125,10 +125,10 @@ def highlight_courier_column(file_path):
             sf_date_interval_col_index = col_num
 
     if courier_col_index is None:
-        print("错误: 未找到 'Courier/快递' 列")
+        print(f"错误: 未找到 {RowName.Courier} 列")
         return
     if sf_date_interval_col_index is None:
-        print("警告: 未找到 'SfDateInterval/SF消息间隔' 列，跳过该列的检查")
+        print(f"警告: 未找到 {RowName.SfDateInterval} 列，跳过该列的检查")
         # 如果没有该列，我们只根据 'Courier/快递' 列进行标记
         sf_date_interval_col_index = -1  # 设置为 -1，表示不使用这个列
 
@@ -140,13 +140,17 @@ def highlight_courier_column(file_path):
         if sf_date_interval_col_index != -1:
             sf_date_interval_cell = ws.cell(row=row, column=sf_date_interval_col_index)
             # 检查 Courier/快递 为特定值并且 SfDateInterval/SF消息间隔 为 0
-            if courier_cell.value in ["pre_ship", "not_yet", "no_tracking"] or \
-                    (courier_cell.value == "tracking" and sf_date_interval_cell.value == 0):
+            if courier_cell.value in [CourierStateMapValue.pre_ship,
+                                      CourierStateMapValue.not_yet,
+                                      CourierStateMapValue.no_tracking] or \
+                    (courier_cell.value == CourierStateMapValue.tracking and sf_date_interval_cell.value == 0):
                 for col in range(1, ws.max_column + 1):  # 让整行变红
                     ws.cell(row=row, column=col).fill = red_fill
         else:
             # 如果没有 "SfDateInterval/SF消息间隔" 列，只根据 "Courier/快递" 列进行判断
-            if courier_cell.value in ["pre_ship", "not_yet", "no_tracking"]:
+            if courier_cell.value in [CourierStateMapValue.pre_ship,
+                                      CourierStateMapValue.not_yet,
+                                      CourierStateMapValue.no_tracking]:
                 for col in range(1, ws.max_column + 1):  # 让整行变红
                     ws.cell(row=row, column=col).fill = red_fill
 
