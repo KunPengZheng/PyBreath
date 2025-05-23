@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import re
+import random
 from dataclasses import dataclass
 from xinshili import utils
 from xinshili.utils import rename_images_by_filename
@@ -13,6 +14,113 @@ class Combined:
     Man = '男'
     Women = '女'
     Nones = '未知'
+
+
+comfort_descriptions = [
+    ". Made to move with you",
+    ". Feather-light comfort",
+    ". Soft like second skin",
+    ". Built for all-day wear",
+    ". So soft, you'll forget it's there",
+    ". Comfort in every thread",
+    ". Feel the difference",
+    ". Breathable. Beautiful.",
+    ". Easy on your skin",
+    ". Fabric that loves you back",
+    ". Light on body, big on comfort",
+    ". Touchably soft",
+    ". Wears like a dream",
+    ". Silky smooth feel",
+    ". Stays cool, feels fresh",
+    ". Seamless comfort",
+    ". Every fiber matters",
+    ". Cozy meets classy",
+    ". Cloud-level softness",
+    ". Effortless on the inside",
+    ". Made for comfort days",
+    ". Simple, but never basic",
+    ". Quality you can feel",
+    ". So good, you’ll want two",
+    ". Fits like a favorite",
+    ". Stretch without squeeze",
+    ". All comfort, no fuss",
+    ". Soft enough to sleep in",
+    ". Fabric that breathes",
+    ". Gentle on your day",
+    ". Cool to the touch",
+    ". Not too loose, not too tight",
+    ". Sensibly soft",
+    ". Stay comfy, stay you",
+    ". The tee you’ll reach for",
+    ". Skin-first softness",
+    ". The luxury of ease",
+    ". Casual, but elevated",
+    ". Feels better with every wear",
+    ". Comfort is the new style",
+    ". Touch of smooth perfection",
+    ". Never itchy, always easy",
+    ". Styled for softness",
+    ". Laidback luxury",
+    ". Perfectly relaxed",
+    ". Comfort that lasts",
+    ". All-season softness",
+    ". Just-right fit, every time",
+    ". Wear it once, love it forever",
+    ". Tailored for feel-good days"
+]
+
+scene_descriptions = [
+    ". Ready for anything",
+    ". Wear it everywhere",
+    ". Effortless from AM to PM",
+    ". Desk to dinner approved",
+    ". Chic on the go",
+    ". Your weekend go-to",
+    ". Just right for travel days",
+    ". Easy fit, easy vibe",
+    ". Perfect for every plan",
+    ". From couch to coffee shop",
+    ". Looks great, feels better",
+    ". WFH essential",
+    ". Sunday brunch style",
+    ". Always in style, never too much",
+    ". Pair with anything",
+    ". Versatility in a tee",
+    ". A tee for every mood",
+    ". Comfy enough for errands",
+    ". Made for slow days",
+    ". Gym to grocery ready",
+    ". Layer it or love it solo",
+    ". Fits your schedule",
+    ". Great for daily wear",
+    ". Your everyday essential",
+    ". Minimal look, maximum use",
+    ". One tee, endless outfits",
+    ". Weekend-ready wear",
+    ". Made for morning walks",
+    ". Ideal for laid-back days",
+    ". Works with denim, skirts, joggers",
+    ". Stylish in any setting",
+    ". Casual doesn’t mean careless",
+    ". From airport to afterparty",
+    ". Dress it up or down",
+    ". Always the right choice",
+    ". Low effort, high reward",
+    ". Wherever you go, it fits",
+    ". Built for your lifestyle",
+    ". Timeless and wearable",
+    ". Comfort that travels",
+    ". All-day style, every day",
+    ". Chic in seconds",
+    ". Wherever life takes you",
+    ". Great for layering",
+    ". Just add jeans",
+    ". From sunrise to streetlight",
+    ". Keep it casual, keep it cool",
+    ". One and done",
+    ". Ready when you are",
+    ". Made to match your moments"
+]
 
 
 def normalize_punctuation_spacing(content, category_keyword):
@@ -47,7 +155,7 @@ def copy(
         lunbotu: object,
         category_keyword,
         color_value: object,
-        stock_quantity: object = 77.1
+        stock_quantity: object = 50
 ) -> object:
     df1 = pd.read_excel(file1_path, header=None, dtype=str)
     df2 = pd.read_excel(file2_path, dtype=str)
@@ -145,7 +253,7 @@ def detect_keywords(content):
     return color_flag, gender_flag
 
 
-def handler(src_path):
+def handler(src_path, price, w_front_no_design_Flag=False):
     file_name_with_extension = utils.get_filename_with_extension(src_path)
     color_flag, gender_flag = detect_keywords(file_name_with_extension)
     if color_flag == Combined.Nones or gender_flag == Combined.Nones:
@@ -168,12 +276,26 @@ def handler(src_path):
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101014/2a1066b0bf75ae5c0ae23e580448c986.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101015/ce1447f258253c875aa2b0b4883b59b1.jpg"
 
+    lunbotu_white_front_no_design = \
+        "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250523145428/c8a045cad46f8706729202360061d4e4.jpg" \
+        "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101012/db23824b806321f7b39f43137994f780.jpg" \
+        "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101013/54570e517207968339038e80969780b9.jpg" \
+        "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101014/2a1066b0bf75ae5c0ae23e580448c986.jpg" \
+        "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101015/ce1447f258253c875aa2b0b4883b59b1.jpg"
+
     lunbotu_black = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101016/98e779932fa49e38c4b95fb57b13393a.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101016/957edc530ac9905385533f9c0f4eb7bc.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101017/bff7b4be4481c5c6e11d2edf1a8d9fc6.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101017/17666fe45e9b5f1254135febbd624721.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101018/d4acb5ca0dce2d7be4fc88a00ce00b44.jpg"
-    result_lbt = lunbotu_white if color_flag == Combined.White else lunbotu_black
+    result_lbt = ""
+    if color_flag == Combined.White:
+        if w_front_no_design_Flag:
+            result_lbt = lunbotu_white_front_no_design
+        else:
+            result_lbt = lunbotu_white
+    else:
+        result_lbt = lunbotu_black
 
     copy(
         file1_path=src_path,
@@ -181,12 +303,62 @@ def handler(src_path):
         output_path=output,
         lunbotu=result_lbt,
         category_keyword=result_sex,
-        color_value=result_color
+        color_value=result_color,
+        stock_quantity=price
     )
 
     utils.open_dir(output_dir)
 
 
+# def check_column_duplicates(file_path):
+#     # 读取 Excel 文件，不使用第一行为列名
+#     df = pd.read_excel(file_path, header=None, dtype=str)
+#     modified = False
+#     final_flag = False
+#
+#     for col_index in range(df.shape[1]):
+#         col_data = df[col_index]
+#         duplicated = col_data.duplicated(keep=False)
+#         if duplicated.any():
+#             print(f"✅ 第 {col_index + 1} 列 存在重复值：")
+#
+#             duplicate_values = col_data[duplicated].dropna().unique()
+#             for val in duplicate_values:
+#                 row_indices = df[df[col_index] == val].index.tolist()
+#                 row_numbers = [i + 1 for i in row_indices]  # 无列名时数据从第1行开始
+#                 print(f"   🔁 重复行为: {row_numbers}    重复值为: {val}")
+#
+#             # 如果是第 3 列（C 列）
+#             if col_index == 2:
+#                 existing_values = set(col_data.dropna())
+#                 attempts = 0
+#                 max_attempts = 100
+#
+#                 while attempts < max_attempts:
+#                     candidates = random.sample(list(existing_values), 2)
+#                     added = False
+#                     for val in candidates:
+#                         if val not in df[col_index].values:
+#                             new_row = [''] * df.shape[1]
+#                             new_row[col_index] = val
+#                             df.loc[len(df)] = new_row
+#                             modified = True
+#                             added = True
+#                     if added and not df[col_index].duplicated(keep=False).any():
+#                         break
+#                     attempts += 1
+#
+#                 if modified:
+#                     print(f"✨ 第 3 列已追加新值，去重完成。")
+#                 else:
+#                     final_flag = True  # 尝试未成功
+#             else:
+#                 final_flag = True  # 其他列重复
+#
+#     if modified:
+#         df.to_excel(file_path, index=False, header=False)
+#
+#     return final_flag
 def check_column_duplicates(file_path):
     df = pd.read_excel(file_path, dtype=str)
     flag = False
@@ -210,12 +382,13 @@ def check_column_duplicates(file_path):
 
 
 if __name__ == '__main__':
-    # src = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/24fe1b1c873f588c7b3f70c4efe61bb7/File/主图"
-    # rename_images_by_filename(src, "B", 4101, 4200)
+    # src = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/24fe1b1c873f588c7b3f70c4efe61bb7/File/B1002-B1101主图"
+    # rename_images_by_filename(src, "B", 1002, 1101)
+    # utils.open_dir(src)
 
     source_file = input("请输入源表文件的绝对路径：")
     if check_column_duplicates(source_file):
         print("⚠️ 源文件的某列存在重复内容，已终止后续处理。")
     else:
         print("🎉 源文件所有列均无重复内容")
-        handler(source_file)
+        handler(source_file, 50, True)
