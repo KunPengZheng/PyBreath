@@ -26,13 +26,10 @@ def update_courier(file1_path, file2_path, output_path):
     df2 = pd.read_excel(file2_path)
 
     # 自动选择 df2 中的匹配列（left_on）
-    flag = True
     if RowName.Tracking_No in df2.columns:
         left_on_col = RowName.Tracking_No
-        flag = False
     elif RowName.Package1_Tracking in df2.columns:
         left_on_col = RowName.Package1_Tracking
-        flag = True
     else:
         raise ValueError(
             f"❌ 文件2中未找到可用的跟踪号列（如 '{RowName.Package1_Tracking}' 或 '{RowName.Tracking_No}'）")
@@ -46,8 +43,7 @@ def update_courier(file1_path, file2_path, output_path):
         if col in df1.columns:
             df1_subset[col] = df1[col]
 
-    # 合并两个 DataFrame：以文件2为主表，
-    # 通过文件2的“Package 1 Tracking No./物流跟踪号1”与文件1的“Tracking No./物流跟踪号”匹配
+    # 合并两个 DataFrame：以文件2为主表，通过文件2的“Package 1 Tracking No./物流跟踪号1”与文件1的“Tracking No./物流跟踪号”匹配
     merged_df = pd.merge(
         df2,
         df1_subset,
@@ -72,15 +68,14 @@ def update_courier(file1_path, file2_path, output_path):
     merged_df.drop(columns=[RowName.Courier_File1,
                             RowName.SfDateInterval_File1,
                             RowName.PossessionSfDate_File1,
-                            RowName.LatestEventSfDate_File1,
-                            RowName.Tracking_No],
+                            RowName.LatestEventSfDate_File1],
                    inplace=True)
 
     # 将更新后的 DataFrame 保存为新的 Excel 文件
     merged_df.to_excel(output_path, index=False)
 
     print(f"更新后的文件已保存为 {output_path}")
-    return flag
+    return left_on_col
 
 
 def me(save_paths, target_dir, pattern_flag=True):
@@ -171,7 +166,7 @@ def highlight_courier_column(file_path, solid_color="C0D79B"):
     print(f"标记完成，已更新 {file_path}")
 
 
-def handle(lists, month_start, month_end):
+def handle(lists, month_start, month_end, merge_exit=False):
     zbw_gjgz_path = "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025."
     sanrio_gjgz_path = "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025."
     xyl_gjgz_path = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025."
@@ -184,28 +179,30 @@ def handle(lists, month_start, month_end):
     sanrio_end_month_dir = f"{sanrio_gjgz_path}{month_end}"
     xyl_end_month_dir = f"{xyl_gjgz_path}{month_end}"
 
-    merge_dir = f"/Users/zkp/Desktop/B&Y/仓库结算/merge{month_start}_{month_end}/"
-    merge_file = f"{merge_dir}merge{month_start}_{month_end}.xlsx"
+    merge_dir = f"/Users/zkp/Desktop/B&Y/仓库结算/merge_{month_start}_{month_end}/"
+    merge_file = f"{merge_dir}merge_{month_start}_{month_end}.xlsx"
 
     zbw_merge = "zbw_merge_"
     sanrio_merge = "sanrio_merge_"
     xyl_merge = "xyl_merge_"
 
-    # 客户各自的数据合并
-    me(f"{merge_dir}{zbw_merge}{month_start}.xlsx", zbw_start_month_dir)
-    me(f"{merge_dir}{sanrio_merge}{month_start}.xlsx", sanrio_start_month_dir)
-    me(f"{merge_dir}{xyl_merge}{month_start}.xlsx", xyl_start_month_dir)
+    if not merge_exit:
+        # 客户各自的数据合并
+        me(f"{merge_dir}{zbw_merge}{month_start}.xlsx", zbw_start_month_dir)
+        me(f"{merge_dir}{sanrio_merge}{month_start}.xlsx", sanrio_start_month_dir)
+        me(f"{merge_dir}{xyl_merge}{month_start}.xlsx", xyl_start_month_dir)
 
-    me(f"{merge_dir}{zbw_merge}{month_end}.xlsx", zbw_end_month_dir)
-    me(f"{merge_dir}{sanrio_merge}{month_end}.xlsx", sanrio_end_month_dir)
-    me(f"{merge_dir}{xyl_merge}{month_end}.xlsx", xyl_end_month_dir)
+        me(f"{merge_dir}{zbw_merge}{month_end}.xlsx", zbw_end_month_dir)
+        me(f"{merge_dir}{sanrio_merge}{month_end}.xlsx", sanrio_end_month_dir)
+        me(f"{merge_dir}{xyl_merge}{month_end}.xlsx", xyl_end_month_dir)
 
-    # # 合并多个客户
-    me(merge_file, merge_dir, False)
+        # 合并多个客户
+        me(merge_file, merge_dir, False)
 
     # 去重
     remove_duplicates_me_file = os.path.splitext(merge_file)[0] + "_remove_duplicates.xlsx"
-    remove_duplicates_by_column(merge_file, remove_duplicates_me_file, RowName.Tracking_No)
+    if not merge_exit:
+        remove_duplicates_by_column(merge_file, remove_duplicates_me_file, RowName.Tracking_No)
 
     # 遍历每个待更新的文件
     for item in lists:
@@ -213,19 +210,11 @@ def handle(lists, month_start, month_end):
         check_and_add_courier_column(item)
 
         # 根据指定列匹配，匹配成功后将对应列的内容复制过来
-        flag = update_courier(remove_duplicates_me_file, item, item)
+        wl_names = update_courier(remove_duplicates_me_file, item, item)
 
         irregular_number_map = find_irregular_tracking_numbers(item)
-        irregular_number_list = []
         if irregular_number_map:
-            irregular_number_list = list(irregular_number_map.keys())
             update_courier_status1(item, irregular_number_map)
-
-        wl_names
-        if flag:
-            wl_names = RowName.Package1_Tracking
-        else:
-            wl_names = RowName.Tracking_No
 
         results = extract_and_process_data(item, RowName.Courier, 100, wl_name=wl_names, ckjs_flag=True)
 
@@ -263,8 +252,8 @@ def handle(lists, month_start, month_end):
 
 if __name__ == '__main__':
     handle(
-        xlsx_zfh_list=[
-            "/Users/zkp/Desktop/B&Y/仓库结算/zfh1.xlsx",
+        lists=[
+            "/Users/zkp/Downloads/副本ParcelOutbound_20250522171021_副本.xlsx",
         ],
         month_start="3",
         month_end="4"
