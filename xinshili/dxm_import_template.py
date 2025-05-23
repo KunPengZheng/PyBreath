@@ -155,7 +155,8 @@ def copy(
         lunbotu: object,
         category_keyword,
         color_value: object,
-        stock_quantity: object = 50
+        stock_quantity: object,
+        repertory: object,
 ) -> object:
     df1 = pd.read_excel(file1_path, header=None, dtype=str)
     df2 = pd.read_excel(file2_path, dtype=str)
@@ -226,7 +227,7 @@ def copy(
         df2.at[row_idx, col_M] = "15"
         df2.at[row_idx, col_N] = "2"
         df2.at[row_idx, col_O] = "180"
-        df2.at[row_idx, col_Y] = "300"
+        df2.at[row_idx, col_Y] = repertory
         df2.at[row_idx, col_Z] = "2"
 
     df2.to_excel(output_path, index=False)
@@ -253,7 +254,7 @@ def detect_keywords(content):
     return color_flag, gender_flag
 
 
-def handler(src_path, price, w_front_no_design_Flag=False):
+def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
     file_name_with_extension = utils.get_filename_with_extension(src_path)
     color_flag, gender_flag = detect_keywords(file_name_with_extension)
     if color_flag == Combined.Nones or gender_flag == Combined.Nones:
@@ -304,7 +305,8 @@ def handler(src_path, price, w_front_no_design_Flag=False):
         lunbotu=result_lbt,
         category_keyword=result_sex,
         color_value=result_color,
-        stock_quantity=price
+        stock_quantity=price,
+        repertory=repertorys
     )
 
     utils.open_dir(output_dir)
@@ -391,4 +393,4 @@ if __name__ == '__main__':
         print("⚠️ 源文件的某列存在重复内容，已终止后续处理。")
     else:
         print("🎉 源文件所有列均无重复内容")
-        handler(source_file, 50, True)
+        handler(source_file, 50, 800, True)
