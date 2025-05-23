@@ -1,10 +1,8 @@
 import numpy as np
 import pandas as pd
 import re
-import random
 from dataclasses import dataclass
 from xinshili import utils
-from xinshili.utils import rename_images_by_filename
 
 
 @dataclass(frozen=True)
@@ -384,13 +382,11 @@ def check_column_duplicates(file_path):
 
 
 if __name__ == '__main__':
-    # src = "/Users/zkp/Library/Containers/com.tencent.xinWeChat/Data/Library/Application Support/com.tencent.xinWeChat/2.0b4.0.9/aee968804ccf60699f2aada7c6e578a8/Message/MessageTemp/24fe1b1c873f588c7b3f70c4efe61bb7/File/B1002-B1101主图"
-    # rename_images_by_filename(src, "B", 1002, 1101)
-    # utils.open_dir(src)
 
     source_file = input("请输入源表文件的绝对路径：")
+
     if check_column_duplicates(source_file):
         print("⚠️ 源文件的某列存在重复内容，已终止后续处理。")
     else:
         print("🎉 源文件所有列均无重复内容")
-        handler(source_file, 50, 800, True)
+        handler(source_file, 52, 800, False)
