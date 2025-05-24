@@ -187,7 +187,7 @@ def extract_signature_receipt_time(text):
 
 
 def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
-                             request_interval: float = 30.0):
+                             request_interval: float = 30.0, ckjs_flag=False):
     data = pd.read_excel(filepath)
 
     if column_name not in data.columns:
@@ -211,11 +211,15 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
     data[column_name] = data[column_name].fillna('')
 
     # 获取指定内容的数据
-    filtered_data = data[data[column_name].apply(
-        lambda x: str(x).strip().lower() in ['', CourierStateMapValue.not_yet,
-                                             CourierStateMapValue.pre_ship,
-                                             CourierStateMapValue.tracking,
-                                             CourierStateMapValue.no_tracking])]
+    if ckjs_flag:
+        filtered_data = data[data[column_name].apply(
+            lambda x: str(x).strip().lower() in [''])]
+    else:
+        filtered_data = data[data[column_name].apply(
+            lambda x: str(x).strip().lower() in ['', CourierStateMapValue.not_yet,
+                                                 CourierStateMapValue.pre_ship,
+                                                 CourierStateMapValue.tracking,
+                                                 CourierStateMapValue.no_tracking])]
 
     # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
     items = filtered_data[wl_name].tolist()
@@ -939,41 +943,50 @@ def get_unpaid_platform_tracking_map(file_path):
     # 只处理 Courier 为 unpaid 的行
     unpaid_data = data[data['Courier/快递'] == 'unpaid'].copy()
 
-    # 将 UnpaidDate 列转换为 datetime 类型，方便排序和分组
+    # 将 UnpaidDate 列转换为 datetime 类型
     unpaid_data['UnpaidDate/unpaid记录时间'] = pd.to_datetime(
         unpaid_data['UnpaidDate/unpaid记录时间'], errors='coerce'
     )
 
-    # 按日期分组，空日期为 None，确保空值组排在最前面
-    unpaid_data['分组时间'] = unpaid_data['UnpaidDate/unpaid记录时间'].apply(
-        lambda x: x if pd.notnull(x) else None
-    )
-
-    # 获取分组，空值（None）排在前面，其余按时间排序
-    sorted_groups = sorted(unpaid_data['分组时间'].dropna().unique())
-    grouped_times = [None] + sorted_groups
-
+    # 准备结果字典
     result = {}
 
-    for group_time in grouped_times:
-        group_rows = unpaid_data[unpaid_data['分组时间'] == group_time]
+    # 处理空日期的记录（NaT）
+    null_date_group = unpaid_data[unpaid_data['UnpaidDate/unpaid记录时间'].isnull()]
+    if not null_date_group.empty:
         group_dict = {}
-
-        for _, row in group_rows.iterrows():
+        for _, row in null_date_group.iterrows():
             platform_number = row['Platform Number/平台单号']
             tracking_number = row['Tracking No./物流跟踪号']
             shipping_service = row['Shipping service/物流渠道']
             recipient = row['Recipient/收件人']
 
-            kj_ = (shipping_service == '上传物流面单(Upload_Shipping_Label)' and
-                   (recipient in ['KJ', 'TK'])) or \
+            kj_ = (shipping_service == '上传物流面单(Upload_Shipping_Label)' and recipient in ['KJ', 'TK']) or \
                   (shipping_service != '上传物流面单(Upload_Shipping_Label)')
 
             group_dict[platform_number] = {
                 "tracking_number": tracking_number,
                 "kj": kj_
             }
+        result[None] = group_dict
 
+    # 处理非空日期分组
+    for group_time, group_rows in unpaid_data[unpaid_data['UnpaidDate/unpaid记录时间'].notnull()].groupby(
+            'UnpaidDate/unpaid记录时间'):
+        group_dict = {}
+        for _, row in group_rows.iterrows():
+            platform_number = row['Platform Number/平台单号']
+            tracking_number = row['Tracking No./物流跟踪号']
+            shipping_service = row['Shipping service/物流渠道']
+            recipient = row['Recipient/收件人']
+
+            kj_ = (shipping_service == '上传物流面单(Upload_Shipping_Label)' and recipient in ['KJ', 'TK']) or \
+                  (shipping_service != '上传物流面单(Upload_Shipping_Label)')
+
+            group_dict[platform_number] = {
+                "tracking_number": tracking_number,
+                "kj": kj_
+            }
         result[group_time] = group_dict
 
     return result
@@ -1395,7 +1408,7 @@ def go(analyse_obj, xlsx_path):
     irregular_number_list = []
     if irregular_number_map:
         irregular_number_list = list(irregular_number_map.keys())
-        print(f"存在无效的物流跟踪号：{irregular_number_list}")
+        # print(f"存在无效的物流跟踪号：{irregular_number_list}")
         # update_courier_status(xlsx_path, {CourierStateMapKey.irregular_number_map: irregular_number_map})
         update_courier_status1(xlsx_path, irregular_number_map)
 
@@ -1976,9 +1989,10 @@ def automatic(dir_path, analyse_obj, ignore=False):
 
 
 def call2():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, True)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, True)
+    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/创建时间3_75.xlsx")
 
 
 if __name__ == '__main__':
