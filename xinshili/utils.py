@@ -86,6 +86,14 @@ def get_filename_with_extension(file_path):
     return filename
 
 
+def get_file_ext(file_path):
+    """
+    获取文件的后缀
+    """
+    ext = os.path.splitext(file_path)[1]  # 获取扩展名，包括“.”
+    return ext
+
+
 def ensure_directory_exists(dir_path):
     """
     确保文件夹存在，不存在则创建
@@ -149,7 +157,7 @@ def convert_csv_to_xlsx(csv_file, xlsx_file):
 
 
 def current_time():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
 
 def day_of_month():
