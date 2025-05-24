@@ -402,7 +402,6 @@ def check_column_duplicates(file_path, output_path):
                 row_numbers = [i + 1 for i in row_indices]
                 print(f"   🔁 重复行为: {row_numbers}    重复值为: {val}")
 
-    # return flag if not third_col_modified else False
     return flag, third_col_modified
 
 
@@ -416,7 +415,7 @@ if __name__ == '__main__':
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 52
+    price = 55
     repertorys = 800
     w_front_no_design_Flag = False
 
