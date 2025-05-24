@@ -4,6 +4,7 @@ import re
 import random
 from dataclasses import dataclass
 from xinshili import utils
+from xinshili.yifu_pupin import rule_replace
 
 
 @dataclass(frozen=True)
@@ -134,11 +135,13 @@ def normalize_punctuation_spacing(content, category_keyword):
     # 构造正则表达式：匹配标点符号后无空格 或 多空格 的情况
     pattern = re.compile(r"({})(?=\S)|({})\s{{2,}}".format("|".join(punctuations), "|".join(punctuations)))
 
+    replaced_text = rule_replace(content, False)
+
     content_category_keyword = ""
-    if ends_with_punctuation(content):
-        content_category_keyword = content + " " + category_keyword
+    if ends_with_punctuation(replaced_text):
+        content_category_keyword = replaced_text + " " + category_keyword
     else:
-        content_category_keyword = content + ". " + category_keyword
+        content_category_keyword = replaced_text + ". " + category_keyword
 
     def fix_spacing(text):
         # 标准化空格（标点后添加一个空格）
