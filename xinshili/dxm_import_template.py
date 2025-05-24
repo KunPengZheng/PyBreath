@@ -293,6 +293,7 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101017/bff7b4be4481c5c6e11d2edf1a8d9fc6.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101017/17666fe45e9b5f1254135febbd624721.jpg" \
                     "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101018/d4acb5ca0dce2d7be4fc88a00ce00b44.jpg"
+
     result_lbt = ""
     if color_flag == Combined.White:
         if w_front_no_design_Flag:
