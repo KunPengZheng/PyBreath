@@ -126,5 +126,4 @@ if __name__ == '__main__':
     utils.open_dir(output_dir)
 
     # 若需要时间转换功能，可启用下面一行：
-    # output_path = f"/Users/zkp/Documents/2025-05-21 15:21:15_阳单.xlsx"
-    # process_excel_time_column(output_path, output_path)
+    # process_excel_time_column(source_file, source_file)
