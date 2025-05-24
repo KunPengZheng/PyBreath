@@ -121,6 +121,11 @@ scene_descriptions = [
 ]
 
 
+def ends_with_punctuation(sentence):
+    sentence = sentence.strip()
+    return sentence[-1] in {'.', '!', '?'} if sentence else False
+
+
 def normalize_punctuation_spacing(content, category_keyword):
     # 定义要处理的标点符号（常见英文标点）
     punctuations = [",", "\\.", "!", "\\?", ";", ":"]
@@ -128,22 +133,23 @@ def normalize_punctuation_spacing(content, category_keyword):
     # 构造正则表达式：匹配标点符号后无空格 或 多空格 的情况
     pattern = re.compile(r"({})(?=\S)|({})\s{{2,}}".format("|".join(punctuations), "|".join(punctuations)))
 
-    def fix_spacing(text, ):
-        if not isinstance(text, str):
-            return text + f"{category_keyword}"
+    content_category_keyword = ""
+    if ends_with_punctuation(content):
+        content_category_keyword = content + " " + category_keyword
+    else:
+        content_category_keyword = content + ". " + category_keyword
 
+    def fix_spacing(text):
         # 标准化空格（标点后添加一个空格）
         text = pattern.sub(lambda m: m.group(0)[0] + " ", text)
 
         # 删除多余的空格（多个空格 → 一个空格）
         text = re.sub(r'\s{2,}', ' ', text)
 
-        text = text + f"{category_keyword}"
-
         # 去除开头/结尾空格
         return text.strip()
 
-    return fix_spacing(content)
+    return fix_spacing(content_category_keyword)
 
 
 def copy(
@@ -263,8 +269,8 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
     output_dir = "/Users/zkp/Desktop/B&Y/dxm/"
     output = f"{output_dir}{file_name_with_extension}"
 
-    sex_man = ". 2025 Men's T-shirt"
-    sex_women = ". 2025 Women's T-shirt"
+    sex_man = "2025 Men's T-shirt"
+    sex_women = "2025 Women's T-shirt"
     result_sex = sex_man if gender_flag == Combined.Man else sex_women
 
     result_color = "White" if color_flag == Combined.White else "Black"
