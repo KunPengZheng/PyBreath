@@ -1,7 +1,10 @@
+from datetime import datetime
+
 import pandas as pd
-from datetime import datetime, timedelta
-from xinshili.utils import current_time
 import pytz
+
+from xinshili import utils
+from xinshili.utils import current_time
 
 
 def transfer_and_merge_address(file1_path, file2_path, output_path, order_prefix, remark_prefix):
@@ -99,11 +102,29 @@ def process_excel_time_column(file_path, output_path):
 
 
 if __name__ == '__main__':
-    scr_path = "/Users/zkp/Downloads/订单管理20250519-82-782994304947683328.xlsx"
-    dst_path = "/Users/zkp/Documents/代采出阳单模版.xlsx"
-    output_path = f"/Users/zkp/Documents/{current_time()}_阳单.xlsx"
-    transfer_and_merge_address(scr_path, dst_path, output_path, order_prefix="", remark_prefix="daicai-")
+    source_file = input("请输入源表文件的绝对路径：")
+    platform_order_number_suffix = input("请输入平台订单号后缀：")
+
+    dst_path = utils.current_dir() + "/xlsx/daicai/代采出阳单模版.xlsx"
+    output_dir = f"/Users/zkp/Desktop/B&Y/dcyd/"
+    output_path = f"{output_dir}{current_time()}_阳单.xlsx"
+
+    order_prefixs = ""
+    if not platform_order_number_suffix:
+        order_prefixs = ""
+    else:
+        if platform_order_number_suffix[0].isalpha():
+            order_prefixs = "-" + platform_order_number_suffix
+        else:
+            raise ValueError(f"订单号后缀只能以字母为开头")
+    remark_prefixs = "daicai-"
+
+    transfer_and_merge_address(source_file, dst_path, output_path,
+                               order_prefix=order_prefixs,
+                               remark_prefix=remark_prefixs)
+
+    utils.open_dir(output_dir)
 
     # 若需要时间转换功能，可启用下面一行：
-    # output_path = f"/Users/zkp/Documents/2025-05-15 15:50:26_阳单 2 2 2.xlsx"
+    # output_path = f"/Users/zkp/Documents/2025-05-21 15:21:15_阳单.xlsx"
     # process_excel_time_column(output_path, output_path)
