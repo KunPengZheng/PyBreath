@@ -4,6 +4,7 @@ import pandas as pd
 import pytz
 
 from xinshili import utils
+from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.utils import current_time
 
 
@@ -107,7 +108,8 @@ if __name__ == '__main__':
 
     dst_path = utils.current_dir() + "/xlsx/daicai/代采出阳单模版.xlsx"
     output_dir = f"/Users/zkp/Desktop/B&Y/dcyd/"
-    output_path = f"{output_dir}{current_time()}_阳单.xlsx"
+    column = remove_duplicates_by_column(source_file, source_file, "平台单号")
+    output_path = f"{output_dir}{current_time()}_阳单_{column}.xlsx"
 
     order_prefixs = ""
     if not platform_order_number_suffix:
@@ -122,6 +124,10 @@ if __name__ == '__main__':
     transfer_and_merge_address(source_file, dst_path, output_path,
                                order_prefix=order_prefixs,
                                remark_prefix=remark_prefixs)
+
+    # column = remove_duplicates_by_column(output_path, output_path, "订单号")
+    # result_output_path = f"{output_dir}{utils.get_filename_without_extension(output_path)}_{column}{utils.get_file_ext(output_path)}"
+    # utils.rename(output_path, result_output_path)
 
     utils.open_dir(output_dir)
 
