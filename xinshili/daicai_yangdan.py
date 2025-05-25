@@ -8,7 +8,7 @@ from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.utils import current_time
 
 
-def transfer_and_merge_address(file1_path, file2_path, output_path, order_prefix, remark_prefix):
+def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix, remark_prefix):
     # 读取文件，并将所有内容当作字符串读入，避免数字变格式
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
     df2 = pd.read_excel(file2_path, dtype=str).fillna("")
@@ -49,7 +49,15 @@ def transfer_and_merge_address(file1_path, file2_path, output_path, order_prefix
     else:
         print("⚠️ 缺少“店铺”或“备注”列，未处理备注信息")
 
-    # 保存为 Excel 文件
+    # 先根据“平台单号”去重，保留第一条
+    if "订单号" in df2.columns:
+        df2 = df2.drop_duplicates(subset=["订单号"], keep='first')
+    else:
+        print("⚠️ df2 中缺少“订单号”列，跳过去重。")
+
+    output_path = f"{output_dir}{current_time()}_阳单_{len(df2)}.xlsx"
+
+    # 保存结果文件
     df2.to_excel(output_path, index=False)
     print(f"✅ 文件已更新并保存至：{output_path}")
 
@@ -108,8 +116,6 @@ if __name__ == '__main__':
 
     dst_path = utils.current_dir() + "/xlsx/daicai/代采出阳单模版.xlsx"
     output_dir = f"/Users/zkp/Desktop/B&Y/dcyd/"
-    column = remove_duplicates_by_column(source_file, source_file, "平台单号")
-    output_path = f"{output_dir}{current_time()}_阳单_{column}.xlsx"
 
     order_prefixs = ""
     if not platform_order_number_suffix:
@@ -121,13 +127,9 @@ if __name__ == '__main__':
             raise ValueError(f"订单号后缀只能以字母为开头")
     remark_prefixs = "daicai-"
 
-    transfer_and_merge_address(source_file, dst_path, output_path,
+    transfer_and_merge_address(source_file, dst_path, output_dir,
                                order_prefix=order_prefixs,
                                remark_prefix=remark_prefixs)
-
-    # column = remove_duplicates_by_column(output_path, output_path, "订单号")
-    # result_output_path = f"{output_dir}{utils.get_filename_without_extension(output_path)}_{column}{utils.get_file_ext(output_path)}"
-    # utils.rename(output_path, result_output_path)
 
     utils.open_dir(output_dir)
 
