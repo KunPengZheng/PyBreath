@@ -13,7 +13,7 @@ def compare_tracking_numbers(file1_path, file2_path, output_path):
     order_col_1 = RowName.Order_Num
     tracking_col_1 = RowName.Track_Num
     order_col_2 = RowName.Platform_Num
-    tracking_col_2 = RowName.Platform_Num
+    tracking_col_2 = RowName.Package1_Tracking
 
     # 清理空格
     df1[order_col_1] = df1[order_col_1].str.strip()
@@ -152,9 +152,9 @@ if __name__ == '__main__':
     file2 = "/Users/zkp/Documents/未命名文件夹 2/ParcelOutbound_20250520160403_副本.xlsx"
     output = "/Users/zkp/Documents/未命名文件夹 2/12-19号阴阳单时间分析.xlsx"
 
-    # compare_tracking_numbers(file1, file2, output)
-    # check_and_add_courier_column(output)
-    #
+    compare_tracking_numbers(file1, file2, output)
+    check_and_add_courier_column(output)
+
     results1 = extract_and_process_data(output, RowName.Yang_Track_State, 100, RowName.Yang_Num)
     all_maps1 = {
         CourierStateMapKey.not_yet_map: results1[CourierStateMapKey.not_yet_map],
