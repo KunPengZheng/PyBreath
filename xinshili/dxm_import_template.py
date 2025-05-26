@@ -411,11 +411,11 @@ if __name__ == '__main__':
     filename = utils.get_filename_without_extension(source_file)
     ext = utils.get_file_ext(source_file)
 
-    ignore_io_permission = file_dir + filename + "_modify_title_column" + ext
+    ignore_io_permission = file_dir + "/" + filename + "_modify_title_column" + ext
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 55
+    price = 52
     repertorys = 800
     w_front_no_design_Flag = False
 
