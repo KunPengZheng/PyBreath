@@ -45,6 +45,20 @@ class RowName:
     LatestEventSfDate_File1 = 'LatestEventSfDate/最新事件时间_file1'
     Package1_Tracking = 'Package 1\nTracking No./物流跟踪号1'
 
+    Order_Num = "订单号"
+    Track_Num = "运单号"
+    Platform_Num = "Platform Number/平台单号"
+    Yang_Num = "阳单_运单号"
+    Yin_Num = "阴单_运单号"
+    Yang_Track_State = "阳单_物流状态"
+    Yin_Track_State = "阴单_物流状态"
+    Yang_Delivered_Time = "阳单_签收时间"
+    Yin_Delivered_Time = "阴单_签收时间"
+    YY_Delivered_Time = "阴阳单_签收间隔"
+    Create_Time = "创建时间"
+
+
+
 
 @dataclass(frozen=True)
 class CourierStateMapKey:
@@ -1989,10 +2003,9 @@ def automatic(dir_path, analyse_obj, ignore=False):
 
 
 def call2():
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, True)
-    go(ClientConstants.xyl, "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/创建时间3_75.xlsx")
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, False)
 
 
 if __name__ == '__main__':
