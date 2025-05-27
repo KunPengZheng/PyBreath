@@ -2,7 +2,9 @@ import pandas as pd
 from datetime import datetime
 import xlsxwriter
 
+from xinshili.fs_utils_plus import get_token, yy_sheet_value, ClientConstants
 from xinshili.gjgz_plus333 import extract_and_process_data, CourierStateMapKey, RowName, update_courier_status
+from xinshili.utils import getYmd
 
 
 def compare_tracking_numbers(file1_path, file2_path, output_path):
@@ -117,6 +119,47 @@ def calculate_sign_time_distribution(file_path):
         print("❌ 未找到“签收时间_间隔”列，请检查文件内容。")
         return
 
+    if RowName.Create_Time not in df.columns:
+        print("❌ 未找到“创建时间”列，请检查文件内容。")
+        return
+
+    # 转换“创建时间”为日期
+    df[RowName.Create_Time] = pd.to_datetime(df[RowName.Create_Time], errors='coerce')
+    df = df.dropna(subset=[RowName.Create_Time])
+
+    df[RowName.YY_Delivered_Time] = df[RowName.YY_Delivered_Time].fillna("").astype(str)
+    df["创建日期"] = df[RowName.Create_Time].dt.date
+
+    grouped = df.groupby("创建日期")
+
+    print("📊 按“创建时间”分组统计结果：")
+    tat = get_token()
+    for date, group in grouped:
+        total = len(group)
+        yang_count = group[RowName.YY_Delivered_Time].str.contains("阳单先到达").sum()
+        yin_count = group[RowName.YY_Delivered_Time].str.contains("阴单先到达").sum()
+        empty_count = (group[RowName.YY_Delivered_Time] == "").sum()
+
+        text = f"\n订单总数：{total}"
+        text += f"\n阳单先到达：({yang_count}, {yang_count / total:.2%})"
+        text += f"\n阴单先到达：({yin_count}, {yin_count / total:.2%})"
+        text += f"\n均未到达：({empty_count}, {empty_count / total:.2%})"
+
+        date_text = f"\n📅 日期: {date}" + text
+        print(date_text)
+
+        formatted_date = date.strftime("%Y/%m/%d")
+        gz_time = getYmd()
+        yy_sheet_value(tat, [text], formatted_date, gz_time, ClientConstants.yy)
+
+
+def calculate_sum_up_distribution(file_path):
+    df = pd.read_excel(file_path)
+
+    if RowName.YY_Delivered_Time not in df.columns:
+        print("❌ 未找到“签收时间_间隔”列，请检查文件内容。")
+        return
+
     total = len(df)
     if total == 0:
         print("⚠️ 文件中无数据。")
@@ -131,57 +174,59 @@ def calculate_sign_time_distribution(file_path):
     print(f"📊 统计结果（共 {total} 行）：")
     print(f"✅ 阳单先到达：{yang_count} 行，占比 {yang_count / total:.2%}")
     print(f"✅ 阴单先到达：{yin_count} 行，占比 {yin_count / total:.2%}")
-    print(f"🔲 空白行：{empty_count} 行，占比 {empty_count / total:.2%}")
+    print(f"🔲 均未到达：{empty_count} 行，占比 {empty_count / total:.2%}")
 
 
 if __name__ == '__main__':
     file1 = "/Users/zkp/Documents/未命名文件夹 2/930单12-20号_副本.xlsx"
     file2 = "/Users/zkp/Documents/未命名文件夹 2/ParcelOutbound_20250520160403_副本.xlsx"
-    output = "/Users/zkp/Documents/未命名文件夹 2/差异输出_带间隔_副本.xlsx"
+    # output = "/Users/zkp/Documents/未命名文件夹 2/差异输出_带间隔_副本.xlsx"
+    output = "/Users/zkp/Documents/未命名文件夹 2/12-19号阴阳单时间分析_27.xlsx"
 
-    compare_tracking_numbers(file1, file2, output)
+    # compare_tracking_numbers(file1, file2, output)
 
-    # results1 = extract_and_process_data(output, RowName.Yang_Track_State, 100, RowName.Yang_Num)
-    # all_maps1 = {
-    #     CourierStateMapKey.not_yet_map: results1[CourierStateMapKey.not_yet_map],
-    #     CourierStateMapKey.pre_ship_map: results1[CourierStateMapKey.pre_ship_map],
-    #     CourierStateMapKey.unpaid_map: results1[CourierStateMapKey.unpaid_map],
-    #     CourierStateMapKey.delivered_map: results1[CourierStateMapKey.delivered_map],
-    #     CourierStateMapKey.no_tracking_map: results1[CourierStateMapKey.no_tracking_map],
-    #     CourierStateMapKey.tracking_map: results1[CourierStateMapKey.tracking_map],
-    #     CourierStateMapKey.delivered_time_map: results1[CourierStateMapKey.delivered_time_map],
-    # }
-    # column_mapping1 = {
-    #     CourierStateMapKey.not_yet_map: RowName.Yang_Track_State,
-    #     CourierStateMapKey.pre_ship_map: RowName.Yang_Track_State,
-    #     CourierStateMapKey.unpaid_map: RowName.Yang_Track_State,
-    #     CourierStateMapKey.delivered_map: RowName.Yang_Track_State,
-    #     CourierStateMapKey.no_tracking_map: RowName.Yang_Track_State,
-    #     CourierStateMapKey.tracking_map: RowName.Yang_Track_State,
-    #     CourierStateMapKey.delivered_time_map: RowName.Yang_Delivered_Time,
-    # }
-    # update_courier_status(output, all_maps1, wl=RowName.Yang_Num, column_map=column_mapping1)
-    #
-    # results2 = extract_and_process_data(output, RowName.Yin_Track_State, 100, RowName.Yin_Num)
-    # all_maps2 = {
-    #     CourierStateMapKey.not_yet_map: results2[CourierStateMapKey.not_yet_map],
-    #     CourierStateMapKey.pre_ship_map: results2[CourierStateMapKey.pre_ship_map],
-    #     CourierStateMapKey.unpaid_map: results2[CourierStateMapKey.unpaid_map],
-    #     CourierStateMapKey.delivered_map: results2[CourierStateMapKey.delivered_map],
-    #     CourierStateMapKey.no_tracking_map: results2[CourierStateMapKey.no_tracking_map],
-    #     CourierStateMapKey.tracking_map: results2[CourierStateMapKey.tracking_map],
-    #     CourierStateMapKey.delivered_time_map: results2[CourierStateMapKey.delivered_time_map],
-    # }
-    # column_mapping2 = {
-    #     CourierStateMapKey.not_yet_map: RowName.Yin_Track_State,
-    #     CourierStateMapKey.pre_ship_map: RowName.Yin_Track_State,
-    #     CourierStateMapKey.unpaid_map: RowName.Yin_Track_State,
-    #     CourierStateMapKey.delivered_map: RowName.Yin_Track_State,
-    #     CourierStateMapKey.no_tracking_map: RowName.Yin_Track_State,
-    #     CourierStateMapKey.tracking_map: RowName.Yin_Track_State,
-    #     CourierStateMapKey.delivered_time_map: RowName.Yin_Delivered_Time,
-    # }
-    # update_courier_status(output, all_maps2, wl=RowName.Yin_Num, column_map=column_mapping2)
-    #
-    # compare_delivery_times(output)
-    # calculate_sign_time_distribution(output)
+    results1 = extract_and_process_data(output, RowName.Yang_Track_State, 100, RowName.Yang_Num)
+    all_maps1 = {
+        CourierStateMapKey.not_yet_map: results1[CourierStateMapKey.not_yet_map],
+        CourierStateMapKey.pre_ship_map: results1[CourierStateMapKey.pre_ship_map],
+        CourierStateMapKey.unpaid_map: results1[CourierStateMapKey.unpaid_map],
+        CourierStateMapKey.delivered_map: results1[CourierStateMapKey.delivered_map],
+        CourierStateMapKey.no_tracking_map: results1[CourierStateMapKey.no_tracking_map],
+        CourierStateMapKey.tracking_map: results1[CourierStateMapKey.tracking_map],
+        CourierStateMapKey.delivered_time_map: results1[CourierStateMapKey.delivered_time_map],
+    }
+    column_mapping1 = {
+        CourierStateMapKey.not_yet_map: RowName.Yang_Track_State,
+        CourierStateMapKey.pre_ship_map: RowName.Yang_Track_State,
+        CourierStateMapKey.unpaid_map: RowName.Yang_Track_State,
+        CourierStateMapKey.delivered_map: RowName.Yang_Track_State,
+        CourierStateMapKey.no_tracking_map: RowName.Yang_Track_State,
+        CourierStateMapKey.tracking_map: RowName.Yang_Track_State,
+        CourierStateMapKey.delivered_time_map: RowName.Yang_Delivered_Time,
+    }
+    update_courier_status(output, all_maps1, wl=RowName.Yang_Num, column_map=column_mapping1)
+
+    results2 = extract_and_process_data(output, RowName.Yin_Track_State, 100, RowName.Yin_Num)
+    all_maps2 = {
+        CourierStateMapKey.not_yet_map: results2[CourierStateMapKey.not_yet_map],
+        CourierStateMapKey.pre_ship_map: results2[CourierStateMapKey.pre_ship_map],
+        CourierStateMapKey.unpaid_map: results2[CourierStateMapKey.unpaid_map],
+        CourierStateMapKey.delivered_map: results2[CourierStateMapKey.delivered_map],
+        CourierStateMapKey.no_tracking_map: results2[CourierStateMapKey.no_tracking_map],
+        CourierStateMapKey.tracking_map: results2[CourierStateMapKey.tracking_map],
+        CourierStateMapKey.delivered_time_map: results2[CourierStateMapKey.delivered_time_map],
+    }
+    column_mapping2 = {
+        CourierStateMapKey.not_yet_map: RowName.Yin_Track_State,
+        CourierStateMapKey.pre_ship_map: RowName.Yin_Track_State,
+        CourierStateMapKey.unpaid_map: RowName.Yin_Track_State,
+        CourierStateMapKey.delivered_map: RowName.Yin_Track_State,
+        CourierStateMapKey.no_tracking_map: RowName.Yin_Track_State,
+        CourierStateMapKey.tracking_map: RowName.Yin_Track_State,
+        CourierStateMapKey.delivered_time_map: RowName.Yin_Delivered_Time,
+    }
+    update_courier_status(output, all_maps2, wl=RowName.Yin_Num, column_map=column_mapping2)
+
+    compare_delivery_times(output)
+    calculate_sign_time_distribution(output)
+    calculate_sum_up_distribution(output)
