@@ -165,6 +165,10 @@ def copy(
         color_value: object,
         stock_quantity: object,
         repertory: object,
+        length: object,
+        width: object,
+        height: object,
+        weight: object
 ) -> object:
     df1 = pd.read_excel(file1_path, header=None, dtype=str)
     df2 = pd.read_excel(file2_path, dtype=str)
@@ -231,10 +235,10 @@ def copy(
         df2.at[row_idx, col_H] = val_h
         df2.at[row_idx, col_J] = str(stock_quantity)
         df2.at[row_idx, col_K] = val_k
-        df2.at[row_idx, col_L] = "20"
-        df2.at[row_idx, col_M] = "15"
-        df2.at[row_idx, col_N] = "2"
-        df2.at[row_idx, col_O] = "180"
+        df2.at[row_idx, col_L] = length
+        df2.at[row_idx, col_M] = width
+        df2.at[row_idx, col_N] = height
+        df2.at[row_idx, col_O] = weight
         df2.at[row_idx, col_Y] = repertory
         df2.at[row_idx, col_Z] = "2"
 
@@ -307,6 +311,21 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
     else:
         result_lbt = lunbotu_black
 
+    lengths = ""
+    widths = ""
+    heights = ""
+    weights = ""
+    if gender_flag == Combined.Man:
+        lengths = "35"
+        widths = "25"
+        heights = "1"
+        weights = "130"
+    else:
+        lengths = "20"
+        widths = "15"
+        heights = "2"
+        weights = "180"
+
     copy(
         file1_path=src_path,
         file2_path=template_path,  # 现在是字符串路径了 ✅
@@ -315,7 +334,11 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
         category_keyword=result_sex,
         color_value=result_color,
         stock_quantity=price,
-        repertory=repertorys
+        repertory=repertorys,
+        length=lengths,
+        width=widths,
+        height=heights,
+        weight=weights
     )
 
     utils.open_dir(output_dir)
@@ -415,7 +438,7 @@ if __name__ == '__main__':
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 52
+    price = 57
     repertorys = 800
     w_front_no_design_Flag = False
 
