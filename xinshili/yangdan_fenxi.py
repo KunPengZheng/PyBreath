@@ -6,17 +6,17 @@ from xinshili.gjgz_plus333 import extract_and_process_data, CourierStateMapKey, 
 
 
 def compare_tracking_numbers(file1_path, file2_path, output_path):
-    # 读取 Excel 文件，全部强制为字符串
+    # 读取 Excel 文件
     df1 = pd.read_excel(file1_path, dtype=str)
     df2 = pd.read_excel(file2_path, dtype=str)
 
     # 定义关键列名
-    order_col_1 = RowName.Order_Num
-    tracking_col_1 = RowName.Track_Num
-    order_col_2 = RowName.Platform_Num
-    tracking_col_2 = RowName.Package1_Tracking
-    create_time_col_2 = "Creation time/创建时间"
-    create_time_out_col = "创建时间"
+    order_col_1 = RowName.Order_Num  # df1 中的订单号
+    tracking_col_1 = RowName.Track_Num  # df1 中的运单号
+    order_col_2 = RowName.Platform_Num  # df2 中的订单号（平台单号）
+    tracking_col_2 = RowName.Package1_Tracking  # df2 中的运单号
+    create_time_col_2 = RowName.OutboundTime  # df2 中的创建时间列
+    create_time_out_col = RowName.Create_Time  # 输出文件中的创建时间列名
 
     # 清理空格
     for col in [order_col_1, tracking_col_1]:
@@ -30,7 +30,7 @@ def compare_tracking_numbers(file1_path, file2_path, output_path):
     df1_clean = df1_clean[(df1_clean[order_col_1] != "") & (df1_clean[tracking_col_1] != "")]
     df2_clean = df2_clean[(df2_clean[order_col_2] != "") & (df2_clean[tracking_col_2] != "")]
 
-    # 合并数据
+    # 合并数据（保留创建时间列）
     merged = pd.merge(
         df1_clean[[order_col_1, tracking_col_1]],
         df2_clean[[order_col_2, tracking_col_2, create_time_col_2]],
@@ -39,61 +39,30 @@ def compare_tracking_numbers(file1_path, file2_path, output_path):
         how='inner'
     )
 
-    # 找出运单号不一致
+    # 找出运单号不一致的数据
     mismatched = merged[merged[tracking_col_1] != merged[tracking_col_2]]
 
-    # 整理结果 DataFrame
+    # 整理输出
     result = mismatched[[order_col_1, tracking_col_1, tracking_col_2, create_time_col_2]].copy()
     result.columns = [RowName.Order_Num, RowName.Yang_Num, RowName.Yin_Num, create_time_out_col]
 
-    # 创建 xlsxwriter 工作簿
-    workbook = xlsxwriter.Workbook(output_path)
-    worksheet = workbook.add_worksheet("差异记录")
+    # ✅ 仅将“订单号”列转换为字符串类型（无前缀）
+    result[RowName.Order_Num] = result[RowName.Order_Num].astype(str)
 
-    # 创建文本格式
-    text_format = workbook.add_format({'num_format': '@'})
+    if RowName.Yang_Track_State not in result.columns:
+        result[RowName.Yang_Track_State] = ""
+    if RowName.Yin_Track_State not in result.columns:
+        result[RowName.Yin_Track_State] = ""
+    if RowName.Yang_Delivered_Time not in result.columns:
+        result[RowName.Yang_Delivered_Time] = ""
+    if RowName.Yin_Delivered_Time not in result.columns:
+        result[RowName.Yin_Delivered_Time] = ""
+    if RowName.YY_Delivered_Time not in result.columns:
+        result[RowName.YY_Delivered_Time] = ""
 
-    # 写入标题
-    for col_num, col_name in enumerate(result.columns):
-        worksheet.write(0, col_num, col_name)
-
-    # 写入每一行数据，强制全部为字符串（防止科学计数法）
-    for row_num, row in enumerate(result.itertuples(index=False), start=1):
-        for col_num, cell in enumerate(row):
-            worksheet.write_string(row_num, col_num, str(cell), text_format)
-
-    workbook.close()
+    # 保存结果（使用 pandas 默认的 Excel 写法）
+    result.to_excel(output_path, index=False)
     print(f"✅ 差异记录已保存到: {output_path}")
-
-
-def check_and_add_courier_column(file_path):
-    """
-    检查 Excel 文件是否存在 '快递' 列，如果没有，则在最后一列添加该列。
-
-    :param file_path: Excel 文件路径
-    :param courier_column: 快递列名，默认为 'Courier/快递'
-    :return: None
-    """
-    try:
-        # 加载 Excel 文件
-        data = pd.read_excel(file_path, engine='openpyxl')
-        # 判断是否存在 '快递' 列
-        if RowName.Yang_Track_State not in data.columns:
-            # 如果没有 '快递' 列，则在最后一列添加该列
-            data[RowName.Yang_Track_State] = ""  # 默认为空值，可以根据需求填充其他默认值
-        if RowName.Yin_Track_State not in data.columns:
-            data[RowName.Yin_Track_State] = ""
-        if RowName.Yang_Delivered_Time not in data.columns:
-            data[RowName.Yang_Delivered_Time] = ""
-        if RowName.Yin_Delivered_Time not in data.columns:
-            data[RowName.Yin_Delivered_Time] = ""
-        if RowName.YY_Delivered_Time not in data.columns:
-            data[RowName.YY_Delivered_Time] = ""
-        # 保存修改后的文件
-        data.to_excel(file_path, index=False, engine='openpyxl')
-        # print("check_and_add_courier_column 方法执行完成")
-    except Exception as e:
-        print(f"发生错误: {e}")
 
 
 def compare_delivery_times(file_path):
@@ -170,7 +139,6 @@ if __name__ == '__main__':
     file2 = "/Users/zkp/Documents/未命名文件夹 2/ParcelOutbound_20250520160403_副本.xlsx"
     output = "/Users/zkp/Documents/未命名文件夹 2/差异输出_带间隔_副本.xlsx"
 
-    check_and_add_courier_column(output)
     compare_tracking_numbers(file1, file2, output)
 
     # results1 = extract_and_process_data(output, RowName.Yang_Track_State, 100, RowName.Yang_Num)
