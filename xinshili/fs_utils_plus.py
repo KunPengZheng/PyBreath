@@ -31,6 +31,7 @@ class ClientConstants:
     cjsj = "cjsj"
     khhz = "khhz"
     ckoms = "ckoms"
+    yy = "yy"
 
 
 FsOrderSheetMap = {
@@ -55,6 +56,7 @@ ClientMapConstants = {
     ClientConstants.md_flld: {MapFields.brief: "ot68bY"},
     ClientConstants.khhz: "Q7LQzA",
     ClientConstants.ckoms: "83VoQ2",
+    ClientConstants.yy: "JYtXLd",
 }
 
 
@@ -75,7 +77,8 @@ def get_map_url(analyse_obj):
             analyse_obj == ClientConstants.mx_dg or \
             analyse_obj == ClientConstants.md_fc or \
             analyse_obj == ClientConstants.md_flld or \
-            analyse_obj == ClientConstants.khhz:
+            analyse_obj == ClientConstants.khhz or \
+            analyse_obj == ClientConstants.yy:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.values_spreadsheets_write_way}"
         return url
@@ -333,6 +336,27 @@ def brief_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
     post_data = {
         "valueRange": {
             "range": f"{ClientMapConstants[analyse_obj][MapFields.brief]}!{column_nums}{row_nums}:{column_nums}{row_nums}",
+            "values": [lists]}
+    }
+
+    # values_prepend 需要使用post请求方式，values需要使用put请求方式
+    r2 = requests.put(url, data=json.dumps(post_data), headers=header)
+    print(r2.json())  # 输出来判断写入是否成功
+
+
+def yy_sheet_value(tat, lists, ck_time, gz_time, analyse_obj):
+    """
+    """
+    url = get_map_url(analyse_obj)
+
+    header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
+
+    column_nums = get_column_for_specific_date(gz_time)
+    row_nums = get_row_for_specific_date(ck_time)
+
+    post_data = {
+        "valueRange": {
+            "range": f"{ClientMapConstants[ClientConstants.yy]}!{column_nums}{row_nums}:{column_nums}{row_nums}",
             "values": [lists]}
     }
 
