@@ -19,9 +19,10 @@ def compare_tracking_numbers(file1_path, file2_path, output_path):
     tracking_col_2 = RowName.Package1_Tracking  # df2 中的运单号
     create_time_col_2 = RowName.OutboundTime  # df2 中的创建时间列
     create_time_out_col = RowName.Create_Time  # 输出文件中的创建时间列名
+    store_col = "店铺账号"  # df1 中的店铺账号列
 
     # 清理空格
-    for col in [order_col_1, tracking_col_1]:
+    for col in [order_col_1, tracking_col_1, store_col]:
         df1[col] = df1[col].str.strip()
     for col in [order_col_2, tracking_col_2, create_time_col_2]:
         df2[col] = df2[col].str.strip()
@@ -32,9 +33,9 @@ def compare_tracking_numbers(file1_path, file2_path, output_path):
     df1_clean = df1_clean[(df1_clean[order_col_1] != "") & (df1_clean[tracking_col_1] != "")]
     df2_clean = df2_clean[(df2_clean[order_col_2] != "") & (df2_clean[tracking_col_2] != "")]
 
-    # 合并数据（保留创建时间列）
+    # 合并数据（保留创建时间列和店铺账号）
     merged = pd.merge(
-        df1_clean[[order_col_1, tracking_col_1]],
+        df1_clean[[order_col_1, tracking_col_1, store_col]],
         df2_clean[[order_col_2, tracking_col_2, create_time_col_2]],
         left_on=order_col_1,
         right_on=order_col_2,
@@ -45,24 +46,22 @@ def compare_tracking_numbers(file1_path, file2_path, output_path):
     mismatched = merged[merged[tracking_col_1] != merged[tracking_col_2]]
 
     # 整理输出
-    result = mismatched[[order_col_1, tracking_col_1, tracking_col_2, create_time_col_2]].copy()
-    result.columns = [RowName.Order_Num, RowName.Yang_Num, RowName.Yin_Num, create_time_out_col]
+    result = mismatched[[order_col_1, tracking_col_1, tracking_col_2, create_time_col_2, store_col]].copy()
+    result.columns = [RowName.Order_Num, RowName.Yang_Num, RowName.Yin_Num, create_time_out_col, "店铺账号"]
 
-    # ✅ 仅将“订单号”列转换为字符串类型（无前缀）
+    # ✅ 强制订单号为字符串
     result[RowName.Order_Num] = result[RowName.Order_Num].astype(str)
 
-    if RowName.Yang_Track_State not in result.columns:
-        result[RowName.Yang_Track_State] = ""
-    if RowName.Yin_Track_State not in result.columns:
-        result[RowName.Yin_Track_State] = ""
-    if RowName.Yang_Delivered_Time not in result.columns:
-        result[RowName.Yang_Delivered_Time] = ""
-    if RowName.Yin_Delivered_Time not in result.columns:
-        result[RowName.Yin_Delivered_Time] = ""
-    if RowName.YY_Delivered_Time not in result.columns:
-        result[RowName.YY_Delivered_Time] = ""
+    # ✅ 追加空列
+    for col in [
+        RowName.Yang_Track_State, RowName.Yin_Track_State,
+        RowName.Yang_Delivered_Time, RowName.Yin_Delivered_Time,
+        RowName.YY_Delivered_Time
+    ]:
+        if col not in result.columns:
+            result[col] = ""
 
-    # 保存结果（使用 pandas 默认的 Excel 写法）
+    # 保存结果
     result.to_excel(output_path, index=False)
     print(f"✅ 差异记录已保存到: {output_path}")
 
@@ -177,14 +176,7 @@ def calculate_sum_up_distribution(file_path):
     print(f"🔲 均未到达：{empty_count} 行，占比 {empty_count / total:.2%}")
 
 
-if __name__ == '__main__':
-    file1 = "/Users/zkp/Documents/未命名文件夹 2/930单12-20号_副本.xlsx"
-    file2 = "/Users/zkp/Documents/未命名文件夹 2/ParcelOutbound_20250520160403_副本.xlsx"
-    # output = "/Users/zkp/Documents/未命名文件夹 2/差异输出_带间隔_副本.xlsx"
-    output = "/Users/zkp/Documents/未命名文件夹 2/12-19号阴阳单时间分析_27.xlsx"
-
-    # compare_tracking_numbers(file1, file2, output)
-
+def fenxi(output):
     results1 = extract_and_process_data(output, RowName.Yang_Track_State, 100, RowName.Yang_Num)
     all_maps1 = {
         CourierStateMapKey.not_yet_map: results1[CourierStateMapKey.not_yet_map],
@@ -230,3 +222,29 @@ if __name__ == '__main__':
     compare_delivery_times(output)
     calculate_sign_time_distribution(output)
     calculate_sum_up_distribution(output)
+
+
+if __name__ == '__main__':
+    select = "\n请选择功能："
+    select += "\n1：🍺合并阴阳单☯️"
+    select += "\n2：📊分析阴阳单☯️"
+    select_input = input("请选择功能：\n")
+
+    if select == "1":
+        dxm_input = input("请输入店小秘文件路径：")
+        omp_input = input("请输入领星OMP文件路径：")
+
+        # file1 = "/Users/zkp/Documents/未命名文件夹 2/930单12-20号_副本.xlsx"
+        # file2 = "/Users/zkp/Documents/未命名文件夹 2/ParcelOutbound_20250520160403_副本.xlsx"
+        # # output = "/Users/zkp/Documents/未命名文件夹 2/差异输出_带间隔_副本.xlsx"
+        # output = "/Users/zkp/Documents/未命名文件夹 2/12-19号阴阳单时间分析_27.xlsx"
+
+        compare_tracking_numbers(dxm_input, omp_input, output)
+
+    elif select == "2":
+        input_path = input("请输入源文件路径：")
+        fenxi(input_path)
+    else:
+        print("🈚️此项功能！")
+
+
