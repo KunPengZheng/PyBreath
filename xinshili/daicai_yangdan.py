@@ -131,7 +131,7 @@ if __name__ == '__main__':
     platform_order_number_suffix = input("请输入平台订单号后缀：")
 
     dst_path = utils.current_dir() + "/xlsx/daicai/代采出阳单模版.xlsx"
-    output_dir = f"/Users/zkp/Desktop/B&Y/dcyd/"
+    output_dir = f"/Users/zkp/Desktop/B&Y/yd/dcyd/"
 
     order_prefixs = ""
     if not platform_order_number_suffix:
