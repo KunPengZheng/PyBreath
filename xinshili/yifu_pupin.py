@@ -29,6 +29,17 @@ def lenb_minus_len(text):
     return extra_bytes
 
 
+def match_case(word, replacement):
+    if word.isupper():
+        return replacement.upper()
+    elif word.islower():
+        return replacement.lower()
+    elif word[0].isupper():
+        return replacement.capitalize()
+    else:
+        return replacement  # 保持默认形式
+
+
 def rule_replace(text, women_big_size_suffix_flag):
     """
     替换中文符号为对应的英文符号，去除品牌名、敏感内容、非法字符，避免侵权和不适当的内容。
@@ -98,7 +109,14 @@ def rule_replace(text, women_big_size_suffix_flag):
 
     # 使用正则替换，忽略大小写
     for zh_symbol, en_symbol in symbol_map.items():
-        text = re.sub(re.escape(zh_symbol), en_symbol, text, flags=re.IGNORECASE)
+        # 使用 \b 保证整词匹配
+        pattern = rf"\b{re.escape(zh_symbol)}\b"
+
+        def replacer(match):
+            original = match.group(0)
+            return match_case(original, en_symbol)
+
+        text = re.sub(pattern, replacer, text, flags=re.IGNORECASE)
 
     for word in rule_words:
         text = re.sub(re.escape(word), "", text, flags=re.IGNORECASE)
@@ -186,9 +204,6 @@ def rename_files_in_folder(folder_path, prefix):
             new_name = f"{prefix}{extension}"  # 生成新文件名
             new_path = os.path.join(folder_path, new_name)
             os.rename(old_path, new_path)  # 重命名文件
-
-
-
 
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250303黑色女装标题.xlsx")
 # process_replace("/Users/zkp/Desktop/未命名文件夹/20250304黑色女装标题.xlsx")
