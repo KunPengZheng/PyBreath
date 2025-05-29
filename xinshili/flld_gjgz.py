@@ -1,6 +1,6 @@
-from datetime import datetime, date, timedelta
 import os
 import re
+from datetime import datetime, timedelta
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -87,36 +87,71 @@ def get_days_difference(file_path, column_name="打单时间"):
         return None
 
 
-def merge_csv_files(file_paths, output_path):
-    # 创建一个空的列表来存储所有的 DataFrame
-    data_frames = []
+def merge_csv_files_to_excel(csv_files, output_dir):
+    """
+    合并多个 CSV 文件，只保留第一个文件的列头，并保存为 Excel 文件。
+    同时提取“打单时间”首条值的月份格式（如2025.5）和日期（如05-24），打印有效行数。
+    """
+    if not csv_files:
+        print("❌ 输入文件列表为空")
+        return
 
-    # 遍历所有文件路径，读取 CSV 文件
-    for file_path in file_paths:
-        # 读取当前 CSV 文件
-        df = pd.read_csv(file_path)
-        data_frames.append(df)
+    combined_df = pd.DataFrame()
 
-    # 使用 pandas.concat 合并所有 DataFrame
-    merged_data = pd.concat(data_frames, ignore_index=True)
+    for i, file in enumerate(csv_files):
+        try:
+            df = pd.read_csv(file, dtype=str).fillna("")
+            if df.empty:
+                print(f"⚠️ 文件为空，已跳过: {file}")
+                continue
 
-    # 将合并后的数据保存为一个新的 CSV 文件
-    merged_data.to_csv(output_path, index=False)
-    print(f"所有 CSV 文件已合并，结果保存至 {output_path}")
+            if i == 0:
+                combined_df = df
+            else:
+                if df.columns.equals(combined_df.columns):
+                    combined_df = pd.concat([combined_df, df], ignore_index=True)
+                else:
+                    print(f"⚠️ 列不匹配，跳过文件: {file}")
+        except Exception as e:
+            print(f"❌ 读取失败: {file}，原因: {e}")
 
+    if combined_df.empty:
+        print("❌ 无有效数据，未生成 Excel 文件")
+        return
 
-def merge_xlsx_files(file1, file2, output_file):
-    # 读取两个 Excel 文件
-    df1 = pd.read_excel(file1)
-    df2 = pd.read_excel(file2)
+    # 有效行：去除全空行
+    valid_rows = combined_df[combined_df.apply(lambda row: row.astype(str).str.strip().any(), axis=1)]
+    valid_count = len(valid_rows)
 
-    # 合并两个 DataFrame，默认按行合并
-    merged_df = pd.concat([df1, df2], ignore_index=True)
+    # 提取“打单时间”第一条数据并处理
+    if "打单时间" in valid_rows.columns:
+        first_time_str = valid_rows["打单时间"].dropna().astype(str).str.strip().iloc[0]
+        try:
+            # 解析格式，如 05-24 14:54
+            dt = datetime.strptime(first_time_str, "%m-%d %H:%M")
+            # 添加年份，拼接为 “2025.5”
+            month_info = f"2025.{dt.month}"
+            # 获取日期部分
+            date_only = dt.strftime("%d")
+            print(f"📅 打单时间首条记录：{first_time_str}")
+            print(f"📅 转换后的月份格式：{month_info}")
+            print(f"📅 提取的日期：{date_only}")
+        except Exception as e:
+            print(f"⚠️ 时间格式解析失败: {first_time_str}，错误: {e}")
+    else:
+        print("⚠️ 未找到“打单时间”列，跳过时间处理")
 
-    # 将合并后的数据保存到新的 Excel 文件
-    merged_df.to_excel(output_file, index=False)
+    print(f"✅ 有效数据行数（不含表头）：{valid_count}")
 
-    print(f"两个文件已合并，结果保存到 {output_file}")
+    # ✅ 创建输出目录（如果不存在）
+    output_dir_month = output_dir + month_info + "/"
+    create_dir = os.path.dirname(output_dir + month_info + "/")
+    os.makedirs(create_dir, exist_ok=True)
+
+    output_path = output_dir_month + f"打单时间{date_only}_{valid_count}.xlsx"
+
+    combined_df.to_excel(output_path, index=False)
+    print(f"✅ 合并完成，保存至: {output_path}")
 
 
 def xsxs(output_file):
@@ -291,11 +326,11 @@ def go(input_path):
         else:
             sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
 
-    if (len(unpaid_tracking_data) > 0):
-        bg = "#A684F0"
-
     if (len(alert_intercepted_tracking_data) > 0):
         bg = "#FFF258"
+
+    if (len(unpaid_tracking_data) > 0):
+        bg = "#A684F0"
 
     tat = get_token()
     brief_sheet_value(tat, [fs_text], ck_time, gz_time, ClientConstants.md_flld)
@@ -351,18 +386,31 @@ def call():
 
 
 if __name__ == '__main__':
-    # 示例调用
-    # file_paths = [
-    #     '/Users/zkp/Downloads/table_1.csv',
-    #     '/Users/zkp/Downloads/table_12.csv',
-    # ]  # 请替换为实际的文件路径
-    # output_path = '/Users/zkp/Downloads/打单时间16_119.xlsx'  # 合并后的文件路径
-    # merge_csv_files(file_paths, output_path)
 
-    # file1 = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5/table_1.xlsx'  # 请替换为您的第一个 Excel 文件路径
-    # file2 = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5/table_1 (1).xlsx'  # 请替换为您的第二个 Excel 文件路径
-    # output_file = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5/merged_output.xlsx'  # 合并后的 Excel 文件路径
-    # merge_xlsx_files(file1, file2, output_file)
+    select = "请选择功能："
+    select += "\n1：🍺合并cvs文件为xlsx文件"
+    select += "\n2：📊轨迹分析️"
+    select += "\n"
+    select_input = input(select)
 
-    call()
+    if select_input == "1":
 
+        file_paths = []
+
+        csv1 = input("请输入csv文件1的路径：").strip()
+        csv2 = input("请输入csv文件2的路径：").strip()
+
+        if csv1.endswith(".csv"):
+            file_paths.append(csv1)
+
+        if csv2.endswith(".csv"):
+            file_paths.append(csv2)
+
+        if len(file_paths):
+            output_dir = '/Users/zkp/Desktop/B&Y/轨迹统计/'
+            merge_csv_files_to_excel(file_paths, output_dir)
+
+    elif select_input == "2":
+        call()
+    else:
+        print("🈚️此项功能！")
