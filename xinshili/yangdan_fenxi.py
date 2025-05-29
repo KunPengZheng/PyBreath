@@ -7,12 +7,8 @@ from xinshili.gjgz_plus333 import extract_and_process_data, CourierStateMapKey, 
 from xinshili.utils import getYmd
 
 
-def compare_tracking_numbers(file1_path, file2_path, output_path):
-    # 读取 Excel 文件
-    df1 = pd.read_excel(file1_path, dtype=str)
-    df2 = pd.read_excel(file2_path, dtype=str)
-
-    # 定义关键列名
+def compare_tracking_numbers(file1_path, file2_path, output_dir):
+    # 引用常量名称（你需确保这些常量在其他地方定义过）
     order_col_1 = RowName.Order_Num  # df1 中的订单号
     tracking_col_1 = RowName.Track_Num  # df1 中的运单号
     order_col_2 = RowName.Platform_Num  # df2 中的订单号（平台单号）
@@ -21,19 +17,21 @@ def compare_tracking_numbers(file1_path, file2_path, output_path):
     create_time_out_col = RowName.Create_Time  # 输出文件中的创建时间列名
     store_col = "店铺账号"  # df1 中的店铺账号列
 
+    # 读取 Excel 文件（强制所有列为字符串以防止科学计数法）
+    df1 = pd.read_excel(file1_path, dtype=str).fillna("")
+    df2 = pd.read_excel(file2_path, dtype=str).fillna("")
+
     # 清理空格
     for col in [order_col_1, tracking_col_1, store_col]:
-        df1[col] = df1[col].str.strip()
+        df1[col] = df1[col].astype(str).str.strip()
     for col in [order_col_2, tracking_col_2, create_time_col_2]:
-        df2[col] = df2[col].str.strip()
+        df2[col] = df2[col].astype(str).str.strip()
 
-    # 删除缺失值
-    df1_clean = df1.dropna(subset=[order_col_1, tracking_col_1])
-    df2_clean = df2.dropna(subset=[order_col_2, tracking_col_2])
-    df1_clean = df1_clean[(df1_clean[order_col_1] != "") & (df1_clean[tracking_col_1] != "")]
-    df2_clean = df2_clean[(df2_clean[order_col_2] != "") & (df2_clean[tracking_col_2] != "")]
+    # 删除缺失值或空字符串的行
+    df1_clean = df1[(df1[order_col_1] != "") & (df1[tracking_col_1] != "")]
+    df2_clean = df2[(df2[order_col_2] != "") & (df2[tracking_col_2] != "")]
 
-    # 合并数据（保留创建时间列和店铺账号）
+    # 合并两个 DataFrame：根据订单号匹配，并保留创建时间和店铺账号
     merged = pd.merge(
         df1_clean[[order_col_1, tracking_col_1, store_col]],
         df2_clean[[order_col_2, tracking_col_2, create_time_col_2]],
@@ -42,17 +40,17 @@ def compare_tracking_numbers(file1_path, file2_path, output_path):
         how='inner'
     )
 
-    # 找出运单号不一致的数据
+    # 查找运单号不一致的记录
     mismatched = merged[merged[tracking_col_1] != merged[tracking_col_2]]
 
     # 整理输出
     result = mismatched[[order_col_1, tracking_col_1, tracking_col_2, create_time_col_2, store_col]].copy()
     result.columns = [RowName.Order_Num, RowName.Yang_Num, RowName.Yin_Num, create_time_out_col, "店铺账号"]
 
-    # ✅ 强制订单号为字符串
+    # 强制订单号为字符串（防止科学计数法）
     result[RowName.Order_Num] = result[RowName.Order_Num].astype(str)
 
-    # ✅ 追加空列
+    # 追加必要的空列（便于后续填充）
     for col in [
         RowName.Yang_Track_State, RowName.Yin_Track_State,
         RowName.Yang_Delivered_Time, RowName.Yin_Delivered_Time,
@@ -61,7 +59,22 @@ def compare_tracking_numbers(file1_path, file2_path, output_path):
         if col not in result.columns:
             result[col] = ""
 
-    # 保存结果
+    # ✅ 打印创建时间列中的最早和最晚时间（仅日期部分）
+    try:
+        create_times = pd.to_datetime(result[create_time_out_col], errors='coerce')
+        create_times = create_times.dropna()
+        if not create_times.empty:
+            min_date = create_times.min().strftime("%Y-%m-%d")
+            max_date = create_times.max().strftime("%Y-%m-%d")
+            print(f"📅 最早创建时间：{min_date}")
+            print(f"📅 最晚创建时间：{max_date}")
+        else:
+            print("⚠️ 创建时间列中无有效日期，无法提取最早和最晚时间。")
+    except Exception as e:
+        print(f"❌ 创建时间解析失败: {e}")
+
+    # 保存为 Excel 文件
+    output_path = output_dir + min_date + "_" + max_date + "_" + f"（{len(result)}）" + ".xlsx"
     result.to_excel(output_path, index=False)
     print(f"✅ 差异记录已保存到: {output_path}")
 
@@ -225,26 +238,19 @@ def fenxi(output):
 
 
 if __name__ == '__main__':
-    select = "\n请选择功能："
+    select = "请选择功能："
     select += "\n1：🍺合并阴阳单☯️"
     select += "\n2：📊分析阴阳单☯️"
-    select_input = input("请选择功能：\n")
+    select += "\n"
+    select_input = input(select)
 
-    if select == "1":
+    if select_input == "1":
         dxm_input = input("请输入店小秘文件路径：")
         omp_input = input("请输入领星OMP文件路径：")
-
-        # file1 = "/Users/zkp/Documents/未命名文件夹 2/930单12-20号_副本.xlsx"
-        # file2 = "/Users/zkp/Documents/未命名文件夹 2/ParcelOutbound_20250520160403_副本.xlsx"
-        # # output = "/Users/zkp/Documents/未命名文件夹 2/差异输出_带间隔_副本.xlsx"
-        # output = "/Users/zkp/Documents/未命名文件夹 2/12-19号阴阳单时间分析_27.xlsx"
-
-        compare_tracking_numbers(dxm_input, omp_input, output)
-
-    elif select == "2":
+        output_dir = "/Users/zkp/Desktop/B&Y/yd/ydfx/"
+        compare_tracking_numbers(dxm_input, omp_input, output_dir)
+    elif select_input == "2":
         input_path = input("请输入源文件路径：")
         fenxi(input_path)
     else:
         print("🈚️此项功能！")
-
-
