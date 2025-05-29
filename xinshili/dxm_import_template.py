@@ -135,7 +135,8 @@ def normalize_punctuation_spacing(content, category_keyword):
     # 构造正则表达式：匹配标点符号后无空格 或 多空格 的情况
     pattern = re.compile(r"({})(?=\S)|({})\s{{2,}}".format("|".join(punctuations), "|".join(punctuations)))
 
-    replaced_text = rule_replace(content, False)
+    # replaced_text = rule_replace(content, False)
+    replaced_text = content
 
     content_category_keyword = ""
     if ends_with_punctuation(replaced_text):
@@ -438,7 +439,7 @@ if __name__ == '__main__':
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 57
+    price = 60
     repertorys = 800
     w_front_no_design_Flag = False
 
