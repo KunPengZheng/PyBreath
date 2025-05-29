@@ -320,7 +320,7 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
         lengths = "35"
         widths = "25"
         heights = "1"
-        weights = "130"
+        weights = "150"
     else:
         lengths = "20"
         widths = "15"
