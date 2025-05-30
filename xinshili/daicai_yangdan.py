@@ -59,13 +59,13 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix,
         lambda row: " ".join(part.strip() for part in row if part.strip()), axis=1
     )
 
-    # “店铺”列复制到“备注”列，并加前缀
-    if "店铺" in df1.columns and "备注" in df2.columns:
-        df2["备注"] = df1["店铺"].astype(str).apply(lambda x: remark_prefix + x.strip())
+    # 生成备注列格式为“前缀-店铺-平台单号”
+    if all(col in df1.columns for col in ["店铺", "平台单号"]) and "备注" in df2.columns:
+        df2["备注"] = df1.apply(lambda row: f"{remark_prefix}-{row['店铺'].strip()}-{row['平台单号'].strip()}", axis=1)
     else:
-        print("⚠️ 缺少“店铺”或“备注”列，未处理备注信息")
+        print("⚠️ 缺少“店铺”、“平台单号”或 df2 中无“备注”列，未处理备注信息")
 
-    # 先根据“平台单号”去重，保留第一条
+    # 去重
     if "订单号" in df2.columns:
         df2 = df2.drop_duplicates(subset=["订单号"], keep='first')
     else:
@@ -73,7 +73,7 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix,
 
     output_path = f"{output_dir}{current_time()}_阳单_{len(df2)}.xlsx"
 
-    # 保存结果文件
+    # 保存文件
     df2.to_excel(output_path, index=False)
     print(f"✅ 文件已更新并保存至：{output_path}")
 
@@ -141,7 +141,7 @@ if __name__ == '__main__':
             order_prefixs = "-" + platform_order_number_suffix
         else:
             raise ValueError(f"订单号后缀只能以字母为开头")
-    remark_prefixs = "daicai-"
+    remark_prefixs = "daicai"
 
     transfer_and_merge_address(source_file, dst_path, output_dir,
                                order_prefix=order_prefixs,
