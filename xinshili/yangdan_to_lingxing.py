@@ -1,7 +1,7 @@
-from datetime import datetime
-
 import pandas as pd
+import os
 import re
+from datetime import datetime
 
 from xinshili import utils
 
@@ -15,47 +15,50 @@ def update_shipping_info(file1_path, file2_path, output_dir):
         return
 
     # 提取数据：从“包裹备注”中获取第二个 "-" 后的编号
-    extract_info = {}
+    new_rows = []
     for _, row in df1.iterrows():
         remark = row["包裹备注"]
         platform_no = row["平台回传单号"]
         match = re.match(r"[^-]+-[^-]+-(.+)", remark)
         if match:
             extracted_number = match.group(1).strip()
-            extract_info[platform_no] = extracted_number
+            new_rows.append({
+                "*系统单号": extracted_number,
+                "*运单号": platform_no,
+                "*物流方式": "502-24417",
+                "*发货仓库": "佛罗里达",
+                "重量单位": "g",
+                "尺寸单位": "cm",
+                "费用币种": "CNY"
+            })
 
-    print(extract_info)
+    if not new_rows:
+        print("⚠️ 未找到任何有效数据，未生成文件。")
+        return
 
-    # 读取文件2
-    df2 = pd.read_excel(file2_path, dtype=str).fillna("")
+    # 读取模板文件（文件2），用于获取列结构
+    df_template = pd.read_excel(file2_path, dtype=str).fillna("")
+    output_columns = df_template.columns.tolist()
 
-    # 写入数据
-    for idx, row in df2.iterrows():
-        print(row, idx)
-        platform_no = row.get("*系统单号", "").strip()
-        if platform_no in extract_info:
-            df2.at[idx, "*系统单号"] = platform_no
-            df2.at[idx, "*运单号"] = extract_info[platform_no]
+    # 构建最终 DataFrame，按模板列顺序填充，其他列留空
+    df_output = pd.DataFrame(new_rows)
+    for col in output_columns:
+        if col not in df_output.columns:
+            df_output[col] = ""
 
-    # 设置固定值（对所有有效行）
-    fixed_fields = {
-        "*物流方式": "502-24417",
-        "*发货仓库": "佛罗里达",
-        "重量单位": "g",
-        "尺寸单位": "cm",
-        "费用币种": "CNY"
-    }
+    df_output = df_output[output_columns]  # 确保列顺序与模板一致
 
-    for col, val in fixed_fields.items():
-        if col in df2.columns:
-            df2[col] = df2[col].apply(lambda x: val if x.strip() == "" else x)
+    # 保存结果文件
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     strftime = datetime.now().strftime("%Y-%m-%d")
-    output_path = f"{output_dir}{strftime}_{len(df2)}单.xlsx"
+    output_path = os.path.join(output_dir, f"{strftime}_{len(df_output)}单.xlsx")
 
-    # 保存结果
-    df2.to_excel(output_path, index=False)
+    df_output.to_excel(output_path, index=False)
     print(f"✅ 已更新并保存文件至：{output_path}")
+
+    # 自动打开目录（可选）
     utils.open_dir(output_dir)
 
 
