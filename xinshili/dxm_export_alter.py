@@ -107,5 +107,6 @@ def process_excel(file_path, output_path, ids):
 
 if __name__ == '__main__':
     source_file = input("请输入源表文件的绝对路径：")
+    output_path = f"/Users/zkp/Desktop/B&Y/dxm/export/{utils.get_filename_with_extension(source_file)}"
     ids = extract_spec_ids(source_file)
-    process_excel(source_file, source_file, ids)
+    process_excel(source_file, output_path, ids)

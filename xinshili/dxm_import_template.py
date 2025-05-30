@@ -275,7 +275,7 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
 
     # 直接使用路径，不用 openpyxl_utils
     template_path = utils.current_dir() + "/xlsx/dxm/import_created_product_popTemu.xlsx"
-    output_dir = "/Users/zkp/Desktop/B&Y/dxm/"
+    output_dir = "/Users/zkp/Desktop/B&Y/dxm/import/"
     output = f"{output_dir}{file_name_with_extension}"
 
     sex_man = "2025 Men's T-shirt"
@@ -439,7 +439,7 @@ if __name__ == '__main__':
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 60
+    price = 57
     repertorys = 800
     w_front_no_design_Flag = False
 
