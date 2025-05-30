@@ -1,5 +1,10 @@
 import pandas as pd
+import re
 import json
+from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
+
+from xinshili import utils
 
 
 def extract_spec_ids(file_path):
@@ -18,7 +23,7 @@ def extract_spec_ids(file_path):
                 sku_attr_list = json.loads(sku_attr_str)
                 for item in sku_attr_list:
                     if item.get("specName") == size:
-                        spec_ids[size] = item.get("specId")
+                        spec_ids[size] = str(item.get("specId"))
                         break
             except json.JSONDecodeError as e:
                 print(f"❌ JSON 解析失败：{e}")
@@ -41,6 +46,8 @@ def process_excel(file_path, output_path, ids):
         "XXL": "5"
     }
 
+    highlight_rows = set()
+
     # 遍历每一行处理 XXS/XS 替换
     for idx, row in df.iterrows():
         row_str = " ".join(row.values)
@@ -53,6 +60,7 @@ def process_excel(file_path, output_path, ids):
             df.loc[idx] = df.loc[idx].apply(
                 lambda x: x.replace(ids["XXS"], ids["XXL"]) if isinstance(x, str) else x
             )
+            highlight_rows.add(idx)
 
         # 替换 XS → XL，12001 → 12003
         if "XS" in row_str:
@@ -62,6 +70,7 @@ def process_excel(file_path, output_path, ids):
             df.loc[idx] = df.loc[idx].apply(
                 lambda x: x.replace(ids["XS"], ids["XL"]) if isinstance(x, str) else x
             )
+            highlight_rows.add(idx)
 
     # 变种属性值二与 SKU货号 调整
     if "变种属性值二" in df.columns and "SKU货号" in df.columns:
@@ -80,11 +89,23 @@ def process_excel(file_path, output_path, ids):
 
     # 保存结果
     df.to_excel(output_path, index=False)
+
+    # 加背景色（绿色）到指定行
+    wb = load_workbook(output_path)
+    ws = wb.active
+    green_fill = PatternFill(start_color="C0D79B", end_color="C0D79B", fill_type="solid")
+
+    for row_idx in highlight_rows:
+        for col_idx in range(1, ws.max_column + 1):
+            ws.cell(row=row_idx + 2, column=col_idx).fill = green_fill  # Excel中数据从第2行开始
+
+    wb.save(output_path)
+
     print(f"✅ 文件已处理并保存至：{output_path}")
+    utils.open_dir(utils.get_file_dir(output_path))
 
 
 if __name__ == '__main__':
     source_file = input("请输入源表文件的绝对路径：")
     ids = extract_spec_ids(source_file)
-    print(ids)
     process_excel(source_file, source_file, ids)
