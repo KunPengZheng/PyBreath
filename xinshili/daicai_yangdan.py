@@ -59,11 +59,11 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix,
         lambda row: " ".join(part.strip() for part in row if part.strip()), axis=1
     )
 
-    # 生成备注列格式为“前缀-店铺-平台单号”
-    if all(col in df1.columns for col in ["店铺", "平台单号"]) and "备注" in df2.columns:
-        df2["备注"] = df1.apply(lambda row: f"{remark_prefix}-{row['店铺'].strip()}-{row['平台单号'].strip()}", axis=1)
+    # 生成备注列格式为“前缀-店铺-系统单号”
+    if all(col in df1.columns for col in ["店铺", "系统单号"]) and "备注" in df2.columns:
+        df2["备注"] = df1.apply(lambda row: f"{remark_prefix}-{row['店铺'].strip()}-{row['系统单号'].strip()}", axis=1)
     else:
-        print("⚠️ 缺少“店铺”、“平台单号”或 df2 中无“备注”列，未处理备注信息")
+        print("⚠️ 缺少“店铺”、“系统单号”或 df2 中无“备注”列，未处理备注信息")
 
     # 去重
     if "订单号" in df2.columns:
@@ -71,7 +71,7 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix,
     else:
         print("⚠️ df2 中缺少“订单号”列，跳过去重。")
 
-    output_path = f"{output_dir}{current_time()}_阳单_{len(df2)}.xlsx"
+    output_path = f"{output_dir}{current_time()}_阳单_{len(df2)}单.xlsx"
 
     # 保存文件
     df2.to_excel(output_path, index=False)
@@ -130,6 +130,19 @@ if __name__ == '__main__':
     source_file = input("请输入源表文件的绝对路径：")
     platform_order_number_suffix = input("请输入平台订单号后缀：")
 
+    select = "请选择备注前缀："
+    select += "\n1：daicai"
+    select += "\n2：yd_test"
+    select += "\n"
+    select_input = input(select)
+
+    if select_input == "1":
+        remark_prefixs = 'daicai'
+    elif select_input == "2":
+        remark_prefixs = 'yd_test'
+    else:
+        print("🈚️此项功能！")
+
     dst_path = utils.current_dir() + "/xlsx/daicai/代采出阳单模版.xlsx"
     output_dir = f"/Users/zkp/Desktop/B&Y/yd/dcyd/"
 
@@ -141,7 +154,6 @@ if __name__ == '__main__':
             order_prefixs = "-" + platform_order_number_suffix
         else:
             raise ValueError(f"订单号后缀只能以字母为开头")
-    remark_prefixs = "daicai"
 
     transfer_and_merge_address(source_file, dst_path, output_dir,
                                order_prefix=order_prefixs,
