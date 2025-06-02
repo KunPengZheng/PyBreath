@@ -34,6 +34,7 @@ def transfer_order_data(file1_path, file2_template_path, output_dir):
     # 保存结果
     df2.to_excel(output_path, index=False)
     print(f"✅ 文件已保存至: {output_path}")
+    utils.open_dir(output_dir)
 
 
 if __name__ == '__main__':

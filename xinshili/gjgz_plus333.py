@@ -58,8 +58,6 @@ class RowName:
     Create_Time = "创建时间"
 
 
-
-
 @dataclass(frozen=True)
 class CourierStateMapKey:
     tracking_map = 'tracking_map'

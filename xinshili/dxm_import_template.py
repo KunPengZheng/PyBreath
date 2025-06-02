@@ -284,11 +284,11 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
 
     result_color = "White" if color_flag == Combined.White else "Black"
 
-    lunbotu_white = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101012/616145e8af459c7495758a9aec2e5f37.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101012/db23824b806321f7b39f43137994f780.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101013/54570e517207968339038e80969780b9.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101014/2a1066b0bf75ae5c0ae23e580448c986.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101015/ce1447f258253c875aa2b0b4883b59b1.jpg"
+    lunbotu_white = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175401/63f85769f0d8ac172eac6a7a0a0cdde4.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175401/7f00f0b5853276090977c8f94a261f79.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175401/28935c2bce8074dc74ace76daf73576c.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175402/4d7af35a91bb7d3b55157dbeb2c7b98d.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175403/a4989c8ee64e62431d4a1a72f46a521e.jpg"
 
     lunbotu_white_front_no_design = \
         "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250523145428/c8a045cad46f8706729202360061d4e4.jpg" \
@@ -297,11 +297,11 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
         "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101014/2a1066b0bf75ae5c0ae23e580448c986.jpg" \
         "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101015/ce1447f258253c875aa2b0b4883b59b1.jpg"
 
-    lunbotu_black = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101016/98e779932fa49e38c4b95fb57b13393a.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101016/957edc530ac9905385533f9c0f4eb7bc.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101017/bff7b4be4481c5c6e11d2edf1a8d9fc6.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101017/17666fe45e9b5f1254135febbd624721.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101018/d4acb5ca0dce2d7be4fc88a00ce00b44.jpg"
+    lunbotu_black = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175358/f6c0f3443c1e5a16f98883cab536cf8b.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175359/734ae897486871d5746fb628982fa3e7.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175359/b00746bd8eae36a38d4485bb002bc24a.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175400/1a14c635ff2dbf9613267a2acae28e6c.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175400/f0d18b3c6708e34f38c985d032d2d8a6.jpg"
 
     result_lbt = ""
     if color_flag == Combined.White:
@@ -439,7 +439,7 @@ if __name__ == '__main__':
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 57
+    price = 58
     repertorys = 800
     w_front_no_design_Flag = False
 

@@ -407,7 +407,7 @@ if __name__ == '__main__':
             file_paths.append(csv2)
 
         if len(file_paths):
-            output_dir = '/Users/zkp/Desktop/B&Y/轨迹统计/'
+            output_dir = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/'
             merge_csv_files_to_excel(file_paths, output_dir)
 
     elif select_input == "2":
