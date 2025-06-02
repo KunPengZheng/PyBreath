@@ -4,10 +4,13 @@ from xinshili import utils
 from xinshili.utils import current_time
 
 
-def transfer_and_merge_address(file1_path, file2_path, output_dir, remark_prefix):
+def transfer_and_merge_address(file1_path, file2_path, output_dir, remark_prefix, state):
     # 读取文件，并将所有内容当作字符串读入，避免数字变格式
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
     df2 = pd.read_excel(file2_path, dtype=str).fillna("")
+
+    # ✅ 清除模板数据
+    df2 = pd.DataFrame(columns=df2.columns)
 
     # 定义列映射关系
     column_mapping = {
@@ -41,6 +44,12 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, remark_prefix
     else:
         print("⚠️ 缺少“店铺”、“系统单号”或 df2 中无“备注”列，未处理备注信息")
 
+    if "状态" in df2.columns:
+        # 从第2行（索引从1开始）开始填充有效行
+        df2.loc[0:, "状态"] = state
+    else:
+        print("⚠️ 文件中不包含“状态”列")
+
     # 去重
     if "备注" in df2.columns:
         df2 = df2.drop_duplicates(subset=["备注"], keep='first')
@@ -73,10 +82,8 @@ if __name__ == '__main__':
     dst_path = utils.current_dir() + "/xlsx/yd/国际单号_USPS_阳单模版.xlsx"
     output_dir = f"/Users/zkp/Desktop/B&Y/yd/yd_gjdh/"
 
-    transfer_and_merge_address(source_file, dst_path, output_dir,
-                               remark_prefix=remark_prefixs)
+    state = "运输途中"
+
+    transfer_and_merge_address(source_file, dst_path, output_dir, remark_prefixs, state)
 
     utils.open_dir(output_dir)
-
-    # 若需要时间转换功能，可启用下面一行：
-    # process_excel_time_column(source_file, source_file)
