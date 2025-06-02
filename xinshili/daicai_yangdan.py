@@ -143,7 +143,7 @@ if __name__ == '__main__':
     else:
         print("🈚️此项功能！")
 
-    dst_path = utils.current_dir() + "/xlsx/daicai/代采出阳单模版.xlsx"
+    dst_path = utils.current_dir() + "/xlsx/yd/fastusps_USPS_阳单模版.xlsx"
     output_dir = f"/Users/zkp/Desktop/B&Y/yd/dcyd/"
 
     order_prefixs = ""

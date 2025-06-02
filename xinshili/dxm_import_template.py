@@ -439,7 +439,7 @@ if __name__ == '__main__':
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 58
+    price = 45.5
     repertorys = 800
     w_front_no_design_Flag = False
 
