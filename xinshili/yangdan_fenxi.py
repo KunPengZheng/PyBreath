@@ -74,7 +74,7 @@ def compare_tracking_numbers(file1_path, file2_path, output_dir):
         print(f"❌ 创建时间解析失败: {e}")
 
     # 保存为 Excel 文件
-    output_path = output_dir + min_date + "_" + max_date + "_" + f"（{len(result)}）" + ".xlsx"
+    output_path = output_dir + min_date + "_" + max_date + "_" + f"{len(result)}单" + ".xlsx"
     result.to_excel(output_path, index=False)
     print(f"✅ 差异记录已保存到: {output_path}")
 
@@ -183,7 +183,21 @@ def calculate_sum_up_distribution(file_path):
     yin_count = col.str.contains("阴单先到达").sum()
     empty_count = (col == "").sum()
 
-    print(f"📊 统计结果（共 {total} 行）：")
+    # ✅ 打印创建时间列中的最早和最晚时间（仅日期部分）
+    try:
+        create_times = pd.to_datetime(df[RowName.Create_Time], errors='coerce')
+        create_times = create_times.dropna()
+        if not create_times.empty:
+            min_date = create_times.min().strftime("%Y-%m-%d")
+            max_date = create_times.max().strftime("%Y-%m-%d")
+            print(f"📅 最早创建时间：{min_date}")
+            print(f"📅 最晚创建时间：{max_date}")
+        else:
+            print("⚠️ 创建时间列中无有效日期，无法提取最早和最晚时间。")
+    except Exception as e:
+        print(f"❌ 创建时间解析失败: {e}")
+
+    print(f"📊 {min_date}_{max_date}_统计结果（共 {total} 单）：")
     print(f"✅ 阳单先到达：{yang_count} 行，占比 {yang_count / total:.2%}")
     print(f"✅ 阴单先到达：{yin_count} 行，占比 {yin_count / total:.2%}")
     print(f"🔲 均未到达：{empty_count} 行，占比 {empty_count / total:.2%}")
