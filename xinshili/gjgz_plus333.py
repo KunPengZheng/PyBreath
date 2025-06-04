@@ -1398,6 +1398,24 @@ def generate_distribution_report2(distribution, no_track_distribution, sku_no_tr
     return report_text, resultList, report_text2
 
 
+def filter_tracking_numbers(input_path, output_path):
+    # 读取 Excel 文件
+    df = pd.read_excel(input_path, dtype=str).fillna("")
+
+    col = "Tracking No./物流跟踪号"
+
+    if col not in df.columns:
+        print(f"❌ 文件中缺少列: {col}")
+        return
+
+    # 保留以 92、93 或 94 开头的行
+    df_filtered = df[df[col].str.startswith(("92", "93", "94"), na=False)]
+
+    # 保存结果
+    df_filtered.to_excel(output_path, index=False)
+    print(f"✅ 筛选后文件已保存到: {output_path}")
+
+
 def go(analyse_obj, xlsx_path):
     if analyse_obj is None:
         analyse_obj = input("请输跟踪对象（zbw/sanrio/xyl/mz_xsd/md_fc/mx_dg）：")
@@ -1412,6 +1430,12 @@ def go(analyse_obj, xlsx_path):
 
     if xlsx_path is None:
         xlsx_path = input("请输入文件的绝对路径：")
+
+    # 针对zbw做的运单号过滤操作
+    if analyse_obj == ClientConstants.zbw:
+        output_file = os.path.splitext(xlsx_path)[0] + "_去重0.xlsx"
+        all_total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)  # 无筛选订单总数
+        delete_file(output_file)
 
     process_tracking_no(xlsx_path)
     check_and_add_courier_column(xlsx_path)
@@ -1451,6 +1475,12 @@ def go(analyse_obj, xlsx_path):
     }
 
     update_courier_status(xlsx_path, all_maps, wl=RowName.Tracking_No, column_map=column_mapping)
+
+    # 针对zbw做的运单号过滤操作
+    if analyse_obj == ClientConstants.zbw:
+        output_file = os.path.splitext(xlsx_path)[0] + "_去重1.xlsx"
+        filter_tracking_numbers(xlsx_path, output_file)
+        xlsx_path = output_file
 
     # 数据map
     data_map = {}
@@ -1649,9 +1679,16 @@ def go(analyse_obj, xlsx_path):
     if (no_tracking_count_int > 0):
         kj_other_no_tracking_swl = round2((kj_no_tracking_count / no_tracking_count_int) * 100)
 
+    zongshu = ""
+    # 针对zbw做的运单号过滤操作
+    if analyse_obj == ClientConstants.zbw:
+        zongshu = f"\n订单总数：{total_count_int}【{all_total_count}】"
+    else:
+        zongshu = f"\n订单总数：{total_count_int}"
+
     # 构建字符串
     wl = (
-        f"\n订单总数：{total_count_int}"
+        f"{zongshu}"
         f"\nKJ订单总数：{kj_counts}"
         f"\n"
         f"\n上网：（{track_count_int}, {swl}%）,（{kj_track_count}, {kj_swl}%）"
@@ -1835,14 +1872,24 @@ def go(analyse_obj, xlsx_path):
 
     # 删除去重文件
     delete_file(output_file)
+    # 针对zbw做的运单号过滤操作
+    if analyse_obj == ClientConstants.zbw:
+        delete_file(xlsx_path)
     print(text)
 
     # 写入飞书在线文档
     tat = get_token()
     if analyse_obj == ClientConstants.zbw or analyse_obj == ClientConstants.sanrio or analyse_obj == ClientConstants.xyl:
 
+        zongshu1 = ""
+        # 针对zbw做的运单号过滤操作
+        if analyse_obj == ClientConstants.zbw:
+            zongshu1 = f"{total_count_int}【{all_total_count}】"
+        else:
+            zongshu1 = f"{total_count_int}"
+
         khhz_sheet_value(tat, [
-            total_count_int,
+            f"{zongshu1}",
             f"（{no_track_count_int}, {wswl}%）",
             f"（{change_shipment_received_count}, {change_shipment_received_countl}%）",
             f"（{delivered_count_int}, {qsl}%）",
@@ -1851,7 +1898,14 @@ def go(analyse_obj, xlsx_path):
 
         khhz_sheet_bg(tat, ck_time, analyse_obj, bg)
 
-        lists = f"上网：({total_count},{swl}%)"
+        zongshu2 = ""
+        # 针对zbw做的运单号过滤操作
+        if analyse_obj == ClientConstants.zbw:
+            zongshu2 = f"上网：({total_count},{swl}%)【{all_total_count}】"
+        else:
+            zongshu2 = f"上网：({total_count},{swl}%)"
+
+        lists = f"{zongshu2}"
         lists += f"\n提货单未上网：({change_shipment_received_count},{change_shipment_received_countl}%)"
         lists += f"\n{warehouse_text2}"
         brief_sheet_value(tat, [lists], ck_time, gz_time, analyse_obj)
