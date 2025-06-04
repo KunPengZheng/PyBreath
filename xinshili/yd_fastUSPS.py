@@ -144,7 +144,7 @@ if __name__ == '__main__':
         print("🈚️此项功能！")
 
     dst_path = utils.current_dir() + "/xlsx/yd/fastusps_USPS_阳单模版.xlsx"
-    output_dir = f"/Users/zkp/Desktop/B&Y/yd/dcyd/"
+    output_dir = f"/Users/zkp/Desktop/B&Y/yd/yd_fast/"
 
     order_prefixs = ""
     if not platform_order_number_suffix:
