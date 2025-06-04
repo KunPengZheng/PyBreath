@@ -40,5 +40,5 @@ def transfer_order_data(file1_path, file2_template_path, output_dir):
 if __name__ == '__main__':
     source_file = input("请输入源表文件的绝对路径：")
     template_path = utils.current_dir() + "/xlsx/dxm/import_logistics_information_template.xlsx"
-    output_dir = "/Users/zkp/Desktop/B&Y/yd/dxmyd/"
+    output_dir = "/Users/zkp/Desktop/B&Y/yd/yd_dxm/"
     transfer_order_data(source_file, template_path, output_dir)

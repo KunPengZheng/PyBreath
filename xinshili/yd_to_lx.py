@@ -65,7 +65,7 @@ def update_shipping_info(file1_path, file2_path, output_dir):
 if __name__ == '__main__':
     source_file = input("请输入源表文件的绝对路径：")
     template_path = utils.current_dir() + "/xlsx/lx/领星出库单模板.xlsx"
-    output_dir = "/Users/zkp/Desktop/B&Y/yd/lxyd/"
+    output_dir = "/Users/zkp/Desktop/B&Y/yd/yd_lx/"
 
     update_shipping_info(
         file1_path=source_file,

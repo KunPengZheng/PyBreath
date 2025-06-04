@@ -261,7 +261,7 @@ if __name__ == '__main__':
     if select_input == "1":
         dxm_input = input("请输入店小秘文件路径：")
         omp_input = input("请输入领星OMP文件路径：")
-        output_dir = "/Users/zkp/Desktop/B&Y/yd/ydfx/"
+        output_dir = "/Users/zkp/Desktop/B&Y/yd/yd_analyse/"
         compare_tracking_numbers(dxm_input, omp_input, output_dir)
     elif select_input == "2":
         input_path = input("请输入源文件路径：")
