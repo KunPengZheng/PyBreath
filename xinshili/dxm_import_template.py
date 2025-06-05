@@ -279,16 +279,17 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
     output = f"{output_dir}{file_name_with_extension}"
 
     sex_man = "2025 Men's T-shirt"
+    # sex_man = "Father's Day 2025 Men T-Shirt"
     sex_women = "2025 Women's T-shirt"
     result_sex = sex_man if gender_flag == Combined.Man else sex_women
 
     result_color = "White" if color_flag == Combined.White else "Black"
 
-    lunbotu_white = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175401/63f85769f0d8ac172eac6a7a0a0cdde4.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175401/7f00f0b5853276090977c8f94a261f79.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175401/28935c2bce8074dc74ace76daf73576c.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175402/4d7af35a91bb7d3b55157dbeb2c7b98d.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175403/a4989c8ee64e62431d4a1a72f46a521e.jpg"
+    lunbotu_white = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172024/c7b764e5712feb0ad606d4ab14d6c661.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172025/1141c242407acc6e50bdfb772a52932c.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172025/5da5ca13bc895f1a112bc7ba8affdab6.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172025/410efd6a4e0ffd7c12f41b430b6b3d7f.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172025/334efa6215eeda133dd06c4c4804044d.jpg"
 
     lunbotu_white_front_no_design = \
         "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250523145428/c8a045cad46f8706729202360061d4e4.jpg" \
@@ -297,11 +298,11 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
         "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101014/2a1066b0bf75ae5c0ae23e580448c986.jpg" \
         "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101015/ce1447f258253c875aa2b0b4883b59b1.jpg"
 
-    lunbotu_black = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175358/f6c0f3443c1e5a16f98883cab536cf8b.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175359/734ae897486871d5746fb628982fa3e7.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175359/b00746bd8eae36a38d4485bb002bc24a.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175400/1a14c635ff2dbf9613267a2acae28e6c.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250530175400/f0d18b3c6708e34f38c985d032d2d8a6.jpg"
+    lunbotu_black = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172026/bf5fb0480a2df35a8c0250bec7fc7feb.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172026/c2dc0897a63e54ba461f12e0ded6770b.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172026/1049578ec825d1194d5cee16fd1898c8.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172027/6721ce86a555a5fa0b64589719068788.jpg" \
+                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172027/2665992b155628e44f3075cfd16be80c.jpg"
 
     result_lbt = ""
     if color_flag == Combined.White:
@@ -439,7 +440,7 @@ if __name__ == '__main__':
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 45.5
+    price = 46
     repertorys = 800
     w_front_no_design_Flag = False
 

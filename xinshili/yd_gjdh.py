@@ -69,6 +69,7 @@ if __name__ == '__main__':
     select = "请选择备注前缀："
     select += "\n1：daicai"
     select += "\n2：yd_test"
+    select += "\n3：yd_lw"
     select += "\n"
     select_input = input(select)
 
@@ -76,6 +77,8 @@ if __name__ == '__main__':
         remark_prefixs = 'daicai'
     elif select_input == "2":
         remark_prefixs = 'yd_test'
+    elif select_input == "3":
+        remark_prefixs = 'yd_lw'
     else:
         print("🈚️此项功能！")
 
