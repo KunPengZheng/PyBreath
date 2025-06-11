@@ -285,11 +285,11 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
 
     result_color = "White" if color_flag == Combined.White else "Black"
 
-    lunbotu_white = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172024/c7b764e5712feb0ad606d4ab14d6c661.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172025/1141c242407acc6e50bdfb772a52932c.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172025/5da5ca13bc895f1a112bc7ba8affdab6.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172025/410efd6a4e0ffd7c12f41b430b6b3d7f.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172025/334efa6215eeda133dd06c4c4804044d.jpg"
+    lunbotu_white = "\nhttps://img.cdnfe.com/product/fancy/143178de-1c71-48a2-bdcc-6979aac64b3c.jpg" \
+                    "\nhttps://img.cdnfe.com/product/fancy/4d66ccc4-0338-4fb8-b70e-da014a739610.jpg" \
+                    "\nhttps://img.cdnfe.com/product/fancy/b4340857-03c2-4f19-94fc-623493dd6d58.jpg" \
+                    "\nhttps://img.cdnfe.com/product/fancy/f1cedd9f-321c-47c2-80bd-87a5c6e4f9b8.jpg" \
+                    "\nhttps://img.cdnfe.com/product/fancy/0fd0110f-b751-4f51-aee6-b97d1c23e7c0.jpg"
 
     lunbotu_white_front_no_design = \
         "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250523145428/c8a045cad46f8706729202360061d4e4.jpg" \
@@ -298,11 +298,11 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
         "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101014/2a1066b0bf75ae5c0ae23e580448c986.jpg" \
         "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250515101015/ce1447f258253c875aa2b0b4883b59b1.jpg"
 
-    lunbotu_black = "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172026/bf5fb0480a2df35a8c0250bec7fc7feb.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172026/c2dc0897a63e54ba461f12e0ded6770b.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172026/1049578ec825d1194d5cee16fd1898c8.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172027/6721ce86a555a5fa0b64589719068788.jpg" \
-                    "\nhttps://wxalbum-10001658.image.myqcloud.com/wxalbum/1573179/20250604172027/2665992b155628e44f3075cfd16be80c.jpg"
+    lunbotu_black = "\nhttps://img.cdnfe.com/product/fancy/a777716c-7d71-4fc2-8d19-1dd80c6bae7b.jpg" \
+                    "\nhttps://img.cdnfe.com/product/fancy/899869d8-0391-49f8-9938-7fed1c403b9a.jpg" \
+                    "\nhttps://img.cdnfe.com/product/fancy/143bf343-e035-4936-84d7-18c1de6165f4.jpg" \
+                    "\nhttps://img.cdnfe.com/product/fancy/ad5fd17b-cf71-49b3-b50d-a41992abd389.jpg" \
+                    "\nhttps://img.cdnfe.com/product/fancy/0fd0110f-b751-4f51-aee6-b97d1c23e7c0.jpg"
 
     result_lbt = ""
     if color_flag == Combined.White:
@@ -440,7 +440,7 @@ if __name__ == '__main__':
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 46
+    price = 45.8
     repertorys = 800
     w_front_no_design_Flag = False
 
