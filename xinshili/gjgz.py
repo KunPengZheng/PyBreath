@@ -2,5 +2,5 @@ from xinshili.flld_gjgz import call
 from xinshili.gjgz_plus333 import call2
 
 if __name__ == '__main__':
-    # call()
+    call()
     call2()
