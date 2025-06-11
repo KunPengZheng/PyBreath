@@ -1,6 +1,7 @@
 import os
 import re
 from datetime import datetime, timedelta
+from collections import defaultdict
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -132,7 +133,7 @@ def merge_csv_files_to_excel(csv_files, output_dir):
             # 添加年份，拼接为 “2025.5”
             month_info = f"2025.{dt.month}"
             # 获取日期部分
-            date_only = dt.strftime("%d")
+            date_only = str(dt.day)
             print(f"📅 打单时间首条记录：{first_time_str}")
             print(f"📅 转换后的月份格式：{month_info}")
             print(f"📅 提取的日期：{date_only}")
@@ -152,6 +153,23 @@ def merge_csv_files_to_excel(csv_files, output_dir):
 
     combined_df.to_excel(output_path, index=False)
     print(f"✅ 合并完成，保存至: {output_path}")
+
+
+def delete_files(file_paths):
+    """
+    遍历文件路径集合并删除文件。
+
+    :param file_paths: 可迭代对象，如 list、set，包含完整文件路径字符串
+    """
+    for path in file_paths:
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+                print(f"✅ 已删除: {path}")
+            else:
+                print(f"⚠️ 文件不存在: {path}")
+        except Exception as e:
+            print(f"❌ 删除失败: {path}，原因: {e}")
 
 
 def xsxs(output_file):
@@ -337,7 +355,33 @@ def go(input_path):
     brief_sheet_bg(tat, ck_time, gz_time, ClientConstants.md_flld, bg)
 
 
+def detect_duplicate_prefix_suffix(dir_path):
+    prefix_suffix_map = defaultdict(list)
+
+    for filename in os.listdir(dir_path):
+        if not filename.lower().endswith('.csv'):
+            continue  # 只处理 .csv 文件
+
+        # 提取 '打单时间X' 前缀
+        match = re.match(r"(打单时间\d+)_\d+\.csv", filename)
+        if match:
+            prefix = match.group(1)  # 如 "打单时间1"
+            suffix = ".csv"
+            full_path = os.path.join(dir_path, filename)
+            prefix_suffix_map[(prefix, suffix)].append(full_path)
+
+    for (prefix, suffix), files in prefix_suffix_map.items():
+        if len(files) >= 1:
+            print(f"📁 找到同组文件（前缀: {prefix}, 后缀: {suffix}）共 {len(files)} 个:")
+            for f in files:
+                print(f"   - {f}")
+            merge_csv_files_to_excel(files, '/Users/zkp/Desktop/B&Y/轨迹统计/flld/')
+            delete_files(files)
+
+
 def automatic(dir_path):
+    detect_duplicate_prefix_suffix(dir_path)
+
     is_morning = (datetime.now().hour) < 12
 
     pattern = r"^(出库时间|创建时间|打单时间)\d+_\d+\.xlsx$"
@@ -383,10 +427,10 @@ def automatic(dir_path):
 
 def call():
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5")
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.6")
 
 
 if __name__ == '__main__':
-
     select = "请选择功能："
     select += "\n1：🍺合并cvs文件为xlsx文件"
     select += "\n2：📊轨迹分析️"
