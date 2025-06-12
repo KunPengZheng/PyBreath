@@ -9,6 +9,18 @@ import pandas as pd
 import holidays
 import platform
 import uuid
+import math
+
+
+def round_up_to_2_decimal(x):
+    # 乘1000保留3位，减去乘100保留2位 → 判断是否有第3位小数
+    scaled = x * 1000
+    remainder = scaled % 10
+    if remainder > 0:
+        # 有第三位小数，则进1
+        return math.ceil(x * 100) / 100
+    else:
+        return round(x, 2)
 
 
 def get_usd_to_cny_rate():
@@ -18,7 +30,8 @@ def get_usd_to_cny_rate():
         data = response.json()
         # 获取 USD 对 CNY 的汇率
         rate = data["quotes"]["USDCNY"]
-        exchange_rate = round(rate, 2) + 0.04
+        # exchange_rate = round(rate, 2)
+        exchange_rate = round_up_to_2_decimal(rate)
         print(f"当前 USD 对 CNY 的汇率是：{rate}, {exchange_rate}")
         return exchange_rate
     except Exception as e:
