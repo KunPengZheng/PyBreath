@@ -1990,9 +1990,10 @@ def automatic(dir_path, analyse_obj, ignore=False):
                     change_shipment_received_count = len(shipment_received_interval2_list)
 
                     output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
+                    filter_tracking_numbers(xlsx_path, output_file)
 
                     # 同一单会有多个sku，多个sku会生成多行数据，分析sku的时候不能去重，其它的需要去重
-                    total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
+                    total_count = remove_duplicates_by_column(output_file, output_file, RowName.Tracking_No)
 
                     patterns = {
                         "no_track": Pattern.no_track,
@@ -2056,8 +2057,11 @@ def automatic(dir_path, analyse_obj, ignore=False):
 
 def call2():
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.6/", ClientConstants.zbw, False)
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.6/", ClientConstants.sanrio, False)
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.6/", ClientConstants.xyl, False)
 
 
 if __name__ == '__main__':
