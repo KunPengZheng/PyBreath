@@ -8,6 +8,8 @@ from xinshili.pd_utils import remove_duplicates_by_column
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 
+from xinshili.utils import ensure_directory_exists
+
 
 def update_courier(file1_path, file2_path, output_path):
     """
@@ -180,6 +182,7 @@ def handle(lists, month_start, month_end, merge_exit=False):
     xyl_end_month_dir = f"{xyl_gjgz_path}{month_end}"
 
     merge_dir = f"/Users/zkp/Desktop/B&Y/仓库结算/merge_{month_start}_{month_end}/"
+    ensure_directory_exists(merge_dir)
     merge_file = f"{merge_dir}merge_{month_start}_{month_end}.xlsx"
 
     zbw_merge = "zbw_merge_"
@@ -253,9 +256,10 @@ def handle(lists, month_start, month_end, merge_exit=False):
 if __name__ == '__main__':
     handle(
         lists=[
-            "/Users/zkp/Downloads/副本ParcelOutbound_20250522171021_副本.xlsx",
+            "/Users/zkp/Desktop/B&Y/仓库结算/merge_4_5/副本5月其他客户结算.xlsx",
+            "/Users/zkp/Desktop/B&Y/仓库结算/merge_4_5/副本5月自发货结算.xlsx",
         ],
-        month_start="3",
-        month_end="4",
+        month_start="4",
+        month_end="5",
         merge_exit=False
     )
