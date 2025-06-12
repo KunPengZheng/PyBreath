@@ -140,9 +140,11 @@ def normalize_punctuation_spacing(content, category_keyword):
 
     content_category_keyword = ""
     if ends_with_punctuation(replaced_text):
-        content_category_keyword = replaced_text + " " + category_keyword
+        # content_category_keyword = replaced_text + " " + category_keyword
+        content_category_keyword = category_keyword + " " + replaced_text
     else:
-        content_category_keyword = replaced_text + ". " + category_keyword
+        # content_category_keyword = replaced_text + ". " + category_keyword
+        content_category_keyword = category_keyword + ". " + replaced_text
 
     def fix_spacing(text):
         # 标准化空格（标点后添加一个空格）
@@ -278,9 +280,11 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
     output_dir = "/Users/zkp/Desktop/B&Y/dxm/import/"
     output = f"{output_dir}{file_name_with_extension}"
 
-    sex_man = "2025 Men's T-shirt"
+    # sex_man = "2025 Men's T-shirt"
+    sex_man = "Summer Men's T-shirt sale"
     # sex_man = "Father's Day 2025 Men T-Shirt"
-    sex_women = "2025 Women's T-shirt"
+    # sex_women = "2025 Women's T-shirt"
+    sex_women = "Summer Women's T-shirt sale"
     result_sex = sex_man if gender_flag == Combined.Man else sex_women
 
     result_color = "White" if color_flag == Combined.White else "Black"
@@ -440,7 +444,7 @@ if __name__ == '__main__':
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 45.8
+    price = 51
     repertorys = 800
     w_front_no_design_Flag = False
 
