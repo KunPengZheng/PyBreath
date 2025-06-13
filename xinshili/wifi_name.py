@@ -1,6 +1,7 @@
 import random
 import string
 
+
 def generate_wifi_names_with_numbers(start=1, end=10):
     wifi_names = set()
     result = []
@@ -27,6 +28,7 @@ def generate_wifi_names_with_numbers(start=1, end=10):
             raise ValueError(f"⚠️ 无法生成满足条件的 WiFi 名字：数字 {number}")
 
     return result
+
 
 # 示例调用
 if __name__ == "__main__":
