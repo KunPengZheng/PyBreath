@@ -281,7 +281,7 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False):
     output = f"{output_dir}{file_name_with_extension}"
 
     # sex_man = "2025 Men's T-shirt"
-    sex_man = "Summer Men's T-shirt sale"
+    sex_man = "Summer Man's T-shirt sale"
     # sex_man = "Father's Day 2025 Men T-Shirt"
     # sex_women = "2025 Women's T-shirt"
     sex_women = "Summer Women's T-shirt sale"
@@ -444,7 +444,7 @@ if __name__ == '__main__':
 
     flag, third_col_modified = check_column_duplicates(source_file, ignore_io_permission)
 
-    price = 51
+    price = 50.8
     repertorys = 800
     w_front_no_design_Flag = False
 
