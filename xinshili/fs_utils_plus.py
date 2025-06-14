@@ -23,6 +23,7 @@ class ClientConstants:
     zbw = "zbw"
     sanrio = "sanrio"
     xyl = "xyl"
+    kaer = "kaer"
     mz_xsd = "mz_xsd"
     mx_dg = "mx_dg"
     md_fc = "md_fc"
@@ -50,6 +51,7 @@ ClientMapConstants = {
     ClientConstants.zbw: {MapFields.detail: "JZrQj9", MapFields.brief: "fa00e1"},
     ClientConstants.sanrio: {MapFields.detail: "ph0AGJ", MapFields.brief: "6tej5U"},
     ClientConstants.xyl: {MapFields.detail: "PqixpT", MapFields.brief: "42Ndb0"},
+    ClientConstants.kaer: {MapFields.detail: "LPaL7b", MapFields.brief: "vZUGgP"},
     ClientConstants.mz_xsd: {MapFields.detail: "Cv3fIH", MapFields.brief: "6BIGKF"},
     ClientConstants.mx_dg: {MapFields.detail: "334FDH", MapFields.brief: "QvGf9H"},
     ClientConstants.md_fc: {MapFields.detail: "P0sVEI", MapFields.brief: "d9tS9E"},
@@ -73,6 +75,7 @@ def get_map_url(analyse_obj):
     if analyse_obj == ClientConstants.zbw or \
             analyse_obj == ClientConstants.sanrio or \
             analyse_obj == ClientConstants.xyl or \
+            analyse_obj == ClientConstants.kaer or \
             analyse_obj == ClientConstants.mz_xsd or \
             analyse_obj == ClientConstants.mx_dg or \
             analyse_obj == ClientConstants.md_fc or \
@@ -90,6 +93,7 @@ def get_bg_map_url(analyse_obj):
     if analyse_obj == ClientConstants.zbw or \
             analyse_obj == ClientConstants.sanrio or \
             analyse_obj == ClientConstants.xyl or \
+            analyse_obj == ClientConstants.kaer or \
             analyse_obj == ClientConstants.mz_xsd or \
             analyse_obj == ClientConstants.mx_dg or \
             analyse_obj == ClientConstants.md_fc or \
@@ -192,6 +196,9 @@ def khhz_sheet_bg(tat, ck_time, analyse_obj, bg):
     elif analyse_obj == ClientConstants.xyl:
         column_start_nums = "N"
         column_end_nums = "R"
+    elif analyse_obj == ClientConstants.kaer:
+        column_start_nums = "T"
+        column_end_nums = "X"
     else:
         raise Exception("使用raise抛出一个异常")
 
@@ -282,6 +289,9 @@ def khhz_sheet_value(tat, lists, ck_time, analyse_obj):
     elif analyse_obj == ClientConstants.xyl:
         column_start_nums = "N"
         column_end_nums = "R"
+    elif analyse_obj == ClientConstants.kaer:
+        column_start_nums = "T"
+        column_end_nums = "X"
     else:
         raise Exception("使用raise抛出一个异常")
 
