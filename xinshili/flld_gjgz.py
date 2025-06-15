@@ -9,7 +9,8 @@ from openpyxl import load_workbook
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants, brief_sheet_bg, khhz_sheet_value, \
     khhz_sheet_bg
 from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, extract_and_process_data_flld, \
-    update_courier_status_flld, count_pattern_state, CourierStateMapKey, Pattern
+    update_courier_status_flld, count_pattern_state, CourierStateMapKey, Pattern, is_time_difference_exceed
+from xinshili.pd_utils import copy_new_file
 from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend, natural_key
 
 
@@ -390,82 +391,119 @@ def detect_duplicate_prefix_suffix(dir_path):
             delete_files(files)
 
 
-def automatic(dir_path):
-    detect_duplicate_prefix_suffix(dir_path)
-
+def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
+    today = datetime.now()
+    current_year = today.year
+    current_month = today.month
+    current_day = today.day
+    current_time = f"{current_year}-{current_month}-{current_day}"
     is_morning = (datetime.now().hour) < 12
+    gz_time = getYmd()
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        dirnames.sort(key=natural_key)
+        for dirname in dirnames:
+            sun_dir_path = os.path.join(dirpath, dirname)
+            detect_duplicate_prefix_suffix(sun_dir_path)
+            parts = dirname.split(".")
+            year, month = parts[0], parts[1]
+            files = [f for f in os.listdir(sun_dir_path) if f.lower().endswith(('.xlsx', '.xls'))]
+            files.sort(key=natural_key)
+            for file in files:
+                xlsx_path = os.path.join(sun_dir_path, file)
+                match = re.search(r"打单时间(\d+)_", file)
+                if match:
+                    day = match.group(1)
+                    current_times = f"{year}-{month}-{day}"
+                    exceed = is_time_difference_exceed(current_time, current_times)
+                    if exceed <= 15:
+                        print(f"正在处理文件: {xlsx_path}")
 
-    pattern = r"^(出库时间|创建时间|打单时间)\d+_\d+\.xlsx$"
+                        if ignore:
+                            go(xlsx_path)
+                            # print(f"00000:{xlsx_path}")
+                            continue
 
-    # 获取所有文件（可选地限制为某种类型，如 .xlsx）
-    files = [f for f in os.listdir(dir_path) if f.lower().endswith(('.xlsx', '.xls'))]
+                        ck_time = get_days_difference(xlsx_path)
+                        interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time,
+                                                                                                    "%Y/%m/%d")).days
 
-    # 按照自然顺序排序
-    files.sort(key=natural_key)
+                        if interval_time == 1 and is_morning:
+                            go(xlsx_path)
+                            # print(f"1111:{xlsx_path}")
+                        else:
+                            if is_morning:
+                                continue
 
-    # 遍历排序后的文件
-    for file in files:
-        if re.match(pattern, file):
-            xlsx_path = os.path.join(dir_path, file)
+                            if (analyse_obj_ignore):
+                                go(xlsx_path)
+                                # print(f"2222:{xlsx_path}")
+                                continue
 
-            go(xlsx_path)
+                            if (check_and_add_courier_column(xlsx_path)):
+                                go(xlsx_path)
+                                # print(f"3333:{xlsx_path}")
+                            else:
 
-            # check_and_add_courier_column(xlsx_path)
-            #
-            # total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
-            # track_count = total_count - no_track_count
-            # total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
-            # total_count3, unpaid_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.unpaid)
-            # total_count4, not_yet_count = count_pattern_state(xlsx_path, RowName.Courier, r"not_yet")
-            # total_count5, pre_ship_count = count_pattern_state(xlsx_path, RowName.Courier, r"pre_ship")
-            # total_count6, alert_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert)
-            #
-            # ck_time = get_days_difference(xlsx_path)
-            # gz_time = getYmd()
-            # interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
-            #
-            # swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-            #
-            # if (is_morning and interval_time == 1):  # 早上跑昨天的
-            #     # go(xlsx_path)
-            #     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
-            #     print("11111", swl, xlsx_path)
-            # else:
-            #     if (swl < 99):
-            #         # go(xlsx_path)
-            #         print("2222", swl, xlsx_path)
+                                output_file = os.path.splitext(xlsx_path)[0] + "_复制.xlsx"
+                                copy_new_file(xlsx_path, output_file)
+
+                                total_count, no_track_count = count_pattern_state(output_file, RowName.Courier,
+                                                                                  Pattern.no_track)
+                                track_count = total_count - no_track_count
+                                total_count2, delivered_count = count_pattern_state(output_file, RowName.Courier,
+                                                                                    Pattern.delivered)
+                                total_count3, unpaid_count = count_pattern_state(output_file, RowName.Courier,
+                                                                                 Pattern.unpaid)
+                                total_count4, not_yet_count = count_pattern_state(output_file, RowName.Courier,
+                                                                                  r"not_yet")
+                                total_count5, pre_ship_count = count_pattern_state(output_file, RowName.Courier,
+                                                                                   r"pre_ship")
+                                total_count6, alert_count = count_pattern_state(output_file, RowName.Courier,
+                                                                                Pattern.alert)
+                                swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+                                unpaid_countl = round2((int(unpaid_count) / int(total_count)) * 100)
+                                delivered_countl = round2((int(delivered_count) / int(total_count)) * 100)
+
+                                delete_file(output_file)
+
+                                # print(f"444444:{swl},{unpaid_count},{delivered_countl}")
+                                if swl < 99 or unpaid_count > 0 or (exceed >= 14 and delivered_countl < 98):
+                                    go(xlsx_path)
 
 
 def call():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5")
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.6")
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5")
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.6")
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, False)
 
 
 if __name__ == '__main__':
-    select = "请选择功能："
-    select += "\n1：🍺合并cvs文件为xlsx文件"
-    select += "\n2：📊轨迹分析️"
-    select += "\n"
-    select_input = input(select)
+    call()
 
-    if select_input == "1":
-
-        file_paths = []
-
-        csv1 = input("请输入csv文件1的路径：").strip()
-        csv2 = input("请输入csv文件2的路径：").strip()
-
-        if csv1.endswith(".csv"):
-            file_paths.append(csv1)
-
-        if csv2.endswith(".csv"):
-            file_paths.append(csv2)
-
-        if len(file_paths):
-            output_dir = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/'
-            merge_csv_files_to_excel(file_paths, output_dir)
-
-    elif select_input == "2":
-        call()
-    else:
-        print("🈚️此项功能！")
+    # select = "请选择功能："
+    # select += "\n1：🍺合并cvs文件为xlsx文件"
+    # select += "\n2：📊轨迹分析️"
+    # select += "\n"
+    # select_input = input(select)
+    #
+    # if select_input == "1":
+    #
+    #     file_paths = []
+    #
+    #     csv1 = input("请输入csv文件1的路径：").strip()
+    #     csv2 = input("请输入csv文件2的路径：").strip()
+    #
+    #     if csv1.endswith(".csv"):
+    #         file_paths.append(csv1)
+    #
+    #     if csv2.endswith(".csv"):
+    #         file_paths.append(csv2)
+    #
+    #     if len(file_paths):
+    #         output_dir = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/'
+    #         merge_csv_files_to_excel(file_paths, output_dir)
+    #
+    # elif select_input == "2":
+    #     call()
+    # else:
+    #     print("🈚️此项功能！")
