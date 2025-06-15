@@ -223,54 +223,6 @@ def khhz_sheet_bg(tat, ck_time, analyse_obj, bg):
     print(r2.json())  # 输出来判断写入是否成功
 
 
-# def xxxxxx(tat, lists, ck_time, analyse_obj):
-def xxxxxx(tat):
-    """
-    仓库oms表格
-    """
-    url = f"https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/QBmbsACcbhBbLgt5Ngic5OgYnVP/values"
-
-    header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
-
-    # row_nums = get_row_for_specific_date(ck_time, start_row=3)
-    row_nums = 90
-
-    column_start_nums = "D"
-    column_end_nums = "K"
-
-    post_data = {
-        "valueRange": {
-            "range": f"{ClientMapConstants[ClientConstants.ckoms]}!{column_start_nums}{row_nums}:{column_end_nums}{row_nums}",
-            "values": [["22222"]]}
-    }
-
-    # values_prepend 需要使用post请求方式，values需要使用put请求方式
-    r2 = requests.put(url, data=json.dumps(post_data), headers=header)
-    print(r2.json())  # 输出来判断写入是否成功
-
-
-def dddd(tat):
-    url = f"https://open.feishu.cn/open-apis/sheets/v3/spreadsheets/QBmbsACcbhBbLgt5Ngic5OgYnVP/sheets/83VoQ2/find"
-
-    header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
-
-    # row_nums = get_row_for_specific_date(ck_time, start_row=3)
-    row_nums = 90
-
-    column_start_nums = "D"
-    column_end_nums = "K"
-
-    post_data = {
-        "valueRange": {
-            "range": f"{ClientMapConstants[ClientConstants.ckoms]}!{column_start_nums}{row_nums}:{column_end_nums}{row_nums}",
-            "values": [["22222"]]}
-    }
-
-    # values_prepend 需要使用post请求方式，values需要使用put请求方式
-    r2 = requests.put(url, data=json.dumps(post_data), headers=header)
-    print(r2.json())  # 输出来判断写入是否成功
-
-
 def khhz_sheet_value(tat, lists, ck_time, analyse_obj):
     """
     客户汇总表
