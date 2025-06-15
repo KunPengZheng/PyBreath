@@ -2060,13 +2060,17 @@ def automatic(dir_path, analyse_obj, ignore=False):
 
 
 def call2():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.6/", ClientConstants.zbw, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.6/", ClientConstants.sanrio, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, True)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.6/", ClientConstants.xyl, True)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.6/", ClientConstants.zbw, False)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.6/", ClientConstants.sanrio, False)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, True)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.6/", ClientConstants.xyl, True)
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/2025.6/", ClientConstants.kaer, False)
+    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False)
+    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False)
+    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True)
+    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True)
 
 
 def is_time_difference_exceed(start_time_str, end_time_str):
@@ -2081,7 +2085,7 @@ def is_time_difference_exceed(start_time_str, end_time_str):
         return False
 
 
-def print_all_folders(root_dir, analyse_obj, ignore=False):
+def print_all_folders(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False):
     today = datetime.now()
     current_year = today.year
     current_month = today.month
@@ -2119,6 +2123,10 @@ def print_all_folders(root_dir, analyse_obj, ignore=False):
                             go(analyse_obj, xlsx_path)
                         else:
                             if is_morning:
+                                continue
+
+                            if (analyse_obj_ignore):
+                                go(analyse_obj, xlsx_path)
                                 continue
 
                             if (check_and_add_courier_column(xlsx_path)):
@@ -2198,6 +2206,3 @@ def print_all_folders(root_dir, analyse_obj, ignore=False):
 
 if __name__ == '__main__':
     call2()
-    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False)
-    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False)
-    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False)
