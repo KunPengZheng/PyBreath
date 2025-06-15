@@ -479,7 +479,3 @@ def fs_msg(user_id, text_content, receive_id_type="user_id"):
 
     # 处理业务结果
     lark.logger.info(lark.JSON.marshal(response.data, indent=4))
-
-
-# if __name__ == '__main__':
-#     fs_msg(FsUserID.WP_ID, "xxxxx")
