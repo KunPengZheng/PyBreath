@@ -6,7 +6,8 @@ from collections import defaultdict
 import pandas as pd
 from openpyxl import load_workbook
 
-from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants, brief_sheet_bg
+from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants, brief_sheet_bg, khhz_sheet_value, \
+    khhz_sheet_bg
 from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, extract_and_process_data_flld, \
     update_courier_status_flld, count_pattern_state, CourierStateMapKey, Pattern
 from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend, natural_key
@@ -353,6 +354,16 @@ def go(input_path):
     tat = get_token()
     brief_sheet_value(tat, [fs_text], ck_time, gz_time, ClientConstants.md_flld)
     brief_sheet_bg(tat, ck_time, gz_time, ClientConstants.md_flld, bg)
+
+    khhz_sheet_value(tat, [
+        f"{total_count}",
+        f"（{no_track_count}, {wswl}%）",
+        f"（{0}, {0}%）",
+        f"（{delivered_count}, {delivered_countl}%）",
+        f"（{unpaid_count}, {unpaid_countl}%）",
+    ], ck_time, ClientConstants.md_flld)
+
+    khhz_sheet_bg(tat, ck_time, ClientConstants.md_flld, bg)
 
 
 def detect_duplicate_prefix_suffix(dir_path):
