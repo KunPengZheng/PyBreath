@@ -1,9 +1,11 @@
-from datetime import datetime
-
 import requests
 import json
 import pandas as pd
 from dataclasses import dataclass
+import json
+
+import lark_oapi as lark
+from lark_oapi.api.im.v1 import *
 
 
 @dataclass(frozen=True)
@@ -16,6 +18,12 @@ class FsConstants:
     values_spreadsheets_write_way = "/values"
     styles_batch_update = "/styles_batch_update"
     gjgz_token = "BGrnsxMFfhfoumtUDF8cXM8jnGg"
+
+
+@dataclass(frozen=True)
+class FsUserID:
+    WP_ID = "a337894d"
+    LW_ID = "e96f3846"
 
 
 @dataclass(frozen=True)
@@ -435,3 +443,43 @@ def get_row_for_specific_date(target_date, start_date="2025/1/1", start_row=2):
     # 计算目标行号
     target_row = start_row + days_diff
     return target_row
+
+
+def fs_msg(user_id, text_content, receive_id_type="user_id"):
+    """
+    # SDK 使用说明: https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/server-side-sdk/python--sdk/preparations-before-development
+    # 以下示例代码默认根据文档示例值填充，如果存在代码问题，请在 API 调试台填上相关必要参数后再复制代码使用
+    # 复制该 Demo 后, 需要将 "YOUR_APP_ID", "YOUR_APP_SECRET" 替换为自己应用的 APP_ID, APP_SECRET.
+    """
+    # 创建client
+    client = lark.Client.builder() \
+        .app_id(FsConstants.app_id) \
+        .app_secret(FsConstants.app_secret) \
+        .log_level(lark.LogLevel.DEBUG) \
+        .build()
+
+    # 构造请求对象
+    request: CreateMessageRequest = CreateMessageRequest.builder() \
+        .receive_id_type(receive_id_type) \
+        .request_body(CreateMessageRequestBody.builder()
+                      .receive_id(user_id)
+                      .msg_type("text")
+                      .content(json.dumps({"text": text_content}))  # 使用变量构造 JSON 字符串
+                      .build()) \
+        .build()
+
+    # 发起请求
+    response: CreateMessageResponse = client.im.v1.message.create(request)
+
+    # 处理失败返回
+    if not response.success():
+        lark.logger.error(
+            f"client.im.v1.message.create failed, code: {response.code}, msg: {response.msg}, log_id: {response.get_log_id()}, resp: \n{json.dumps(json.loads(response.raw.content), indent=4, ensure_ascii=False)}")
+        return
+
+    # 处理业务结果
+    lark.logger.info(lark.JSON.marshal(response.data, indent=4))
+
+
+# if __name__ == '__main__':
+#     fs_msg(FsUserID.WP_ID, "xxxxx")
