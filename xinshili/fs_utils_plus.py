@@ -199,6 +199,9 @@ def khhz_sheet_bg(tat, ck_time, analyse_obj, bg):
     elif analyse_obj == ClientConstants.kaer:
         column_start_nums = "T"
         column_end_nums = "X"
+    elif analyse_obj == ClientConstants.md_flld:
+        column_start_nums = "Z"
+        column_end_nums = "AD"
     else:
         raise Exception("使用raise抛出一个异常")
 
@@ -292,6 +295,9 @@ def khhz_sheet_value(tat, lists, ck_time, analyse_obj):
     elif analyse_obj == ClientConstants.kaer:
         column_start_nums = "T"
         column_end_nums = "X"
+    elif analyse_obj == ClientConstants.md_flld:
+        column_start_nums = "Z"
+        column_end_nums = "AD"
     else:
         raise Exception("使用raise抛出一个异常")
 
