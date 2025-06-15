@@ -12,7 +12,7 @@ import gc
 from natsort import natsorted
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_value, ClientConstants, detail_sheet_bg, \
-    brief_sheet_bg, khhz_sheet_value, khhz_sheet_bg
+    brief_sheet_bg, khhz_sheet_value, khhz_sheet_bg, FsUserID, fs_msg
 from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.usps_utils import track
 from xinshili.utils import round2, getYmd, delete_file, is_us_weekend, get_weekday, get_american_holiday, \
@@ -1538,18 +1538,27 @@ def go(analyse_obj, xlsx_path):
     text += "\n----------------------unpaid详情----------------------"
     unpaid_text = ""
     result_map = get_unpaid_platform_tracking_map(xlsx_path)
-    if (len(result_map) > 0):
+    current_day_unpaid_text = ""
+    current_day_unpaid_len = 0
+    now_strftime = datetime.now().strftime('%Y-%m-%d')
+    if len(result_map) > 0:
+        search_day = ""
         for group_time, records in result_map.items():
             if group_time is None:
-                if (len(records.items()) > 0):
+                if len(records.items()) > 0:
                     unpaid_text += f"\n🕒"
             else:
                 dt = pd.to_datetime(group_time)
-                unpaid_text += f"\n🕒{dt.strftime('%Y-%m-%d')}"
+                search_day = dt.strftime('%Y-%m-%d')
+                unpaid_text += f"\n🕒{search_day}"
 
             for platform_number, info in records.items():
                 # print(f"\n平台单号：{platform_number} , 物流跟踪号：{info['tracking_number']}, 是否kj: {info['kj']}")
-                unpaid_text += f"\n{info['tracking_number']}"
+                number_ = f"\n{info['tracking_number']}"
+                unpaid_text += number_
+                if search_day == now_strftime:
+                    current_day_unpaid_text += number_
+                    current_day_unpaid_len += 1
 
             unpaid_text += "\n"
 
@@ -1954,6 +1963,15 @@ def go(analyse_obj, xlsx_path):
 
         # if (bgFlag):
         detail_sheet_bg(tat, ck_time, analyse_obj, bg)
+
+    if len(current_day_unpaid_text) > 0:
+        omp_tiem_str = datetime.strptime(ck_time, "%Y年%m月%d号")
+        fenxi_tiem_str = datetime.now().strftime('%Y年%m月%d号')
+        result_fs_msg = ""
+        result_fs_msg += f"{analyse_obj} {omp_tiem_str} {current_day_unpaid_len}单 unpaid: \n"
+        result_fs_msg += current_day_unpaid_text
+        fs_msg(FsUserID.WP_ID, result_fs_msg)
+        fs_msg(FsUserID.LW_ID, result_fs_msg)
 
 
 def automatic(dir_path, analyse_obj, ignore=False):
