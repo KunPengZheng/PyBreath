@@ -80,3 +80,13 @@ def merge_xlsx_files(file_paths: list, output_path: str):
     merged_df.to_excel(output_path, index=False)
 
     print(f"所有文件已合并，结果保存为: {output_path}")
+
+
+def copy_new_file(input_path, output_path):
+    """
+    复制生成新文件
+    """
+    # 读取原始 Excel 文件
+    df = pd.read_excel(input_path)
+    # 将数据写入新的 Excel 文件
+    df.to_excel(output_path, index=False)
