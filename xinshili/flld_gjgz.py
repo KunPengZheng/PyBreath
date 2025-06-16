@@ -174,51 +174,6 @@ def delete_files(file_paths):
             print(f"❌ 删除失败: {path}，原因: {e}")
 
 
-def xsxs(output_file):
-    patterns = {
-        "no_track": Pattern.no_track,
-        "delivered": Pattern.delivered,
-        "unpaid": Pattern.unpaid,
-        "not_yet": Pattern.not_yet,
-        "pre_ship": Pattern.pre_ship,
-        "irregular_no_tracking": Pattern.irregular_no_tracking,
-        "no_tracking": Pattern.no_tracking,
-        "tracking": Pattern.tracking
-    }
-
-    count_dict = count_pattern_state(output_file, RowName.Courier, patterns)
-
-    no_track_count = count_dict["no_track"]
-    delivered_count = count_dict["delivered"]
-    unpaid_count = count_dict["unpaid"]
-    not_yet_count = count_dict["not_yet"]
-    pre_ship_count = count_dict["pre_ship"]
-    irregular_no_tracking_count = count_dict["irregular_no_tracking"]
-    no_tracking_count = count_dict["no_tracking"]
-    tracking_count = count_dict["tracking"]
-
-    delivered_count_int = int(delivered_count)
-    unpaid_count_int = int(unpaid_count)
-    not_yet_count_int = int(not_yet_count)
-    pre_ship_count_int = int(pre_ship_count)
-    irregular_no_tracking_count_int = int(irregular_no_tracking_count)
-    no_tracking_count_int = int(no_tracking_count)
-    tracking_count_int = int(tracking_count)
-    no_track_count_int = int(no_track_count)
-    total_count_int = no_track_count_int + delivered_count + unpaid_count + tracking_count
-
-    # 计算百分比
-    swl = round2(100 - ((no_track_count_int) / total_count_int * 100))
-    wswl = round2(100 - swl)
-    qsl = round2((delivered_count_int / total_count_int) * 100)
-    unpaidl = round2((unpaid_count_int / total_count_int) * 100)
-    not_yetl = round2((not_yet_count_int / total_count_int) * 100)
-    pre_shipl = round2((pre_ship_count_int / total_count_int) * 100)
-    irregular_no_trackingl = round2((irregular_no_tracking_count_int / total_count_int) * 100)
-    no_tracking_countl = round2((no_tracking_count_int / total_count_int) * 100)
-    tracking_countl = round2((tracking_count_int / total_count_int) * 100)
-
-
 def go(input_path):
     if input_path is None:
         input_path = input("请输入文件的绝对路径：")
@@ -474,6 +429,7 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
 def call():
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5")
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.6")
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", True, False)
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, False)
 
 
