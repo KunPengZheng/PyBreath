@@ -429,8 +429,8 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
 def call():
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5")
     # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.6")
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", True, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", True, False)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, False)
 
 
 if __name__ == '__main__':
