@@ -4,6 +4,8 @@ import re
 import random
 from dataclasses import dataclass
 from xinshili import utils
+import os
+import sys
 from xinshili.yifu_pupin import rule_replace
 
 
@@ -275,8 +277,16 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False, output_de
     if color_flag == Combined.Nones or gender_flag == Combined.Nones:
         raise ValueError(f"文件名不存在 '男女'或'黑白' 等关键字！！！")
 
-    # 直接使用路径，不用 openpyxl_utils
-    template_path = utils.current_dir() + "/xlsx/dxm/import_created_product_popTemu.xlsx"
+    def resource_path(relative_path):
+        """兼容开发和打包环境的资源路径"""
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(base_path, relative_path)
+
+    # 正确读取打包后的文件路径
+    template_path = resource_path("xlsx/dxm/import_created_product_popTemu.xlsx")
 
     if output_default:
         output_dir = "/Users/zkp/Desktop/B&Y/dxm/import/"
