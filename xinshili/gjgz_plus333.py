@@ -1964,12 +1964,26 @@ def go(analyse_obj, xlsx_path):
         # if (bgFlag):
         detail_sheet_bg(tat, ck_time, analyse_obj, bg)
 
+    result_fs_msg = f"客户：{analyse_obj}\n"
+    result_fs_msg += f"订单创建时间：{ck_time}\n"
+    result_fs_msg += f"跟踪时间：{gz_time}\n"
+    fs_msg_flag = False
+
     if len(current_day_unpaid_text) > 0:
-        omp_tiem_str = datetime.strptime(ck_time, "%Y年%m月%d号")
-        fenxi_tiem_str = datetime.now().strftime('%Y年%m月%d号')
-        result_fs_msg = ""
-        result_fs_msg += f"{analyse_obj} {omp_tiem_str} {current_day_unpaid_len}单 unpaid: \n"
+        result_fs_msg += f"新增 {current_day_unpaid_len}单 unpaid: \n"
         result_fs_msg += current_day_unpaid_text
+        fs_msg_flag = True
+
+    if change_shipment_received_count >= 10:
+        result_fs_msg += f"{change_shipment_received_count}单 提货单未更新轨迹（>=2天）\n"
+        fs_msg_flag = True
+
+    if swl_flag:
+        result_fs_msg += f"上网率异常: {swl}%\n"
+        fs_msg_flag = True
+
+    if fs_msg_flag:
+        # print(result_fs_msg)
         fs_msg(FsUserID.WP_ID, result_fs_msg)
         fs_msg(FsUserID.LW_ID, result_fs_msg)
 
