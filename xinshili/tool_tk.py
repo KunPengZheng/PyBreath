@@ -6,6 +6,8 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QMessageBox, QLabel, QLineEdit
 )
 
+from xinshili import utils
+from xinshili.dxm_import_template import create_dxm_clothes_template
 from xinshili.excel_combined import merge_based_on_largest_header
 from xinshili.pdf_split import split_pdf, extract_text_from_pdf
 from xinshili.utils import ensure_directory_exists, open_dir
@@ -390,6 +392,98 @@ class AddPicPrefixTool(QWidget):
         open_dir(file_path)
 
 
+class DxmClothesTool(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("生成店小秘衣服模版")
+        self.setGeometry(100, 100, 500, 300)
+        self.input_folder = None
+        self.output_file = None
+
+        layout = QVBoxLayout()
+
+        # 选择输入文件夹按钮
+        self.input_btn = QPushButton("选择输入文件", self)
+        self.input_btn.setFixedSize(200, 50)
+        self.input_btn.clicked.connect(self.select_input_folder)
+        layout.addWidget(self.input_btn)
+
+        self.input_label = QLabel("未选择输入文件", self)
+        self.input_label.setFixedSize(500, 50)
+        layout.addWidget(self.input_label)
+
+        # 创建单行输入框
+        self.line_edit = QLineEdit()
+        self.line_edit.setPlaceholderText("请输入价格")
+        self.line_edit.setFixedSize(100, 50)
+        layout.addWidget(self.line_edit)
+
+        # # 选择输出文件按钮
+        # self.output_btn = QPushButton("选择输出目录", self)
+        # self.output_btn.setFixedSize(200, 50)
+        # self.output_btn.clicked.connect(self.select_output_folder)
+        # layout.addWidget(self.output_btn)
+        #
+        # self.output_label = QLabel("未选择输出目录", self)
+        # layout.addWidget(self.output_label)
+
+        # 开始合并按钮
+        self.merge_btn = QPushButton("开始", self)
+        self.merge_btn.setFixedSize(200, 50)
+        self.merge_btn.clicked.connect(self.merge_excel_files)
+        layout.addWidget(self.merge_btn)
+
+        self.setLayout(layout)
+
+    def select_input_folder(self):
+        folder, _ = QFileDialog.getOpenFileName(self, "选择 标题.xlsx 文件", "", "Excel Files (*.xlsx)")
+        if folder:
+            self.input_folder = folder
+            self.input_label.setText(f"已选择文件：{folder}")
+        else:
+            self.input_label.setText("未选择任何文件")
+
+    def select_output_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "选择输出目录")
+        if folder:
+            self.output_file = folder
+            self.output_label.setText(f"输入目录：{folder}")
+        else:
+            self.output_label.setText("未选择任何文件夹")
+
+    def merge_excel_files(self):
+        # if not self.input_folder or not self.output_file:
+        #     QMessageBox.critical(self, "错误", "请先选择输入文件夹和输出文件夹！")
+        #     return
+        if not self.input_folder:
+            QMessageBox.critical(self, "错误", "请先选择输入文件！")
+            return
+        if not self.line_edit.text():  # 判断 QLineEdit 是否为空
+            QMessageBox.critical(self, "错误", "请输入价格")
+        try:
+            create_dxm_clothes_template(self.input_folder, self.line_edit.text().strip(), False)
+
+            output_dir = utils.get_file_dir(self.input_folder)
+            file_name_with_extension = utils.get_filename_with_extension(self.input_folder)
+            result_output_file = output_dir + "/create_" + file_name_with_extension
+
+            # 创建消息框
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Information)
+            msg_box.setWindowTitle("成功")
+            msg_box.setText(f"完成！\n文件已保存到：{result_output_file}")
+            msg_box.setStandardButtons(QMessageBox.Ok)
+
+            # 绑定自定义逻辑到 OK 按钮点击事件
+            # msg_box.accepted.connect(lambda: self.custom_logic_after_merge(result_output_file))
+            msg_box.exec_()
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"发生错误：{str(e)}")
+
+    def custom_logic_after_merge(self, file_path):
+        open_dir(file_path)
+
+
 # 主窗口
 class MainWindow(QWidget):
     def __init__(self):
@@ -399,32 +493,37 @@ class MainWindow(QWidget):
 
         layout = QVBoxLayout()
 
-        # PDF 切分功能入口按钮
-        self.pdf_tool_btn = QPushButton("PDF 切分工具", self)
-        self.pdf_tool_btn.setFixedSize(450, 50)
-        self.pdf_tool_btn.clicked.connect(self.open_pdf_tool)
-        layout.addWidget(self.pdf_tool_btn)
+        # # PDF 切分功能入口按钮
+        # self.pdf_tool_btn = QPushButton("PDF 切分工具", self)
+        # self.pdf_tool_btn.setFixedSize(450, 50)
+        # self.pdf_tool_btn.clicked.connect(self.open_pdf_tool)
+        # layout.addWidget(self.pdf_tool_btn)
+        #
+        # # Excel 合并功能入口按钮
+        # self.excel_merge_btn = QPushButton("Excel 合并工具", self)
+        # self.excel_merge_btn.setFixedSize(450, 50)
+        # self.excel_merge_btn.clicked.connect(self.open_excel_merge_tool)
+        # layout.addWidget(self.excel_merge_btn)
+        #
+        # self.yf_title_filter_btn = QPushButton("标题过滤工具🔧", self)
+        # self.yf_title_filter_btn.setFixedSize(450, 50)
+        # self.yf_title_filter_btn.clicked.connect(lambda: self.open_yf_title_filter_tool(is_big_size=False))
+        # layout.addWidget(self.yf_title_filter_btn)
+        #
+        # self.yf_title_filter_btn = QPushButton("女装大码-标题添加后缀工具🔧", self)
+        # self.yf_title_filter_btn.setFixedSize(450, 50)
+        # self.yf_title_filter_btn.clicked.connect(lambda: self.open_yf_title_filter_tool(is_big_size=True))
+        # layout.addWidget(self.yf_title_filter_btn)
+        #
+        # # Excel 合并功能入口按钮
+        # self.add_pic_prefix_btn = QPushButton("图片名添加前缀工具🔧", self)
+        # self.add_pic_prefix_btn.setFixedSize(450, 50)
+        # self.add_pic_prefix_btn.clicked.connect(self.open_add_pic_prefix_tool)
+        # layout.addWidget(self.add_pic_prefix_btn)
 
-        # Excel 合并功能入口按钮
-        self.excel_merge_btn = QPushButton("Excel 合并工具", self)
-        self.excel_merge_btn.setFixedSize(450, 50)
-        self.excel_merge_btn.clicked.connect(self.open_excel_merge_tool)
-        layout.addWidget(self.excel_merge_btn)
-
-        self.yf_title_filter_btn = QPushButton("标题过滤工具🔧", self)
-        self.yf_title_filter_btn.setFixedSize(450, 50)
-        self.yf_title_filter_btn.clicked.connect(lambda: self.open_yf_title_filter_tool(is_big_size=False))
-        layout.addWidget(self.yf_title_filter_btn)
-
-        self.yf_title_filter_btn = QPushButton("女装大码-标题添加后缀工具🔧", self)
-        self.yf_title_filter_btn.setFixedSize(450, 50)
-        self.yf_title_filter_btn.clicked.connect(lambda: self.open_yf_title_filter_tool(is_big_size=True))
-        layout.addWidget(self.yf_title_filter_btn)
-
-        # Excel 合并功能入口按钮
-        self.add_pic_prefix_btn = QPushButton("图片名添加前缀工具🔧", self)
+        self.add_pic_prefix_btn = QPushButton("生成店小秘衣服模版🔧", self)
         self.add_pic_prefix_btn.setFixedSize(450, 50)
-        self.add_pic_prefix_btn.clicked.connect(self.open_add_pic_prefix_tool)
+        self.add_pic_prefix_btn.clicked.connect(self.open_create_dxm_clothes_template_tool)
         layout.addWidget(self.add_pic_prefix_btn)
 
         self.setLayout(layout)
@@ -443,6 +542,10 @@ class MainWindow(QWidget):
 
     def open_add_pic_prefix_tool(self):
         self.excel_merge_tool = AddPicPrefixTool()
+        self.excel_merge_tool.show()
+
+    def open_create_dxm_clothes_template_tool(self):
+        self.excel_merge_tool = DxmClothesTool()
         self.excel_merge_tool.show()
 
 
