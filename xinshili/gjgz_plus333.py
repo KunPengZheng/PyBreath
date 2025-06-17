@@ -1413,7 +1413,7 @@ def filter_tracking_numbers(input_path, output_path):
 
     # 保存结果
     df_filtered.to_excel(output_path, index=False)
-    print(f"✅ 筛选后文件已保存到: {output_path}")
+    # print(f"✅ 筛选后文件已保存到: {output_path}")
 
 
 def go(analyse_obj, xlsx_path):
