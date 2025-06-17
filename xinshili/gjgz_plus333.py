@@ -38,6 +38,8 @@ class RowName:
     LatestEventSfDate = "LatestEventSfDate/最新事件时间"
     SfDateInterval = "SfDateInterval/SF消息间隔"
     UnpaidDate = "UnpaidDate/unpaid记录时间"
+    Recipient = "Recipient/收件人"
+    Upload_Shipping_Label = "上传物流面单(Upload_Shipping_Label)"
 
     Courier_File1 = 'Courier/快递_file1'
     SfDateInterval_File1 = 'SfDateInterval/SF消息间隔_file1'
@@ -56,6 +58,11 @@ class RowName:
     Yin_Delivered_Time = "阴单_签收时间"
     YY_Delivered_Time = "阴阳单_签收间隔"
     Create_Time = "创建时间"
+
+    Length = 'Length/长'
+    Width = 'Width/宽'
+    Height = 'Height/高'
+    Unit = 'Unit/单位'
 
 
 @dataclass(frozen=True)
@@ -79,6 +86,7 @@ class CourierStateMapValue:
     not_yet = 'not_yet'
     pre_ship = "pre_ship"
     no_tracking = "no_tracking"
+    no_track = "no_track"
     unpaid = "unpaid"
     delivered = "delivered"
     tracking = "tracking"
@@ -103,6 +111,7 @@ class CellKey:
 
 @dataclass(frozen=True)
 class Pattern:
+    no_track = r"not_yet|pre_ship|irregular_no_tracking|no_tracking"
     no_track = r"not_yet|pre_ship|irregular_no_tracking|no_tracking"
     delivered = r"^delivered$"
     unpaid = r"^unpaid$"
@@ -535,7 +544,7 @@ def count_pattern_and_tracking_with_sf_date(file_path, column_name, sfDateInterv
             sfDateInterval_value = row[sfDateInterval_index]
 
             # 判断是否符合 'tracking' 且 'SfDateEquality' 为 0 的条件
-            if courier_value == "tracking" and sfDateInterval_value == 0:
+            if courier_value == CourierStateMapValue.tracking and sfDateInterval_value == 0:
                 tracking_sf_date_equality_count += 1
 
             # 判断正则表达式匹配
@@ -637,7 +646,7 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
             key_counter = OrderedDict(sorted(key_counter.items(), key=lambda x: get_priority(x[0])))
             key_no_track_counter = OrderedDict(sorted(key_no_track_counter.items(), key=lambda x: get_priority(x[0])))
 
-        elif key_column == "Client/客户":
+        elif key_column == RowName.Client:
             # 定义区域优先级
             region_priority = {
                 "东谷": 1,
@@ -752,7 +761,7 @@ def count_distribution_and_no_track3(file_path, key_column, courier_column=RowNa
                         key_delivered_counter[key_str] += 1
                     if pattern_unpaid.search(courier_str):
                         key_unpaid_counter[key_str] += 1
-                    if courier_str.lower() == "tracking" and sf_date_value == 0:
+                    if courier_str.lower() == CourierStateMapValue.tracking and sf_date_value == 0:
                         key_tracking_sf_zero_counter[key_str] += 1
 
         # 使用自然排序对所有 Counter 进行排序并转为 OrderedDict
@@ -945,36 +954,36 @@ def get_unpaid_platform_tracking_map(file_path):
     data = pd.read_excel(file_path)
 
     required_columns = [
-        'Courier/快递', 'Platform Number/平台单号', 'Tracking No./物流跟踪号',
-        'Shipping service/物流渠道', 'Recipient/收件人', 'UnpaidDate/unpaid记录时间'
+        RowName.Courier, RowName.Platform_Num, RowName.Tracking_No,
+        RowName.ShippingService, RowName.Recipient, RowName.UnpaidDate
     ]
     for col in required_columns:
         if col not in data.columns:
             raise ValueError(f"文件中缺少所需列：{col}")
 
     # 只处理 Courier 为 unpaid 的行
-    unpaid_data = data[data['Courier/快递'] == 'unpaid'].copy()
+    unpaid_data = data[data[RowName.Courier] == CourierStateMapValue.unpaid].copy()
 
     # 将 UnpaidDate 列转换为 datetime 类型
-    unpaid_data['UnpaidDate/unpaid记录时间'] = pd.to_datetime(
-        unpaid_data['UnpaidDate/unpaid记录时间'], errors='coerce'
+    unpaid_data[RowName.UnpaidDate] = pd.to_datetime(
+        unpaid_data[RowName.UnpaidDate], errors='coerce'
     )
 
     # 准备结果字典
     result = {}
 
     # 处理空日期的记录（NaT）
-    null_date_group = unpaid_data[unpaid_data['UnpaidDate/unpaid记录时间'].isnull()]
+    null_date_group = unpaid_data[unpaid_data[RowName.UnpaidDate].isnull()]
     if not null_date_group.empty:
         group_dict = {}
         for _, row in null_date_group.iterrows():
-            platform_number = row['Platform Number/平台单号']
-            tracking_number = row['Tracking No./物流跟踪号']
-            shipping_service = row['Shipping service/物流渠道']
-            recipient = row['Recipient/收件人']
+            platform_number = row[RowName.Platform_Num]
+            tracking_number = row[RowName.Tracking_No]
+            shipping_service = row[RowName.ShippingService]
+            recipient = row[RowName.Recipient]
 
-            kj_ = (shipping_service == '上传物流面单(Upload_Shipping_Label)' and recipient in ['KJ', 'TK']) or \
-                  (shipping_service != '上传物流面单(Upload_Shipping_Label)')
+            kj_ = (shipping_service == RowName.Upload_Shipping_Label and recipient in ['KJ', 'TK']) or \
+                  (shipping_service != RowName.Upload_Shipping_Label)
 
             group_dict[platform_number] = {
                 "tracking_number": tracking_number,
@@ -983,17 +992,17 @@ def get_unpaid_platform_tracking_map(file_path):
         result[None] = group_dict
 
     # 处理非空日期分组
-    for group_time, group_rows in unpaid_data[unpaid_data['UnpaidDate/unpaid记录时间'].notnull()].groupby(
-            'UnpaidDate/unpaid记录时间'):
+    for group_time, group_rows in unpaid_data[unpaid_data[RowName.UnpaidDate].notnull()].groupby(
+            RowName.UnpaidDate):
         group_dict = {}
         for _, row in group_rows.iterrows():
-            platform_number = row['Platform Number/平台单号']
-            tracking_number = row['Tracking No./物流跟踪号']
-            shipping_service = row['Shipping service/物流渠道']
-            recipient = row['Recipient/收件人']
+            platform_number = row[RowName.Platform_Num]
+            tracking_number = row[RowName.Tracking_No]
+            shipping_service = row[RowName.ShippingService]
+            recipient = row[RowName.Recipient]
 
-            kj_ = (shipping_service == '上传物流面单(Upload_Shipping_Label)' and recipient in ['KJ', 'TK']) or \
-                  (shipping_service != '上传物流面单(Upload_Shipping_Label)')
+            kj_ = (shipping_service == RowName.Upload_Shipping_Label and recipient in ['KJ', 'TK']) or \
+                  (shipping_service != RowName.Upload_Shipping_Label)
 
             group_dict[platform_number] = {
                 "tracking_number": tracking_number,
@@ -1036,7 +1045,7 @@ def get_shipment_received_numbers(filepath, gz_time):
         tracking_no = row[column_indices[RowName.Tracking_No]]
 
         # 筛选条件：Courier == 'tracking' 且 SfDateInterval == '0'
-        if courier == "tracking" and sf_date_interval == 0:
+        if courier == CourierStateMapValue.tracking and sf_date_interval == 0:
 
             # try:
             # 解析并计算日期间隔
@@ -1070,7 +1079,7 @@ def get_filtered_count(filepath, gz_time, target_column, target_value):
     df = pd.read_excel(filepath, dtype=str)
 
     # 确保需要的列存在
-    required_columns = {"Courier/快递", "SfDateInterval/SF消息间隔", "OutboundTime/出库时间", target_column}
+    required_columns = {RowName.Courier, RowName.SfDateInterval, RowName.OutboundTime2, target_column}
     if not required_columns.issubset(df.columns):
         raise ValueError(f"Excel 文件缺少必要的列: {required_columns - set(df.columns)}")
 
@@ -1079,8 +1088,8 @@ def get_filtered_count(filepath, gz_time, target_column, target_value):
 
     # 进一步筛选条件：
     filtered_df = filtered_df[
-        (filtered_df["Courier/快递"] == "tracking") &
-        (filtered_df["SfDateInterval/SF消息间隔"] == "0")
+        (filtered_df[RowName.Courier] == CourierStateMapValue.tracking) &
+        (filtered_df[RowName.SfDateInterval] == "0")
         ]
 
     # 解析 "OutboundTime/出库时间" 并计算时间间隔
@@ -1106,7 +1115,7 @@ def get_filtered_count(filepath, gz_time, target_column, target_value):
         except ValueError:
             return False  # 解析失败则跳过
 
-    filtered_df = filtered_df[filtered_df["OutboundTime/出库时间"].apply(check_outbound_time)]
+    filtered_df = filtered_df[filtered_df[RowName.OutboundTime2].apply(check_outbound_time)]
 
     # 返回符合条件的数据数量
     return len(filtered_df)
@@ -1126,18 +1135,18 @@ def get_in(file_path, sku_to_match):
     data = pd.read_excel(file_path)
 
     # 确保相关列存在
-    required_columns = ['SKU', 'Length/长', 'Width/宽', 'Height/高', 'Unit/单位']
+    required_columns = [RowName.SKU, RowName.Length, RowName.Width, RowName.Height, RowName.Unit]
     if not all(col in data.columns for col in required_columns):
         raise ValueError(f"文件中缺少所需的列，请检查文件结构")
 
     # 查找匹配的第一个 SKU
-    matched_row = data[data['SKU'] == sku_to_match].iloc[0]  # 获取第一个匹配的行
+    matched_row = data[data[RowName.SKU] == sku_to_match].iloc[0]  # 获取第一个匹配的行
 
     # 提取数据
-    length = matched_row['Length/长']
-    width = matched_row['Width/宽']
-    height = matched_row['Height/高']
-    unit = matched_row['Unit/单位']
+    length = matched_row[RowName.Length]
+    width = matched_row[RowName.Width]
+    height = matched_row[RowName.Height]
+    unit = matched_row[RowName.Unit]
 
     # 如果单位是英寸，进行转换
     if unit == 'in':
@@ -1148,7 +1157,7 @@ def get_in(file_path, sku_to_match):
 
     # 返回一个字典，包含转换后的数据
     result = {
-        'SKU': sku_to_match,
+        RowName.SKU: sku_to_match,
         'Length': length,
         'Width': width,
         'Height': height,
@@ -1159,9 +1168,9 @@ def get_in(file_path, sku_to_match):
 
 
 def temu_count(file_path, sku_value,
-               sku_column='SKU',
-               shipping_service_column='Platform Number/平台单号',
-               courier_column='Courier/快递'):
+               sku_column=RowName.SKU,
+               shipping_service_column=RowName.Platform_Num,
+               courier_column=RowName.Courier):
     # 读取 Excel 文件
     data = pd.read_excel(file_path, dtype=str)  # 确保数据按字符串读取，避免 NaN 影响筛选
 
@@ -1184,10 +1193,10 @@ def temu_count(file_path, sku_value,
 
 
 def sku_kj_count(file_path, sku_value,
-                 sku_column='SKU',
-                 shipping_service_column='Shipping service/物流渠道',
-                 recipient_column='Recipient/收件人',
-                 courier_column='Courier/快递'):
+                 sku_column=RowName.SKU,
+                 shipping_service_column=RowName.ShippingService,
+                 recipient_column=RowName.Recipient,
+                 courier_column=RowName.Courier):
     """
     计算符合条件的 SKU 订单总数，并返回匹配 'Courier/快递' 正则的数据数量
     :param file_path: Excel 文件路径
@@ -1210,9 +1219,9 @@ def sku_kj_count(file_path, sku_value,
     filtered_data = data[
         (data[sku_column] == sku_value) &
         (
-                ((data[shipping_service_column] == '上传物流面单(Upload_Shipping_Label)') &
+                ((data[shipping_service_column] == RowName.Upload_Shipping_Label) &
                  ((data[recipient_column] == 'KJ') | (data[recipient_column] == 'TK'))) |
-                (data[shipping_service_column] != '上传物流面单(Upload_Shipping_Label)')
+                (data[shipping_service_column] != RowName.Upload_Shipping_Label)
         )
         ]
 
@@ -1226,7 +1235,7 @@ def sku_kj_count(file_path, sku_value,
     return len(filtered_data), len(matched_data)
 
 
-def kj_count(file_path, shipping_service_column='Shipping service/物流渠道', recipient_column='Recipient/收件人'):
+def kj_count(file_path, shipping_service_column=RowName.ShippingService, recipient_column=RowName.Recipient):
     # 读取 Excel 文件
     data = pd.read_excel(file_path)
 
@@ -1235,10 +1244,10 @@ def kj_count(file_path, shipping_service_column='Shipping service/物流渠道',
         raise ValueError(f"文件中缺少必要的列，请检查列名是否正确")
 
     # 条件1：'Shipping service/物流渠道' 不为 '上传物流面单(Upload_Shipping_Label)' 的行
-    condition1 = (data[shipping_service_column] != '上传物流面单(Upload_Shipping_Label)')
+    condition1 = (data[shipping_service_column] != RowName.Upload_Shipping_Label)
 
     # 条件2：'Shipping service/物流渠道' 为 '上传物流面单(Upload_Shipping_Label)' 且 'Recipient/收件人' 为 'KJ' 的行
-    condition2 = (data[shipping_service_column] == '上传物流面单(Upload_Shipping_Label)') & (
+    condition2 = (data[shipping_service_column] == RowName.Upload_Shipping_Label) & (
             (data[recipient_column] == 'KJ') | (data[recipient_column] == 'TK'))
 
     # 综合筛选符合任一条件的行
@@ -1603,26 +1612,26 @@ def go(analyse_obj, xlsx_path):
     total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)
 
     patterns = {
-        "no_track": Pattern.no_track,
-        "delivered": Pattern.delivered,
-        "unpaid": Pattern.unpaid,
-        "not_yet": Pattern.not_yet,
-        "pre_ship": Pattern.pre_ship,
-        "irregular_no_tracking": Pattern.irregular_no_tracking,
-        "no_tracking": Pattern.no_tracking,
-        "tracking": Pattern.tracking
+        CourierStateMapValue.no_track: Pattern.no_track,
+        CourierStateMapValue.delivered: Pattern.delivered,
+        CourierStateMapValue.unpaid: Pattern.unpaid,
+        CourierStateMapValue.not_yet: Pattern.not_yet,
+        CourierStateMapValue.pre_ship: Pattern.pre_ship,
+        CourierStateMapValue.irregular_no_tracking: Pattern.irregular_no_tracking,
+        CourierStateMapValue.no_tracking: Pattern.no_tracking,
+        CourierStateMapValue.tracking: Pattern.tracking
     }
 
     count_dict = count_pattern_and_tracking_with_sf_date(output_file, RowName.Courier, RowName.SfDateInterval, patterns)
 
-    no_track_count = count_dict["no_track"]
-    delivered_count = count_dict["delivered"]
-    unpaid_count = count_dict["unpaid"]
-    not_yet_count = count_dict["not_yet"]
-    pre_ship_count = count_dict["pre_ship"]
-    irregular_no_tracking_count = count_dict["irregular_no_tracking"]
-    no_tracking_count = count_dict["no_tracking"]
-    tracking_count = count_dict["tracking"]
+    no_track_count = count_dict[CourierStateMapValue.no_track]
+    delivered_count = count_dict[CourierStateMapValue.delivered]
+    unpaid_count = count_dict[CourierStateMapValue.unpaid]
+    not_yet_count = count_dict[CourierStateMapValue.not_yet]
+    pre_ship_count = count_dict[CourierStateMapValue.pre_ship]
+    irregular_no_tracking_count = count_dict[CourierStateMapValue.irregular_no_tracking]
+    no_tracking_count = count_dict[CourierStateMapValue.no_tracking]
+    tracking_count = count_dict[CourierStateMapValue.tracking]
     tracking_zero_count = count_dict["sfDateInterval"]
 
     # 先进行一次计算，并缓存结果
@@ -2032,27 +2041,27 @@ def automatic(dir_path, analyse_obj, ignore=False):
                     total_count = remove_duplicates_by_column(output_file, output_file, RowName.Tracking_No)
 
                     patterns = {
-                        "no_track": Pattern.no_track,
-                        "delivered": Pattern.delivered,
-                        "unpaid": Pattern.unpaid,
-                        "not_yet": Pattern.not_yet,
-                        "pre_ship": Pattern.pre_ship,
-                        "irregular_no_tracking": Pattern.irregular_no_tracking,
-                        "no_tracking": Pattern.no_tracking,
-                        "tracking": Pattern.tracking
+                        CourierStateMapValue.no_track: Pattern.no_track,
+                        CourierStateMapValue.delivered: Pattern.delivered,
+                        CourierStateMapValue.unpaid: Pattern.unpaid,
+                        CourierStateMapValue.not_yet: Pattern.not_yet,
+                        CourierStateMapValue.pre_ship: Pattern.pre_ship,
+                        CourierStateMapValue.irregular_no_tracking: Pattern.irregular_no_tracking,
+                        CourierStateMapValue.no_tracking: Pattern.no_tracking,
+                        CourierStateMapValue.tracking: Pattern.tracking
                     }
 
                     count_dict = count_pattern_and_tracking_with_sf_date(output_file, RowName.Courier,
                                                                          RowName.SfDateInterval, patterns)
 
-                    no_track_count = count_dict["no_track"]
-                    delivered_count = count_dict["delivered"]
-                    unpaid_count = count_dict["unpaid"]
-                    not_yet_count = count_dict["not_yet"]
-                    pre_ship_count = count_dict["pre_ship"]
-                    irregular_no_tracking_count = count_dict["irregular_no_tracking"]
-                    no_tracking_count = count_dict["no_tracking"]
-                    tracking_count = count_dict["tracking"]
+                    no_track_count = count_dict[CourierStateMapValue.no_track]
+                    delivered_count = count_dict[CourierStateMapValue.delivered]
+                    unpaid_count = count_dict[CourierStateMapValue.unpaid]
+                    not_yet_count = count_dict[CourierStateMapValue.not_yet]
+                    pre_ship_count = count_dict[CourierStateMapValue.pre_ship]
+                    irregular_no_tracking_count = count_dict[CourierStateMapValue.irregular_no_tracking]
+                    no_tracking_count = count_dict[CourierStateMapValue.no_tracking]
+                    tracking_count = count_dict[CourierStateMapValue.tracking]
                     tracking_zero_count = count_dict["sfDateInterval"]
 
                     # 先进行一次计算，并缓存结果
@@ -2174,27 +2183,27 @@ def print_all_folders(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=Fa
                                 total_count = remove_duplicates_by_column(output_file, output_file, RowName.Tracking_No)
 
                                 patterns = {
-                                    "no_track": Pattern.no_track,
-                                    "delivered": Pattern.delivered,
-                                    "unpaid": Pattern.unpaid,
-                                    "not_yet": Pattern.not_yet,
-                                    "pre_ship": Pattern.pre_ship,
-                                    "irregular_no_tracking": Pattern.irregular_no_tracking,
-                                    "no_tracking": Pattern.no_tracking,
-                                    "tracking": Pattern.tracking
+                                    CourierStateMapValue.no_track: Pattern.no_track,
+                                    CourierStateMapValue.delivered: Pattern.delivered,
+                                    CourierStateMapValue.unpaid: Pattern.unpaid,
+                                    CourierStateMapValue.not_yet: Pattern.not_yet,
+                                    CourierStateMapValue.pre_ship: Pattern.pre_ship,
+                                    CourierStateMapValue.irregular_no_tracking: Pattern.irregular_no_tracking,
+                                    CourierStateMapValue.no_tracking: Pattern.no_tracking,
+                                    CourierStateMapValue.tracking: Pattern.tracking
                                 }
 
                                 count_dict = count_pattern_and_tracking_with_sf_date(output_file, RowName.Courier,
                                                                                      RowName.SfDateInterval, patterns)
 
-                                no_track_count = count_dict["no_track"]
-                                delivered_count = count_dict["delivered"]
-                                unpaid_count = count_dict["unpaid"]
-                                not_yet_count = count_dict["not_yet"]
-                                pre_ship_count = count_dict["pre_ship"]
-                                irregular_no_tracking_count = count_dict["irregular_no_tracking"]
-                                no_tracking_count = count_dict["no_tracking"]
-                                tracking_count = count_dict["tracking"]
+                                no_track_count = count_dict[CourierStateMapValue.no_track]
+                                delivered_count = count_dict[CourierStateMapValue.delivered]
+                                unpaid_count = count_dict[CourierStateMapValue.unpaid]
+                                not_yet_count = count_dict[CourierStateMapValue.not_yet]
+                                pre_ship_count = count_dict[CourierStateMapValue.pre_ship]
+                                irregular_no_tracking_count = count_dict[CourierStateMapValue.irregular_no_tracking]
+                                no_tracking_count = count_dict[CourierStateMapValue.no_tracking]
+                                tracking_count = count_dict[CourierStateMapValue.tracking]
                                 tracking_zero_count = count_dict["sfDateInterval"]
 
                                 # 先进行一次计算，并缓存结果
