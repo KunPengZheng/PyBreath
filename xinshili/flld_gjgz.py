@@ -9,7 +9,8 @@ from openpyxl import load_workbook
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants, brief_sheet_bg, khhz_sheet_value, \
     khhz_sheet_bg, fs_msg, FsUserID
 from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, extract_and_process_data_flld, \
-    update_courier_status_flld, count_pattern_state, CourierStateMapKey, Pattern, is_time_difference_exceed
+    update_courier_status_flld, count_pattern_state, CourierStateMapKey, Pattern, is_time_difference_exceed, \
+    extract_and_process_data, update_courier_status
 from xinshili.pd_utils import copy_new_file
 from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend, natural_key
 
@@ -33,8 +34,8 @@ def str_strip(filepath: str, column_name: str):
     data.to_excel(filepath, index=False)
 
 
-def get_unpaid_tracking_data(file_path, courier_column='Courier/快递', waybill_column='单号',
-                             tracking_column='快递单号', key_value='unpaid'):
+def get_alert_intercepted_data(file_path, courier_column='Courier/快递', waybill_column='单号',
+                               tracking_column='快递单号', key_value='unpaid'):
     # 读取Excel文件
     data = pd.read_excel(file_path)
 
@@ -49,6 +50,41 @@ def get_unpaid_tracking_data(file_path, courier_column='Courier/快递', waybill
     result_map = dict(zip(unpaid_data[waybill_column], unpaid_data[tracking_column]))
 
     return result_map
+
+
+def get_unpaid_tracking_data(file_path,
+                             courier_column='Courier/快递',
+                             waybill_column='单号',
+                             tracking_column='快递单号',
+                             date_column='UnpaidDate/unpaid记录时间',
+                             key_value='unpaid'):
+    # 读取 Excel 文件
+    data = pd.read_excel(file_path)
+
+    # 确保必要的列存在
+    for col in [courier_column, waybill_column, tracking_column, date_column]:
+        if col not in data.columns:
+            raise ValueError(f"文件中缺少必要的列：{col}")
+
+    # 筛选出 Courier/快递 列内容为 'unpaid' 的数据，并复制以避免警告
+    unpaid_data = data[data[courier_column].astype(str).str.strip().str.lower() == key_value].copy()
+
+    # 处理日期列，填充空值为 'EMPTY'
+    unpaid_data.loc[:, date_column] = unpaid_data[date_column].fillna('EMPTY')
+
+    # 格式化日期列为字符串
+    unpaid_data.loc[:, date_column] = unpaid_data[date_column].apply(
+        lambda x: x.strftime('%Y-%m-%d') if isinstance(x, pd.Timestamp) else str(x)
+    )
+
+    # 根据日期列分组，并构建结果字典
+    grouped_result = {}
+    for group_key, group_df in unpaid_data.groupby(date_column):
+        # 每组数据生成一个 map：{单号: 快递单号}
+        group_map = dict(zip(group_df[waybill_column], group_df[tracking_column]))
+        grouped_result[group_key] = group_map
+
+    return grouped_result
 
 
 def get_days_difference(file_path, column_name="打单时间"):
@@ -180,15 +216,34 @@ def go(input_path):
     xlsx_path = extract_path_before_csv(input_path)
     str_strip(xlsx_path, "快递单号")
     check_and_add_courier_column(xlsx_path)
-    results = extract_and_process_data_flld(xlsx_path, RowName.Courier, 100, "快递单号")
 
-    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.not_yet_map], "快递单号")
-    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.pre_ship_map], "快递单号")
-    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.unpaid_map], "快递单号")
-    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.delivered_map], "快递单号")
-    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.no_tracking_map], "快递单号")
-    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.tracking_map], "快递单号")
-    update_courier_status_flld(xlsx_path, results[CourierStateMapKey.alert_map], "快递单号")
+    results = extract_and_process_data(xlsx_path, RowName.Courier, 100, "快递单号")
+
+    all_maps = {
+        CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
+        CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
+        CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
+        CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
+        CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
+        CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
+        CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
+        CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
+        CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
+    }
+
+    column_mapping = {
+        CourierStateMapKey.not_yet_map: RowName.Courier,
+        CourierStateMapKey.pre_ship_map: RowName.Courier,
+        CourierStateMapKey.unpaid_map: RowName.Courier,
+        CourierStateMapKey.delivered_map: RowName.Courier,
+        CourierStateMapKey.no_tracking_map: RowName.Courier,
+        CourierStateMapKey.tracking_map: RowName.Courier,
+        CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
+        CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
+        CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
+    }
+
+    update_courier_status(xlsx_path, all_maps, wl="快递单号", column_map=column_mapping)
 
     total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
     track_count = total_count - no_track_count
@@ -247,14 +302,24 @@ def go(input_path):
     fs_text += f"\nalert：（{alert_count}, {alert_countl}%）"
 
     unpaid_tracking_data = get_unpaid_tracking_data(xlsx_path)
+    current_day_unpaid_text = ""
+    current_day_unpaid_len = 0
+    now_strftime = datetime.now().strftime('%Y-%m-%d')
     if (len(unpaid_tracking_data) > 0):
         text += f"\n-------unpaid详情-------"
         fs_text += f"\n-------unpaid详情-------"
-        for key, value in unpaid_tracking_data.items():
-            text += f"\n（单号：{key}, 快递单号：{value}）"
-            fs_text += f"\n（单号：{key}, 快递单号：{value}）"
+        for times, value in unpaid_tracking_data.items():
+            result = f"\n 🕒：{times}"
+            for key, val in value.items():
+                result += f"\n（单号：{key}, 快递单号：{val}）"
+                if times == now_strftime:
+                    current_day_unpaid_text += f"{val}\n"
+                    current_day_unpaid_len += 1
+            result += "\n"
+            text += result
+            fs_text += result
 
-    alert_intercepted_tracking_data = get_unpaid_tracking_data(xlsx_path, key_value="alert")
+    alert_intercepted_tracking_data = get_alert_intercepted_data(xlsx_path, key_value="alert")
     if (len(alert_intercepted_tracking_data) > 0):
         text += f"\n-------alert详情-------"
         fs_text += f"\n-------alert详情-------"
@@ -321,25 +386,24 @@ def go(input_path):
 
     khhz_sheet_bg(tat, ck_time, ClientConstants.md_flld, bg)
 
-    # result_fs_msg = f"客户：佛罗里达\n"
-    # result_fs_msg += f"订单创建时间：{ck_time}\n"
-    # result_fs_msg += f"跟踪时间：{gz_time}\n"
-    # fs_msg_flag = False
-    #
-    # if len(current_day_unpaid_text) > 0:
-    #     result_fs_msg += f"新增 {current_day_unpaid_len}单 unpaid: \n"
-    #     result_fs_msg += current_day_unpaid_text
-    #     fs_msg_flag = True
-    #
-    # if swl_flag:
-    #     result_fs_msg += f"上网率异常: {swl}%\n"
-    #     fs_msg_flag = True
-    #
-    # if fs_msg_flag:
-    #     # print(result_fs_msg)
-    #     fs_msg(FsUserID.WP_ID, result_fs_msg)
-    #     fs_msg(FsUserID.LW_ID, result_fs_msg)
+    result_fs_msg = f"客户：佛罗里达\n"
+    result_fs_msg += f"订单创建时间：{ck_time}\n"
+    result_fs_msg += f"跟踪时间：{gz_time}\n"
+    fs_msg_flag = False
 
+    if len(current_day_unpaid_text) > 0:
+        result_fs_msg += f"新增 {current_day_unpaid_len}单 unpaid: \n"
+        result_fs_msg += current_day_unpaid_text
+        fs_msg_flag = True
+
+    if swl_flag:
+        result_fs_msg += f"上网率异常: {swl}%\n"
+        fs_msg_flag = True
+
+    if fs_msg_flag:
+        # print(result_fs_msg)
+        fs_msg(FsUserID.WP_ID, result_fs_msg)
+        fs_msg(FsUserID.LW_ID, result_fs_msg)
 
 
 def detect_duplicate_prefix_suffix(dir_path):
@@ -395,7 +459,6 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
 
                         if ignore:
                             go(xlsx_path)
-                            # print(f"00000:{xlsx_path}")
                             continue
 
                         ck_time = get_days_difference(xlsx_path)
@@ -404,19 +467,16 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
 
                         if interval_time == 1 and is_morning:
                             go(xlsx_path)
-                            # print(f"1111:{xlsx_path}")
                         else:
                             if is_morning:
                                 continue
 
                             if (analyse_obj_ignore):
                                 go(xlsx_path)
-                                # print(f"2222:{xlsx_path}")
                                 continue
 
                             if (check_and_add_courier_column(xlsx_path)):
                                 go(xlsx_path)
-                                # print(f"3333:{xlsx_path}")
                             else:
 
                                 output_file = os.path.splitext(xlsx_path)[0] + "_复制.xlsx"
@@ -441,7 +501,6 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
 
                                 delete_file(output_file)
 
-                                # print(f"444444:{swl},{unpaid_count},{delivered_countl}")
                                 if swl < 99 or unpaid_count > 0 or (exceed >= 14 and delivered_countl < 98):
                                     go(xlsx_path)
 
