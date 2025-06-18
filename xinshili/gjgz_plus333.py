@@ -2100,13 +2100,6 @@ def automatic(dir_path, analyse_obj, ignore=False):
 
 
 def call2():
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.5/", ClientConstants.zbw, False)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.6/", ClientConstants.zbw, False)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.5/", ClientConstants.sanrio, False)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/2025.6/", ClientConstants.sanrio, False)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.5/", ClientConstants.xyl, True)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/2025.6/", ClientConstants.xyl, True)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/2025.6/", ClientConstants.kaer, False)
     print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False)
     print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False)
     print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True)
