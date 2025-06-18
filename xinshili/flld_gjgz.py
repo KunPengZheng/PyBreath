@@ -427,39 +427,8 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
 
 
 def call():
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.5")
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.6")
     automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, True)
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, False)
 
 
 if __name__ == '__main__':
     call()
-
-    # select = "请选择功能："
-    # select += "\n1：🍺合并cvs文件为xlsx文件"
-    # select += "\n2：📊轨迹分析️"
-    # select += "\n"
-    # select_input = input(select)
-    #
-    # if select_input == "1":
-    #
-    #     file_paths = []
-    #
-    #     csv1 = input("请输入csv文件1的路径：").strip()
-    #     csv2 = input("请输入csv文件2的路径：").strip()
-    #
-    #     if csv1.endswith(".csv"):
-    #         file_paths.append(csv1)
-    #
-    #     if csv2.endswith(".csv"):
-    #         file_paths.append(csv2)
-    #
-    #     if len(file_paths):
-    #         output_dir = '/Users/zkp/Desktop/B&Y/轨迹统计/flld/'
-    #         merge_csv_files_to_excel(file_paths, output_dir)
-    #
-    # elif select_input == "2":
-    #     call()
-    # else:
-    #     print("🈚️此项功能！")
