@@ -112,7 +112,6 @@ class CellKey:
 @dataclass(frozen=True)
 class Pattern:
     no_track = r"not_yet|pre_ship|irregular_no_tracking|no_tracking"
-    no_track = r"not_yet|pre_ship|irregular_no_tracking|no_tracking"
     delivered = r"^delivered$"
     unpaid = r"^unpaid$"
     not_yet = r"^not_yet$"
