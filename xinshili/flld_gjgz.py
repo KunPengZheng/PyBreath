@@ -7,7 +7,7 @@ import pandas as pd
 from openpyxl import load_workbook
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants, brief_sheet_bg, khhz_sheet_value, \
-    khhz_sheet_bg
+    khhz_sheet_bg, fs_msg, FsUserID
 from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, extract_and_process_data_flld, \
     update_courier_status_flld, count_pattern_state, CourierStateMapKey, Pattern, is_time_difference_exceed
 from xinshili.pd_utils import copy_new_file
@@ -320,6 +320,26 @@ def go(input_path):
     ], ck_time, ClientConstants.md_flld)
 
     khhz_sheet_bg(tat, ck_time, ClientConstants.md_flld, bg)
+
+    # result_fs_msg = f"客户：佛罗里达\n"
+    # result_fs_msg += f"订单创建时间：{ck_time}\n"
+    # result_fs_msg += f"跟踪时间：{gz_time}\n"
+    # fs_msg_flag = False
+    #
+    # if len(current_day_unpaid_text) > 0:
+    #     result_fs_msg += f"新增 {current_day_unpaid_len}单 unpaid: \n"
+    #     result_fs_msg += current_day_unpaid_text
+    #     fs_msg_flag = True
+    #
+    # if swl_flag:
+    #     result_fs_msg += f"上网率异常: {swl}%\n"
+    #     fs_msg_flag = True
+    #
+    # if fs_msg_flag:
+    #     # print(result_fs_msg)
+    #     fs_msg(FsUserID.WP_ID, result_fs_msg)
+    #     fs_msg(FsUserID.LW_ID, result_fs_msg)
+
 
 
 def detect_duplicate_prefix_suffix(dir_path):
