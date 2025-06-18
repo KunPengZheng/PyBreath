@@ -8,8 +8,8 @@ from openpyxl import load_workbook
 
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants, brief_sheet_bg, khhz_sheet_value, \
     khhz_sheet_bg, fs_msg, FsUserID
-from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, extract_and_process_data_flld, \
-    update_courier_status_flld, count_pattern_state, CourierStateMapKey, Pattern, is_time_difference_exceed, \
+from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, \
+    count_pattern_state, CourierStateMapKey, Pattern, is_time_difference_exceed, \
     extract_and_process_data, update_courier_status
 from xinshili.pd_utils import copy_new_file
 from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend, natural_key
