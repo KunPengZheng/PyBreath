@@ -275,18 +275,16 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                     results_map[CourierStateMapKey.latest_event_sf_date_map][package_id] = ""
                     results_map[CourierStateMapKey.sf_date_equality_map][package_id] = 0
                 else:
+                    statusLong = info.get('statusLong')
+                    statusCategory = info.get('statusCategory')
                     if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
-                            info.get('statusLong'):
+                            statusLong:
                         results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
-                    elif "Delivered" in info.get('statusCategory'):
+                    elif "Delivered" in statusCategory or "Delivered to Agent" in statusCategory:
                         results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
-                        receipt_time = extract_signature_receipt_time(info.get('statusLong'))
+                        receipt_time = extract_signature_receipt_time(statusLong)
                         results_map[CourierStateMapKey.delivered_time_map][package_id] = receipt_time
-                    elif "Delivered to Agent" in info.get('statusCategory'):
-                        results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
-                        receipt_time = extract_signature_receipt_time(info.get('statusLong'))
-                        results_map[CourierStateMapKey.delivered_time_map][package_id] = receipt_time
-                    elif "Alert" in info.get('statusCategory'):
+                    elif "Alert" in statusCategory:
                         results_map[CourierStateMapKey.alert_map][package_id] = CourierStateMapValue.alert
                     else:
                         results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
@@ -331,6 +329,7 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
             print(f"处理组 {grouped_items.index(group) + 1} 时发生错误: {e}")
 
     return results_map
+
 
 def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_map=None):
     """
