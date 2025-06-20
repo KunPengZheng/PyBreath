@@ -17,7 +17,10 @@ class FsConstants:
     # 表格的写入方式：values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
     values_spreadsheets_write_way = "/values"
     styles_batch_update = "/styles_batch_update"
+    insert_dimension_range = "/insert_dimension_range"
     gjgz_token = "BGrnsxMFfhfoumtUDF8cXM8jnGg"
+    xyl_sales_repertory_token = "DbiRsNu1BhEDd1tmOKlcVv3Vn3c"
+    sanrio_sales_repertory_token = "InsHs1yV7hQxN0tIVsic0rVWnoh"
 
 
 @dataclass(frozen=True)
@@ -41,6 +44,7 @@ class ClientConstants:
     khhz = "khhz"
     ckoms = "ckoms"
     yy = "yy"
+    xyl_sales_repertory = "xyl_sales_repertory"
 
 
 FsOrderSheetMap = {
@@ -53,6 +57,8 @@ FsOrderSheetMap = {
 class MapFields:
     detail = "detail"
     brief = "brief"
+    xyl_sku = "xyl_sku"
+    xyl_store = "xyl_store"
 
 
 ClientMapConstants = {
@@ -67,6 +73,8 @@ ClientMapConstants = {
     ClientConstants.khhz: "Q7LQzA",
     ClientConstants.ckoms: "83VoQ2",
     ClientConstants.yy: "JYtXLd",
+    ClientConstants.xyl_sales_repertory: {MapFields.xyl_sku: "8e023c",
+                                          MapFields.xyl_store: "yZxXEU"},
 }
 
 
@@ -92,7 +100,6 @@ def get_map_url(analyse_obj):
             analyse_obj == ClientConstants.yy:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.values_spreadsheets_write_way}"
-        return url
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -108,6 +115,17 @@ def get_bg_map_url(analyse_obj):
             analyse_obj == ClientConstants.md_flld:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.styles_batch_update}"
+        return url
+    else:
+        raise ValueError(f"{analyse_obj} 未定义")
+
+
+def get_sales_repertory_url(analyse_obj):
+    if analyse_obj == ClientConstants.xyl_sales_repertory:
+        url = f"{FsConstants.spreadsheets_base_url}{FsConstants.xyl_sales_repertory_token}{FsConstants.styles_batch_update}"
+        return url
+    elif analyse_obj == ClientConstants.sanrio_sales_repertory:
+        url = f"{FsConstants.spreadsheets_base_url}{FsConstants.sanrio_sales_repertory_token}{FsConstants.styles_batch_update}"
         return url
     else:
         raise ValueError(f"{analyse_obj} 未定义")
@@ -479,3 +497,56 @@ def fs_msg(user_id, text_content, receive_id_type="user_id"):
 
     # 处理业务结果
     lark.logger.info(lark.JSON.marshal(response.data, indent=4))
+
+
+def insert_col_row(tat, spreadsheet_token, sheetId, startIndex, endIndex, majorDimension="COLUMNS"):
+    """
+    majorDimension:
+        - ROWS：行
+        - COLUMNS：列
+
+    startIndex: 插入的行或列的起始位置。从 0 开始计数。若 startIndex 为 3，则从第 4 行或列开始插入空行或列。包含第 4 行或列。
+    endIndex: 插入的行或列结束的位置。从 0 开始计数。若 endIndex 为 7，则从第 8 行结束插入行。第 8 行不再插入空行。
+    示例：当 majorDimension为 ROWS、 startIndex 为 3、endIndex 为 7 时，则在第 4、5、6、7 行插入空白行，共插入 4 行。
+    """
+    url = f"{FsConstants.spreadsheets_base_url}{spreadsheet_token}/{FsConstants.insert_dimension_range}"
+
+    headers = {
+        "Authorization": "Bearer " + str(tat),
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "dimension": {
+            "sheetId": sheetId,
+            "majorDimension": majorDimension,
+            "startIndex": startIndex,
+            "endIndex": endIndex
+        },
+        "inheritStyle": "BEFORE"
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+    print(response.status_code, response.text)
+
+    return response.status_code == 200 & response.json()["code"] == 0
+
+
+def get_data(tat, spreadsheet_token, sheetId, range):
+    url = f"{FsConstants.spreadsheets_base_url}{spreadsheet_token}/{FsConstants.values_spreadsheets_write_way}/{sheetId}!{range}"
+
+    params = {
+        "valueRenderOption": "ToString",
+        "dateTimeRenderOption": "FormattedString"
+    }
+
+    headers = {
+        "Authorization": "Bearer " + str(tat),
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+
+    jsons = response.json()
+    print(response.status_code, jsons)
+
+    return jsons["data"]["valueRange"]["values"]
