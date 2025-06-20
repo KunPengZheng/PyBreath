@@ -6,6 +6,11 @@ from xinshili.fs_utils_plus import get_token, yy_sheet_value, ClientConstants
 from xinshili.gjgz_plus333 import extract_and_process_data, CourierStateMapKey, RowName, update_courier_status
 from xinshili.utils import getYmd
 
+"""
+1. 下载 店小秘 和 领星 tk平台对应日期的数据，然后使用功能1
+2. 间隔十的倍数的天数，就可以对之前的数据进行功能2的分析
+"""
+
 
 def compare_tracking_numbers(file1_path, file2_path, output_dir):
     # 引用常量名称（你需确保这些常量在其他地方定义过）
