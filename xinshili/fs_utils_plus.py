@@ -44,6 +44,7 @@ class ClientConstants:
     khhz = "khhz"
     ckoms = "ckoms"
     yy = "yy"
+    xyl_sales_repertory = "xyl_sales_repertory"
 
 
 FsOrderSheetMap = {
