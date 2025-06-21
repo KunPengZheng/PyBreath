@@ -36,7 +36,11 @@ class RowName:
     ShippingService = "Shipping service/物流渠道"
     PossessionSfDate = "PossessionSfDate/揽收时间"
     LatestEventSfDate = "LatestEventSfDate/最新事件时间"
+    LatestEventSfTime = "LatestEventSfTime/最新事件时间"
+    LatestEventSfSite = "LatestEventSfSite/最新事件地点"
     SfDateInterval = "SfDateInterval/SF消息间隔"
+    TrackTimeInterval = "TrackTimeInterval/跟踪时间间隔"
+    TrackTimeIntervalState = "TrackTimeIntervalState/跟踪时间间隔状态"
     UnpaidDate = "UnpaidDate/unpaid记录时间"
     Recipient = "Recipient/收件人"
     Upload_Shipping_Label = "上传物流面单(Upload_Shipping_Label)"
@@ -79,6 +83,8 @@ class CourierStateMapKey:
     latest_event_sf_date_map = "latest_event_sf_date_map"
     sf_date_equality_map = "sf_date_equality_map"
     delivered_time_map = "delivered_time_map"
+    latest_event_sf_time_map = "latest_event_sf_time_map"
+    latest_event_sf_site_map = "latest_event_sf_site_map"
 
 
 class CourierStateMapValue:
@@ -206,6 +212,36 @@ def extract_signature_receipt_time(text):
         return ""
 
 
+def extract_tracking_site_and_time(text):
+    # 提取时间并转为 24 小时格式
+    time_match = re.search(r'\bat\s+([\d:]+\s*[apAP][mM])', text)
+    time_24h = ""
+    if time_match:
+        time_str = time_match.group(1).strip()
+        try:
+            time_obj = datetime.strptime(time_str, "%I:%M %p")
+            time_24h = time_obj.strftime("%H:%M")
+        except ValueError:
+            time_24h = "时间格式错误"
+
+    moving = "transit to the next facility"
+    # 尝试匹配 "in xxx." 这种结构（例如 in NORCO, CA 92860.）
+    in_match = re.search(r'\bin\s+([A-Z0-9 ,\-]+)[\.\n]?', text)
+    # 尝试匹配 “our ... on” 这种结构
+    our_on_match = re.search(r'\bour\s+(.*?)\s+on\b', text)
+
+    if moving in text.lower():
+        location = moving
+    elif in_match:
+        location = in_match.group(1).strip()
+    elif our_on_match:
+        location = our_on_match.group(1).strip()
+    else:
+        "未知地点"
+
+    return time_24h, location
+
+
 def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
                              request_interval: float = 30.0, ckjs_flag=False):
     data = pd.read_excel(filepath)
@@ -226,6 +262,8 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
         CourierStateMapKey.sf_date_equality_map: {},
         CourierStateMapKey.delivered_time_map: {},
         CourierStateMapKey.alert_map: {},
+        CourierStateMapKey.latest_event_sf_time_map: {},
+        CourierStateMapKey.latest_event_sf_site_map: {},
     }
 
     # 将无内容的单元格赋值""空字符串
@@ -288,6 +326,9 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                         results_map[CourierStateMapKey.alert_map][package_id] = CourierStateMapValue.alert
                     else:
                         results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
+                        time_24h, site_location = extract_tracking_site_and_time(statusLong)
+                        results_map[CourierStateMapKey.latest_event_sf_time_map][package_id] = time_24h
+                        results_map[CourierStateMapKey.latest_event_sf_site_map][package_id] = site_location
 
                     latestEventSfDateTimeStr = info.get("latestEventSfDateTime")
                     possessionSfDateTimeStr = info.get("possessionSfDateTime")
@@ -808,6 +849,18 @@ def check_and_add_courier_column(file_path):
         if RowName.UnpaidDate not in data.columns:
             data[RowName.UnpaidDate] = ""
             flag = True
+        if RowName.LatestEventSfTime not in data.columns:
+            data[RowName.LatestEventSfTime] = ""
+            flag = True
+        if RowName.LatestEventSfSite not in data.columns:
+            data[RowName.LatestEventSfSite] = ""
+            flag = True
+        if RowName.TrackTimeInterval not in data.columns:
+            data[RowName.TrackTimeInterval] = ""
+            flag = True
+        if RowName.TrackTimeIntervalState not in data.columns:
+            data[RowName.TrackTimeIntervalState] = ""
+            flag = True
         # 保存修改后的文件
         data.to_excel(file_path, index=False, engine='openpyxl')
         # print("check_and_add_courier_column 方法执行完成")
@@ -1323,6 +1376,62 @@ def filter_tracking_numbers(input_path, output_path):
     # print(f"✅ 筛选后文件已保存到: {output_path}")
 
 
+def process_tracking_time(file_path):
+    df = pd.read_excel(file_path)
+
+    # 筛选出 Courier/快递 不为 'unpaid' 或 'delivered' 的行
+    df_filtered = df[~df['Courier/快递'].str.lower().isin(['unpaid', 'delivered'])].copy()
+
+    intervals = []
+    states = []
+
+    for idx, row in df_filtered.iterrows():
+        date_str = str(row.get("LatestEventSfDate/最新事件时间", "")).strip()
+        time_str = str(row.get("LatestEventSfTime/最新事件时间", "")).strip()
+        creation_time_str = str(row.get("Creation time/创建时间", "")).strip()
+
+        try:
+            if date_str and time_str and date_str != 'nan' and time_str != 'nan':
+                event_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+                diff = datetime.now() - event_time
+            elif creation_time_str and creation_time_str != 'nan':
+                creation_time = datetime.strptime(creation_time_str, "%Y-%m-%d %H:%M:%S")
+                if date_str and time_str and date_str != 'nan' and time_str != 'nan':
+                    event_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+                    diff = creation_time - event_time
+                else:
+                    diff = None
+            else:
+                diff = None
+
+            if diff is not None:
+                hours = round(diff.total_seconds() / 3600, 2)
+                intervals.append(hours)
+
+                # 状态判断
+                if hours >= 72:
+                    states.append("替换超时")
+                elif hours >= 48:
+                    states.append("阳单替换")
+                elif hours >= 24:
+                    states.append("预备阳单")
+                else:
+                    states.append("")
+            else:
+                intervals.append(None)
+                states.append("")
+        except Exception as e:
+            intervals.append(None)
+            states.append("")
+            print(f"⚠️ 第 {idx} 行处理失败: {e}")
+
+    # 写入两列
+    df_filtered["TrackTimeInterval/跟踪时间间隔"] = intervals
+    df_filtered["TrackTimeIntervalState/跟踪时间间隔状态"] = states
+
+    return df_filtered
+
+
 def go(analyse_obj, xlsx_path):
     if analyse_obj is None:
         analyse_obj = input("请输跟踪对象（zbw/sanrio/xyl/mz_xsd/md_fc/mx_dg）：")
@@ -1368,6 +1477,8 @@ def go(analyse_obj, xlsx_path):
         CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
         CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
         CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
+        CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
+        CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
     }
 
     column_mapping = {
@@ -1380,6 +1491,8 @@ def go(analyse_obj, xlsx_path):
         CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
         CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
         CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
+        CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
+        CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
     }
 
     update_courier_status(xlsx_path, all_maps, wl=RowName.Tracking_No, column_map=column_mapping)
@@ -2003,6 +2116,8 @@ def call2():
     print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False)
     print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True)
     print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True)
+    # go(ClientConstants.xyl, "/Users/zkp/Downloads/创建时间19_74_副本.xlsx")
+    # process_tracking_time("/Users/zkp/Downloads/创建时间19_74_副本.xlsx")
 
 
 def is_time_difference_exceed(start_time_str, end_time_str):
