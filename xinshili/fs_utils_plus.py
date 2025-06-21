@@ -44,7 +44,6 @@ class ClientConstants:
     khhz = "khhz"
     ckoms = "ckoms"
     yy = "yy"
-    xyl_sales_repertory = "xyl_sales_repertory"
 
 
 FsOrderSheetMap = {
@@ -100,6 +99,7 @@ def get_map_url(analyse_obj):
             analyse_obj == ClientConstants.yy:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.values_spreadsheets_write_way}"
+        return url
     else:
         raise ValueError(f"{analyse_obj} 未定义")
 
@@ -115,17 +115,6 @@ def get_bg_map_url(analyse_obj):
             analyse_obj == ClientConstants.md_flld:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.styles_batch_update}"
-        return url
-    else:
-        raise ValueError(f"{analyse_obj} 未定义")
-
-
-def get_sales_repertory_url(analyse_obj):
-    if analyse_obj == ClientConstants.xyl_sales_repertory:
-        url = f"{FsConstants.spreadsheets_base_url}{FsConstants.xyl_sales_repertory_token}{FsConstants.styles_batch_update}"
-        return url
-    elif analyse_obj == ClientConstants.sanrio_sales_repertory:
-        url = f"{FsConstants.spreadsheets_base_url}{FsConstants.sanrio_sales_repertory_token}{FsConstants.styles_batch_update}"
         return url
     else:
         raise ValueError(f"{analyse_obj} 未定义")
