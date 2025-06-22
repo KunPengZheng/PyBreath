@@ -2,7 +2,27 @@ from datetime import datetime, timezone, timedelta
 
 import pandas as pd
 
-from xinshili.utils import convert_china_to_us
+
+def convert_china_to_us(china_time: datetime, offset_hours: int = -8) -> datetime:
+    """
+    将中国时间转换为美国时间，使用固定时差（忽略夏令时）
+    :param china_time: 中国时间 datetime 对象
+    :param offset_hours: 美国与 UTC 的偏移（如 -8 表示 UTC-8）
+    :return: 美国时间（不含夏令时调整）
+    """
+    if not isinstance(china_time, datetime):
+        raise ValueError("china_time 必须是 datetime 类型")
+
+    china_tz = timezone(timedelta(hours=8))
+    us_fixed_tz = timezone(timedelta(hours=offset_hours))
+
+    # 将 naive datetime 标准化为中国时间
+    china_time = china_time.replace(tzinfo=china_tz)
+
+    # 转换为美国固定时差时间
+    us_time = china_time.astimezone(us_fixed_tz)
+
+    return us_time
 
 
 def process_tracking_time1(file_path):
