@@ -56,6 +56,12 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, remark_prefix
     else:
         print("⚠️ df2 中缺少“订单号”列，跳过去重。")
 
+    # 删除“签收邮编”列为空的行
+    if "签收邮编" in df2.columns:
+        df2 = df2[df2["签收邮编"].str.strip() != ""]
+    else:
+        print("⚠️ 文件中不包含“签收邮编”列，未执行删除空邮编行操作")
+
     output_path = f"{output_dir}{current_time()}_阳单_{len(df2)}单.xlsx"
 
     # 保存文件
