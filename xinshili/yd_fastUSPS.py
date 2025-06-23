@@ -132,14 +132,14 @@ if __name__ == '__main__':
 
     select = "请选择备注前缀："
     select += "\n1：daicai"
-    select += "\n2：yd_test"
+    select += "\n2：yd"
     select += "\n"
     select_input = input(select)
 
     if select_input == "1":
         remark_prefixs = 'daicai'
     elif select_input == "2":
-        remark_prefixs = 'yd_test'
+        remark_prefixs = 'yd'
     else:
         print("🈚️此项功能！")
 
