@@ -47,12 +47,12 @@ def process_tracking_time1(file_path):
             possession_str = str(row.get("PossessionSfDate/揽收时间", "")).strip()
             outbound_time_str = str(row.get("OutboundTime/出库时间", "")).strip()
 
-            base_time = None
-            if possession_str and possession_str.lower() != "nan":  # PossessionSfDate/揽收时间 存在数据，优先使用
-                # 揽收时间是美国时间，不需要转换
-                base_time = datetime.strptime(possession_str, "%Y-%m-%d")
-                base_us_time = base_time.replace(tzinfo=us_tz)  # 保持一致，加上 tzinfo
-            elif outbound_time_str and outbound_time_str.lower() != "nan":  # PossessionSfDate/揽收时间 存在数据，证明是not-yet这些状态，则使用出库时间
+            # base_time = None
+            # if possession_str and possession_str.lower() != "nan":  # PossessionSfDate/揽收时间 存在数据，优先使用
+            #     # 揽收时间是美国时间，不需要转换
+            #     base_time = datetime.strptime(possession_str, "%Y-%m-%d")
+            #     base_us_time = base_time.replace(tzinfo=us_tz)  # 保持一致，加上 tzinfo
+            if outbound_time_str and outbound_time_str.lower() != "nan":  # PossessionSfDate/揽收时间 存在数据，证明是not-yet这些状态，则使用出库时间
                 # 出库时间是中国时间，需要转换
                 creation_china_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
                 base_us_time = convert_china_to_us(creation_china_time, offset_hours=-8)
@@ -65,7 +65,7 @@ def process_tracking_time1(file_path):
 
                 if base_hours > 72:
                     intervals.append(base_hours)
-                    states.append("无法替换")
+                    states.append("超时")
                     continue  # 不再处理事件时间，直接进入下一行
 
             # ---------- 最新事件时间判断 ----------
