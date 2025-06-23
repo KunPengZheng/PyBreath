@@ -7,13 +7,15 @@ def convert_china_to_us(china_time: datetime, offset_hours: int = -8) -> datetim
     """
     将中国时间转换为美国时间，使用固定时差（忽略夏令时）
     :param china_time: 中国时间 datetime 对象
-    :param offset_hours: 美国与 UTC 的偏移（如 -8 表示 UTC-8）
+    :param offset_hours: 美国与 UTC 的偏移
+        （如 -8 表示 UTC-8，冬令时，通常称为 PST（Pacific Standard Time））
+        （如 -7 表示 UTC-7，夏令时，通常称为 PDT（Pacific Daylight Time））
     :return: 美国时间（不含夏令时调整）
     """
     if not isinstance(china_time, datetime):
         raise ValueError("china_time 必须是 datetime 类型")
 
-    china_tz = timezone(timedelta(hours=8))
+    china_tz = timezone(timedelta(hours=8))  # 中国时间固定 UTC+8
     us_fixed_tz = timezone(timedelta(hours=offset_hours))
 
     # 将 naive datetime 标准化为中国时间
@@ -43,16 +45,16 @@ def process_tracking_time1(file_path):
         try:
             # ---------- 时间来源 ----------
             possession_str = str(row.get("PossessionSfDate/揽收时间", "")).strip()
-            creation_str = str(row.get("OutboundTime/出库时间", "")).strip()
+            outbound_time_str = str(row.get("OutboundTime/出库时间", "")).strip()
 
             base_time = None
             if possession_str and possession_str.lower() != "nan":  # PossessionSfDate/揽收时间 存在数据，优先使用
                 # 揽收时间是美国时间，不需要转换
                 base_time = datetime.strptime(possession_str, "%Y-%m-%d")
                 base_us_time = base_time.replace(tzinfo=us_tz)  # 保持一致，加上 tzinfo
-            elif creation_str and creation_str.lower() != "nan":  # PossessionSfDate/揽收时间 存在数据，证明是not-yet这些状态，则使用出库时间
+            elif outbound_time_str and outbound_time_str.lower() != "nan":  # PossessionSfDate/揽收时间 存在数据，证明是not-yet这些状态，则使用出库时间
                 # 出库时间是中国时间，需要转换
-                creation_china_time = datetime.strptime(creation_str, "%Y-%m-%d %H:%M:%S")
+                creation_china_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
                 base_us_time = convert_china_to_us(creation_china_time, offset_hours=-8)
             else:
                 base_us_time = None
@@ -73,8 +75,8 @@ def process_tracking_time1(file_path):
             if date_str and time_str and date_str.lower() != "nan" and time_str.lower() != "nan":
                 event_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M").replace(tzinfo=us_tz)
                 diff = us_now - event_time
-            elif creation_str and creation_str.lower() != "nan":
-                creation_time = datetime.strptime(creation_str, "%Y-%m-%d %H:%M:%S")
+            elif outbound_time_str and outbound_time_str.lower() != "nan":
+                creation_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
                 diff = us_now - convert_china_to_us(creation_time, offset_hours=-8)
             else:
                 diff = None
