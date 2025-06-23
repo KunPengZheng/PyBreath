@@ -41,6 +41,8 @@ class RowName:
     SfDateInterval = "SfDateInterval/SF消息间隔"
     TrackTimeInterval = "TrackTimeInterval/跟踪时间间隔"
     TrackTimeIntervalState = "TrackTimeIntervalState/跟踪时间间隔状态"
+    YD_state = "YD/yd状态"
+    Tacking_Time = "Tacking_Time/追踪时间"
     UnpaidDate = "UnpaidDate/unpaid记录时间"
     Recipient = "Recipient/收件人"
     Upload_Shipping_Label = "上传物流面单(Upload_Shipping_Label)"
@@ -230,6 +232,7 @@ def extract_tracking_site_and_time(text):
     # 尝试匹配 “our ... on” 这种结构
     our_on_match = re.search(r'\bour\s+(.*?)\s+on\b', text)
 
+    location = ""
     if moving in text.lower():
         location = moving
     elif in_match:
@@ -861,6 +864,12 @@ def check_and_add_courier_column(file_path):
         if RowName.TrackTimeIntervalState not in data.columns:
             data[RowName.TrackTimeIntervalState] = ""
             flag = True
+        if RowName.Tacking_Time not in data.columns:
+            data[RowName.Tacking_Time] = ""
+            flag = True
+        if RowName.YD_state not in data.columns:
+            data[RowName.YD_state] = ""
+            flag = True
         # 保存修改后的文件
         data.to_excel(file_path, index=False, engine='openpyxl')
         # print("check_and_add_courier_column 方法执行完成")
@@ -1374,62 +1383,6 @@ def filter_tracking_numbers(input_path, output_path):
     # 保存结果
     df_filtered.to_excel(output_path, index=False)
     # print(f"✅ 筛选后文件已保存到: {output_path}")
-
-
-def process_tracking_time(file_path):
-    df = pd.read_excel(file_path)
-
-    # 筛选出 Courier/快递 不为 'unpaid' 或 'delivered' 的行
-    df_filtered = df[~df['Courier/快递'].str.lower().isin(['unpaid', 'delivered'])].copy()
-
-    intervals = []
-    states = []
-
-    for idx, row in df_filtered.iterrows():
-        date_str = str(row.get("LatestEventSfDate/最新事件时间", "")).strip()
-        time_str = str(row.get("LatestEventSfTime/最新事件时间", "")).strip()
-        creation_time_str = str(row.get("Creation time/创建时间", "")).strip()
-
-        try:
-            if date_str and time_str and date_str != 'nan' and time_str != 'nan':
-                event_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-                diff = datetime.now() - event_time
-            elif creation_time_str and creation_time_str != 'nan':
-                creation_time = datetime.strptime(creation_time_str, "%Y-%m-%d %H:%M:%S")
-                if date_str and time_str and date_str != 'nan' and time_str != 'nan':
-                    event_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-                    diff = creation_time - event_time
-                else:
-                    diff = None
-            else:
-                diff = None
-
-            if diff is not None:
-                hours = round(diff.total_seconds() / 3600, 2)
-                intervals.append(hours)
-
-                # 状态判断
-                if hours >= 72:
-                    states.append("替换超时")
-                elif hours >= 48:
-                    states.append("阳单替换")
-                elif hours >= 24:
-                    states.append("预备阳单")
-                else:
-                    states.append("")
-            else:
-                intervals.append(None)
-                states.append("")
-        except Exception as e:
-            intervals.append(None)
-            states.append("")
-            print(f"⚠️ 第 {idx} 行处理失败: {e}")
-
-    # 写入两列
-    df_filtered["TrackTimeInterval/跟踪时间间隔"] = intervals
-    df_filtered["TrackTimeIntervalState/跟踪时间间隔状态"] = states
-
-    return df_filtered
 
 
 def go(analyse_obj, xlsx_path):
@@ -2112,12 +2065,11 @@ def automatic(dir_path, analyse_obj, ignore=False):
 
 
 def call2():
-    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False)
-    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False)
-    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True)
-    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True)
-    # go(ClientConstants.xyl, "/Users/zkp/Downloads/创建时间19_74_副本.xlsx")
-    # process_tracking_time("/Users/zkp/Downloads/创建时间19_74_副本.xlsx")
+    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.6/创建时间9_723.xlsx")
+    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False)
+    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False)
+    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True)
+    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True)
 
 
 def is_time_difference_exceed(start_time_str, end_time_str):
