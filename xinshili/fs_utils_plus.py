@@ -18,6 +18,7 @@ class FsConstants:
     values_spreadsheets_write_way = "/values"
     styles_batch_update = "/styles_batch_update"
     insert_dimension_range = "/insert_dimension_range"
+    dimension_range = "/dimension_range"
     gjgz_token = "BGrnsxMFfhfoumtUDF8cXM8jnGg"
     xyl_sales_repertory_token = "DbiRsNu1BhEDd1tmOKlcVv3Vn3c"
     sanrio_sales_repertory_token = "InsHs1yV7hQxN0tIVsic0rVWnoh"
@@ -540,3 +541,27 @@ def get_data(tat, spreadsheet_token, sheetId, range):
     print(response.status_code, jsons)
 
     return jsons["data"]["valueRange"]["values"]
+
+
+def dimension_range(tat, spreadsheet_token, sheetId, startIndex, endIndex, majorDimension="ROWS"):
+    url = f"{FsConstants.spreadsheets_base_url}{spreadsheet_token}/{FsConstants.dimension_range}"
+
+    headers = {
+        'Authorization': 'Bearer ' + tat,
+        'Content-Type': 'application/json'
+    }
+
+    data = {
+        "dimension": {
+            "sheetId": sheetId,
+            "majorDimension": majorDimension,
+            "startIndex": startIndex,
+            "endIndex": endIndex
+        }
+    }
+
+    response = requests.delete(url, headers=headers, json=data)
+
+    # 输出结果
+    print("Status Code:", response.status_code)
+    print("Response Body:", response.text)
