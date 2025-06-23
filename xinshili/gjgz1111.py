@@ -35,6 +35,7 @@ def process_tracking_time1(file_path):
 
     intervals = []
     states = []
+    yd_states = []
 
     # 代码运行时的中国时间，转换为美国时间
     us_now = convert_china_to_us(datetime.now(), offset_hours=-8)
@@ -89,22 +90,28 @@ def process_tracking_time1(file_path):
                     states.append("无法替换")
                 elif hours >= 48:
                     states.append("阳单替换")
+                    yd_states.append("YD")
                 elif hours >= 24:
                     states.append("预备阳单")
+                    yd_states.append("YD")
                 else:
                     states.append("")
+                    yd_states.append("")
             else:
                 intervals.append(None)
                 states.append("")
+                yd_states.append("")
 
         except Exception as e:
             print(f"⚠️ 第 {idx} 行处理失败: {e}")
             intervals.append(None)
             states.append("")
+            yd_states.append("")
 
     # 写入结果列
     df_filtered["TrackTimeInterval/跟踪时间间隔"] = intervals
     df_filtered["TrackTimeIntervalState/跟踪时间间隔状态"] = states
+    df_filtered["YD/yd状态"] = yd_states
 
     # 用处理后数据更新原始表
     df.update(df_filtered)
@@ -112,5 +119,4 @@ def process_tracking_time1(file_path):
 
 
 if __name__ == '__main__':
-    # process_tracking_time1("/Users/zkp/Downloads/创建时间19_74_副本.xlsx")
-    process_tracking_time1("/Users/zkp/Downloads/创建时间19_74_副本2.xlsx")
+    process_tracking_time1("/Users/zkp/Downloads/创建时间21_59_副本.xlsx")
