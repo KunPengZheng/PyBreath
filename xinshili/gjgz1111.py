@@ -8,23 +8,20 @@ from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_proc
     update_courier_status
 
 
-def convert_china_to_us(china_time: datetime, offset_hours: int = -8) -> datetime:
+def convert_china_to_utc(china_time: datetime) -> datetime:
     """
-      将中国时间转换为美国时间，使用固定时差（忽略夏令时）
-      :param china_time: 中国时间 datetime 对象
-      :param offset_hours: 美国与 UTC 的偏移
-          （如 -8 表示 UTC-8，冬令时，通常称为 PST（Pacific Standard Time））
-          （如 -7 表示 UTC-7，夏令时，通常称为 PDT（Pacific Daylight Time））
-      :return: 美国时间（不含夏令时调整）
-      """
+    将中国时间转换为零时区（UTC/Zulu Time），忽略夏令时
+    :param china_time: 中国时间 datetime 对象（无 tzinfo 或本地时间）
+    :return: UTC 时间 datetime（无 tzinfo）
+    """
     if not isinstance(china_time, datetime):
         raise ValueError("china_time 必须是 datetime 类型")
 
-    china_tz = timezone(timedelta(hours=8))  # 中国时间固定 UTC+8
-    us_fixed_tz = timezone(timedelta(hours=offset_hours))
+    china_tz = timezone(timedelta(hours=8))  # 中国时区 UTC+8
+    utc_tz = timezone.utc  # UTC 零时区
 
-    # 标准化为中国时区 → 转换为美国时区 → 去除 tzinfo
-    return china_time.replace(tzinfo=china_tz).astimezone(us_fixed_tz).replace(tzinfo=None)
+    # 设置中国时区 → 转为 UTC → 去除 tzinfo
+    return china_time.replace(tzinfo=china_tz).astimezone(utc_tz).replace(tzinfo=None)
 
 
 def process_tracking_time1(file_path):
@@ -38,8 +35,8 @@ def process_tracking_time1(file_path):
     yd_states = []
     track_times = []
 
-    # 当前中国时间转换为美国时间（无时区）
-    us_now = convert_china_to_us(datetime.now(), offset_hours=-8)
+    # 当前中国时间转换为零时区时间，因为usps接口返回的时间是领时区的
+    us_now = convert_china_to_utc(datetime.now())
 
     for idx, row in df_filtered.iterrows():
         try:
@@ -50,7 +47,7 @@ def process_tracking_time1(file_path):
             # if outbound_time_str and outbound_time_str.lower() != "nan":
             #     try:
             #         creation_china_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
-            #         base_us_time = convert_china_to_us(creation_china_time, offset_hours=-8)
+            #         base_us_time = convert_china_to_utc(creation_china_time)
             #     except Exception:
             #         base_us_time = None
             #
@@ -71,17 +68,18 @@ def process_tracking_time1(file_path):
 
             if date_str and time_str and date_str.lower() != "nan" and time_str.lower() != "nan":
                 event_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+                # 跟踪时间 - 最新轨迹时间
                 diff = us_now - event_time
             elif outbound_time_str and outbound_time_str.lower() != "nan":
                 creation_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
-                diff = us_now - convert_china_to_us(creation_time, offset_hours=-8)
+                # 跟踪时间 - 发货时间
+                diff = us_now - convert_china_to_utc(creation_time)
             else:
                 diff = None
 
-            print(diff)
-
             if diff is not None:
                 hours = round(diff.total_seconds() / 3600, 2)
+                print(hours)
                 intervals.append(hours)
 
                 if hours >= 72:
@@ -191,6 +189,8 @@ def read_xlsx_as_nested_list(file_path):
 
 
 if __name__ == '__main__':
+
+    # 订单号，运单号，发货时间，付款时间
     # xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本.xlsx"
     xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本2.xlsx"
 
