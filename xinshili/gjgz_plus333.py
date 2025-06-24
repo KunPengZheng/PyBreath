@@ -327,6 +327,9 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                         results_map[CourierStateMapKey.delivered_time_map][package_id] = receipt_time
                     elif "Alert" in statusCategory:
                         results_map[CourierStateMapKey.alert_map][package_id] = CourierStateMapValue.alert
+                        time_24h, site_location = extract_tracking_site_and_time(statusLong)
+                        results_map[CourierStateMapKey.latest_event_sf_time_map][package_id] = time_24h
+                        results_map[CourierStateMapKey.latest_event_sf_site_map][package_id] = site_location
                     else:
                         results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
                         time_24h, site_location = extract_tracking_site_and_time(statusLong)
