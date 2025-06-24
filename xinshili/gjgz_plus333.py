@@ -1969,12 +1969,16 @@ def go(analyse_obj, xlsx_path):
     result_fs_msg = f"客户：{analyse_obj}\n"
     result_fs_msg += f"订单创建时间：{ck_time}\n"
     result_fs_msg += f"跟踪时间：{gz_time}\n"
+    lj_fs_msg = ""
     fs_msg_flag = False
+    lj_msg_flag = False
 
     if len(current_day_unpaid_text) > 0:
         result_fs_msg += f"新增 {current_day_unpaid_len}单 unpaid: \n"
         result_fs_msg += current_day_unpaid_text
+        lj_fs_msg = result_fs_msg
         fs_msg_flag = True
+        lj_msg_flag = True
 
     if change_shipment_received_count >= 10:
         result_fs_msg += f"{change_shipment_received_count}单 提货单未更新轨迹（>=2天）\n"
@@ -1988,6 +1992,9 @@ def go(analyse_obj, xlsx_path):
         # print(result_fs_msg)
         fs_msg(FsUserID.WP_ID, result_fs_msg)
         fs_msg(FsUserID.LW_ID, result_fs_msg)
+
+    if lj_msg_flag:
+        fs_msg(FsUserID.LJ_ID, lj_fs_msg)
 
 
 def call2():
