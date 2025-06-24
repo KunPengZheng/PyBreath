@@ -1432,6 +1432,7 @@ def go(analyse_obj, xlsx_path):
         CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
         CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
         CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
+        CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
     }
 
     column_mapping = {
@@ -1441,6 +1442,7 @@ def go(analyse_obj, xlsx_path):
         CourierStateMapKey.delivered_map: RowName.Courier,
         CourierStateMapKey.no_tracking_map: RowName.Courier,
         CourierStateMapKey.tracking_map: RowName.Courier,
+        CourierStateMapKey.alert_map: RowName.Courier,
         CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
         CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
         CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
@@ -2065,11 +2067,10 @@ def automatic(dir_path, analyse_obj, ignore=False):
 
 
 def call2():
-    go(ClientConstants.zbw, "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/2025.6/创建时间9_723.xlsx")
-    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False)
-    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False)
-    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True)
-    # print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True)
+    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False)
+    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False)
+    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True)
+    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True)
 
 
 def is_time_difference_exceed(start_time_str, end_time_str):
