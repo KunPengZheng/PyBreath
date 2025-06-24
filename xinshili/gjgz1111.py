@@ -1,6 +1,9 @@
 from datetime import datetime, timezone, timedelta
 
 import pandas as pd
+import os
+
+from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range
 
 
 def convert_china_to_us(china_time: datetime, offset_hours: int = -8) -> datetime:
@@ -36,6 +39,7 @@ def process_tracking_time1(file_path):
     intervals = []
     states = []
     yd_states = []
+    track_times = []
 
     # 代码运行时的中国时间，转换为美国时间
     us_now = convert_china_to_us(datetime.now(), offset_hours=-8)
@@ -102,21 +106,80 @@ def process_tracking_time1(file_path):
                 states.append("")
                 yd_states.append("")
 
+            track_times.append(us_now)
+
         except Exception as e:
             print(f"⚠️ 第 {idx} 行处理失败: {e}")
             intervals.append(None)
             states.append("")
             yd_states.append("")
+            track_times.append(us_now)
 
     # 写入结果列
     df_filtered["TrackTimeInterval/跟踪时间间隔"] = intervals
     df_filtered["TrackTimeIntervalState/跟踪时间间隔状态"] = states
     df_filtered["YD/yd状态"] = yd_states
+    df_filtered["Tacking_Time/追踪时间"] = track_times
 
     # 用处理后数据更新原始表
     df.update(df_filtered)
     df.to_excel(file_path, index=False)
 
 
+def create_fs_xlsx_file(file_path):
+    # 定义表头
+    columns = [
+        "创建时间", "出库时间", "订单号", "运单号",
+        "轨迹状态", "最新轨迹位置", "最新轨迹时间", "追踪时间",
+        "时间间隔", "处理状态"
+    ]
+
+    # 创建空的 DataFrame 并写入文件（覆盖或新建）
+    df = pd.DataFrame(columns=columns)
+    df.to_excel(file_path, index=False)
+    print(f"✅ 文件已{'创建' if not os.path.exists(file_path) else '清空并重建'}：{file_path}")
+
+
+def export_yd_data(source_file, target_file):
+    # 读取文件1（源文件）
+    df = pd.read_excel(source_file)
+
+    # 筛选 "YD/yd状态" 为 "YD" 的行
+    df_filtered = df[df["YD/yd状态"].astype(str).str.upper() == "YD"].copy()
+
+    # 构造“最新轨迹时间”字段：拼接 日期 + 空格 + 时间
+    df_filtered["最新轨迹时间"] = df_filtered["LatestEventSfDate/最新事件时间"].astype(str).str.strip() + " " + \
+                                  df_filtered["LatestEventSfTime/最新事件时间"].astype(str).str.strip()
+
+    # 构造目标列的数据
+    export_df = pd.DataFrame({
+        "创建时间": df_filtered["Creation time/创建时间"],
+        "出库时间": df_filtered["OutboundTime/出库时间"],
+        "订单号": df_filtered["Platform Number/平台单号"],
+        "运单号": df_filtered["Tracking No./物流跟踪号"],
+        "轨迹状态": df_filtered["Courier/快递"],
+        "最新轨迹位置": df_filtered["LatestEventSfSite/最新事件地点"],
+        "最新轨迹时间": df_filtered["最新轨迹时间"],
+        "追踪时间": df_filtered["Tacking_Time/追踪时间"],
+        "时间间隔": df_filtered["TrackTimeInterval/跟踪时间间隔"],
+        "处理状态": df_filtered["TrackTimeIntervalState/跟踪时间间隔状态"],
+    })
+
+    # 写入到目标文件（如果存在则覆盖）
+    export_df.to_excel(target_file, index=False)
+    print(f"✅ 已成功导出 YD 数据至：{target_file}")
+
+    return len(export_df)
+
+
 if __name__ == '__main__':
-    process_tracking_time1("/Users/zkp/Downloads/创建时间21_59_副本.xlsx")
+    xlsx1 = "/Users/zkp/Downloads/创建时间21_59_副本.xlsx"
+    process_tracking_time1(xlsx1)
+    xlsx2 = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl_track/xyl_track_merger_temp.xlsx"
+    # create_fs_xlsx_file(xlsx2)
+    data_len = export_yd_data(xlsx1, xlsx2)
+    print(f"dsdsds:{data_len}")
+
+    # token = get_token()
+    # dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 10, majorDimension="COLUMNS")
+    # value_range(token, FsConstants.gjgz_token, "yTIUrm", "A1:I41")
