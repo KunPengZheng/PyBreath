@@ -173,24 +173,6 @@ def read_xlsx_as_nested_list(file_path):
     return nested_list
 
 
-def force_column_as_text(xlsx_path, column_names):
-    wb = load_workbook(xlsx_path)
-    ws = wb.active
-
-    # 获取第一行列名
-    headers = [cell.value for cell in ws[1]]
-    target_indexes = [i + 1 for i, col in enumerate(headers) if col in column_names]
-
-    for col_idx in target_indexes:
-        for row in ws.iter_rows(min_row=2, min_col=col_idx, max_col=col_idx):
-            for cell in row:
-                cell.number_format = '@'
-                if cell.value is not None:
-                    cell.value = str(cell.value)  # 强制转为字符串
-
-    wb.save(xlsx_path)
-
-
 if __name__ == '__main__':
     # 订单号，运单号，发货时间，付款时间
     xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本.xlsx"
@@ -231,17 +213,14 @@ if __name__ == '__main__':
     update_courier_status(xlsx_path, all_maps, wl='运单号', column_map=column_mapping)
 
     process_tracking_time1(xlsx_path)
-    # force_column_as_text(xlsx_path, ["订单号"])
-
     xlsx2 = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl_track/xyl_track_merger_temp.xlsx"
     data_len = export_yd_data(xlsx_path, xlsx2)
-    # force_column_as_text(xlsx2, ["订单号"])
 
     # 示例调用
     # result = read_xlsx_as_nested_list(xlsx2)
     # for row in result:
     #     print(row)
-
+    #
     # token = get_token()
     # dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 10, majorDimension="COLUMNS")
     # value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:K{len(result)}", result)
