@@ -4,6 +4,8 @@ import pandas as pd
 import os
 
 from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range
+from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
+    update_courier_status
 
 
 def convert_china_to_us(china_time: datetime, offset_hours: int = -8) -> datetime:
@@ -41,27 +43,27 @@ def process_tracking_time1(file_path):
 
     for idx, row in df_filtered.iterrows():
         try:
-            # 优先使用 PossessionSfDate/揽收时间 或 OutboundTime/出库时间
-            outbound_time_str = str(row.get("OutboundTime/出库时间", "")).strip()
+            # # 优先使用 PossessionSfDate/揽收时间 或 OutboundTime/出库时间
+            outbound_time_str = str(row.get("发货时间", "")).strip()
 
-            base_us_time = None
-            if outbound_time_str and outbound_time_str.lower() != "nan":
-                try:
-                    creation_china_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
-                    base_us_time = convert_china_to_us(creation_china_time, offset_hours=-8)
-                except Exception:
-                    base_us_time = None
-
-            if base_us_time:
-                base_diff = us_now - base_us_time
-                base_hours = round(base_diff.total_seconds() / 3600, 2)
-
-                if base_hours > 72:
-                    intervals.append(base_hours)
-                    states.append("超时")
-                    yd_states.append("")
-                    track_times.append(us_now)
-                    continue  # 跳过后续判断
+            # base_us_time = None
+            # if outbound_time_str and outbound_time_str.lower() != "nan":
+            #     try:
+            #         creation_china_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
+            #         base_us_time = convert_china_to_us(creation_china_time, offset_hours=-8)
+            #     except Exception:
+            #         base_us_time = None
+            #
+            # if base_us_time:
+            #     base_diff = us_now - base_us_time
+            #     base_hours = round(base_diff.total_seconds() / 3600, 2)
+            #
+            #     if base_hours > 72:
+            #         intervals.append(base_hours)
+            #         states.append("超时")
+            #         yd_states.append("")
+            #         track_times.append(us_now)
+            #         continue  # 跳过后续判断
 
             # 最新事件时间
             date_str = str(row.get("LatestEventSfDate/最新事件时间", "")).strip()
@@ -75,6 +77,8 @@ def process_tracking_time1(file_path):
                 diff = us_now - convert_china_to_us(creation_time, offset_hours=-8)
             else:
                 diff = None
+
+            print(diff)
 
             if diff is not None:
                 hours = round(diff.total_seconds() / 3600, 2)
@@ -152,10 +156,10 @@ def export_yd_data(source_file, target_file):
 
     # 构造目标列的数据
     export_df = pd.DataFrame({
-        "创建时间": df_filtered["Creation time/创建时间"],
-        "出库时间": df_filtered["OutboundTime/出库时间"],
-        "订单号": df_filtered["Platform Number/平台单号"],
-        "运单号": df_filtered["Tracking No./物流跟踪号"],
+        "付款时间": df_filtered["付款时间"],
+        "发货时间": df_filtered["发货时间"],
+        "订单号": df_filtered["订单号"],
+        "运单号": df_filtered["运单号"],
         "轨迹状态": df_filtered["Courier/快递"],
         "最新轨迹位置": df_filtered["LatestEventSfSite/最新事件地点"],
         "最新轨迹时间": df_filtered["最新轨迹时间"],
@@ -187,17 +191,54 @@ def read_xlsx_as_nested_list(file_path):
 
 
 if __name__ == '__main__':
-    xlsx1 = "/Users/zkp/Downloads/创建时间21_59_副本.xlsx"
-    process_tracking_time1(xlsx1)
+    # xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本.xlsx"
+    xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本2.xlsx"
+
+    # check_and_add_courier_column(xlsx_path)
+    # results = extract_and_process_data(xlsx_path, RowName.Courier, 100, wl_name='运单号')
+    #
+    # all_maps = {
+    #     CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
+    #     CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
+    #     CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
+    #     CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
+    #     CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
+    #     CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
+    #     CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
+    #     CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
+    #     CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
+    #     CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
+    #     CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
+    #     CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
+    # }
+    #
+    # column_mapping = {
+    #     CourierStateMapKey.not_yet_map: RowName.Courier,
+    #     CourierStateMapKey.pre_ship_map: RowName.Courier,
+    #     CourierStateMapKey.unpaid_map: RowName.Courier,
+    #     CourierStateMapKey.delivered_map: RowName.Courier,
+    #     CourierStateMapKey.no_tracking_map: RowName.Courier,
+    #     CourierStateMapKey.tracking_map: RowName.Courier,
+    #     CourierStateMapKey.alert_map: RowName.Courier,
+    #     CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
+    #     CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
+    #     CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
+    #     CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
+    #     CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
+    # }
+    #
+    # update_courier_status(xlsx_path, all_maps, wl='运单号', column_map=column_mapping)
+
+    process_tracking_time1(xlsx_path)
     xlsx2 = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl_track/xyl_track_merger_temp.xlsx"
     create_fs_xlsx_file(xlsx2)
-    data_len = export_yd_data(xlsx1, xlsx2)
+    data_len = export_yd_data(xlsx_path, xlsx2)
 
     # 示例调用
-    result = read_xlsx_as_nested_list(xlsx2)
+    # result = read_xlsx_as_nested_list(xlsx2)
     # for row in result:
     #     print(row)
 
-    token = get_token()
-    dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 10, majorDimension="COLUMNS")
-    value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:J{len(result)}", result)
+    # token = get_token()
+    # dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 10, majorDimension="COLUMNS")
+    # value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:J{len(result)}", result)
