@@ -76,7 +76,6 @@ def process_tracking_time1(file_path):
 
             if diff is not None:
                 hours = round(diff.total_seconds() / 3600, 2)
-                print(hours)
                 intervals.append(hours)
 
                 if hours >= 72:
@@ -128,9 +127,6 @@ def create_fs_xlsx_file(file_path):
 def export_yd_data(source_file, target_file):
     # 读取文件1（源文件）
     df = pd.read_excel(source_file)
-
-    # 筛选 "YD/yd状态" 为 "YD" 的行
-    # df_filtered = df[df["YD/yd状态"].astype(str).str.upper() == "YD"].copy()
 
     def safe_concat_time(row):
         date_part = str(row.get("LatestEventSfDate/最新事件时间", "")).strip()
