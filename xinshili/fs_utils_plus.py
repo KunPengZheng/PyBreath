@@ -565,3 +565,19 @@ def dimension_range(tat, spreadsheet_token, sheetId, startIndex, endIndex, major
     # 输出结果
     print("Status Code:", response.status_code)
     print("Response Body:", response.text)
+
+
+def value_range(tat, spreadsheet_token, sheetId, range, lists):
+    url = f"{FsConstants.spreadsheets_base_url}{spreadsheet_token}/{FsConstants.values_spreadsheets_write_way}"
+
+    header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
+
+    post_data = {
+        "valueRange": {
+            "range": f"{sheetId}!{range}",
+            "values": lists}
+    }
+
+    # values_prepend 需要使用post请求方式，values需要使用put请求方式
+    r2 = requests.put(url, data=json.dumps(post_data), headers=header)
+    print(r2.json())  # 输出来判断写入是否成功
