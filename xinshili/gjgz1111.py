@@ -122,18 +122,18 @@ def process_tracking_time1(file_path):
     print(f"✅ 已处理并保存至：{file_path}")
 
 
-def create_fs_xlsx_file(file_path):
-    # 定义表头
-    columns = [
-        "创建时间", "出库时间", "订单号", "运单号",
-        "轨迹状态", "最新轨迹位置", "最新轨迹时间", "上一条轨迹时间", "追踪时间",
-        "时间间隔", "处理状态"
-    ]
-
-    # 创建空的 DataFrame 并写入文件（覆盖或新建）
-    df = pd.DataFrame(columns=columns)
-    df.to_excel(file_path, index=False)
-    print(f"✅ 文件已{'创建' if not os.path.exists(file_path) else '清空并重建'}：{file_path}")
+# def create_fs_xlsx_file(file_path):
+#     # 定义表头
+#     columns = [
+#         "付款时间", "发货时间", "订单号", "运单号",
+#         "轨迹状态", "最新轨迹位置", "最新轨迹时间", "上一条轨迹时间", "追踪时间",
+#         "时间间隔", "处理状态"
+#     ]
+#
+#     # 创建空的 DataFrame 并写入文件（覆盖或新建）
+#     df = pd.DataFrame(columns=columns)
+#     df.to_excel(file_path, index=False)
+#     print(f"✅ 文件已{'创建' if not os.path.exists(file_path) else '清空并重建'}：{file_path}")
 
 
 def export_yd_data(source_file, target_file):
@@ -157,12 +157,12 @@ def export_yd_data(source_file, target_file):
         "订单号": df["订单号"],
         "运单号": df["运单号"],
         "轨迹状态": df["Courier/快递"],
+        "追踪时间": df["Tacking_Time/追踪时间"],
+        "上一条轨迹时间": df["LastEventSfTime/上一条轨迹时间"],
         "最新轨迹位置": df["LatestEventSfSite/最新事件地点"],
         "最新轨迹时间": df["最新轨迹时间"],
-        "追踪时间": df["Tacking_Time/追踪时间"],
         "时间间隔": df["TrackTimeInterval/跟踪时间间隔"],
         "处理状态": df["TrackTimeIntervalState/跟踪时间间隔状态"],
-        "上一条轨迹时间": df["LastEventSfTime/上一条轨迹时间"],
     })
 
     # 写入到目标文件（如果存在则覆盖）
@@ -228,7 +228,7 @@ if __name__ == '__main__':
 
     process_tracking_time1(xlsx_path)
     xlsx2 = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl_track/xyl_track_merger_temp.xlsx"
-    create_fs_xlsx_file(xlsx2)
+    # create_fs_xlsx_file(xlsx2)
     data_len = export_yd_data(xlsx_path, xlsx2)
 
     # 示例调用
@@ -238,4 +238,4 @@ if __name__ == '__main__':
 
     # token = get_token()
     # dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 10, majorDimension="COLUMNS")
-    # value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:J{len(result)}", result)
+    # value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:K{len(result)}", result)
