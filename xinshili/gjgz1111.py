@@ -32,7 +32,6 @@ def process_tracking_time1(file_path):
 
     intervals = []
     states = []
-    yd_states = []
     track_times = []
 
     # 当前中国时间转换为零时区时间，因为usps接口返回的时间是领时区的
@@ -56,8 +55,7 @@ def process_tracking_time1(file_path):
 
                 if base_hours > 72:  # 如果 当前时间 - 发货时间 > 72 小时，默认不能再替换运单号。但是结果结果不一定卡死再72小时，而且不包含周末和节假日
                     intervals.append(base_hours)
-                    states.append("超时")
-                    yd_states.append("")
+                    states.append("无法替换")
                     track_times.append(us_now)
                     continue  # 跳过后续判断
 
@@ -83,20 +81,15 @@ def process_tracking_time1(file_path):
 
                 if hours >= 72:
                     states.append("无法替换")
-                    yd_states.append("")
                 elif hours >= 48:
                     states.append("阳单替换")
-                    yd_states.append("YD")
                 elif hours >= 24:
                     states.append("预备阳单")
-                    yd_states.append("YD")
                 else:
-                    states.append("")
-                    yd_states.append("")
+                    states.append("轨迹正常")
             else:
                 intervals.append(None)
                 states.append("")
-                yd_states.append("")
 
             track_times.append(us_now)
 
@@ -104,13 +97,11 @@ def process_tracking_time1(file_path):
             print(f"⚠️ 第 {idx} 行处理失败: {e}")
             intervals.append(None)
             states.append("")
-            yd_states.append("")
             track_times.append(us_now)
 
     # 写入结果列
     df_filtered["TrackTimeInterval/跟踪时间间隔"] = intervals
     df_filtered["TrackTimeIntervalState/跟踪时间间隔状态"] = states
-    df_filtered["YD/yd状态"] = yd_states
     df_filtered["Tacking_Time/追踪时间"] = [t.strftime("%Y-%m-%d %H:%M:%S") if isinstance(t, datetime) else "" for t in
                                             track_times]
 
@@ -139,7 +130,7 @@ def export_yd_data(source_file, target_file):
     df = pd.read_excel(source_file)
 
     # 筛选 "YD/yd状态" 为 "YD" 的行
-    df_filtered = df[df["YD/yd状态"].astype(str).str.upper() == "YD"].copy()
+    # df_filtered = df[df["YD/yd状态"].astype(str).str.upper() == "YD"].copy()
 
     def safe_concat_time(row):
         date_part = str(row.get("LatestEventSfDate/最新事件时间", "")).strip()
@@ -149,20 +140,20 @@ def export_yd_data(source_file, target_file):
         else:
             return ""
 
-    df_filtered["最新轨迹时间"] = df_filtered.apply(safe_concat_time, axis=1)
+    df["最新轨迹时间"] = df.apply(safe_concat_time, axis=1)
 
     # 构造目标列的数据
     export_df = pd.DataFrame({
-        "付款时间": df_filtered["付款时间"],
-        "发货时间": df_filtered["发货时间"],
-        "订单号": df_filtered["订单号"],
-        "运单号": df_filtered["运单号"],
-        "轨迹状态": df_filtered["Courier/快递"],
-        "最新轨迹位置": df_filtered["LatestEventSfSite/最新事件地点"],
-        "最新轨迹时间": df_filtered["最新轨迹时间"],
-        "追踪时间": df_filtered["Tacking_Time/追踪时间"],
-        "时间间隔": df_filtered["TrackTimeInterval/跟踪时间间隔"],
-        "处理状态": df_filtered["TrackTimeIntervalState/跟踪时间间隔状态"],
+        "付款时间": df["付款时间"],
+        "发货时间": df["发货时间"],
+        "订单号": df["订单号"],
+        "运单号": df["运单号"],
+        "轨迹状态": df["Courier/快递"],
+        "最新轨迹位置": df["LatestEventSfSite/最新事件地点"],
+        "最新轨迹时间": df["最新轨迹时间"],
+        "追踪时间": df["Tacking_Time/追踪时间"],
+        "时间间隔": df["TrackTimeInterval/跟踪时间间隔"],
+        "处理状态": df["TrackTimeIntervalState/跟踪时间间隔状态"],
     })
 
     # 写入到目标文件（如果存在则覆盖）
