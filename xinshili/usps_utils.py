@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import requests
 import json
 
@@ -12,6 +14,9 @@ def track(lists):
         url=url,
         json=pd
     )
+
+    # text_str = resp.text
+    # print(text_str)
 
     data_str = resp.json()
     print(data_str)
