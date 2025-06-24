@@ -62,8 +62,15 @@ def process_tracking_time1(file_path):
             # 最新事件时间
             date_str = str(row.get("LatestEventSfDate/最新事件时间", "")).strip()
             time_str = str(row.get("LatestEventSfTime/最新事件时间", "")).strip()
+            last_time_str = str(row.get("LastEventSfTime/上一条轨迹时间", "")).strip()
 
-            if date_str and time_str and date_str.lower() != "nan" and time_str.lower() != "nan":
+            if last_time_str and date_str and time_str and \
+                    last_time_str.lower() != "nan" and date_str.lower() != "nan" and time_str.lower() != "nan":
+                last_time = datetime.strptime(f"{last_time_str}", "%Y-%m-%d %H:%M")
+                event_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+                # 最新轨迹时间 - 上一条轨迹时间
+                diff = event_time - last_time
+            elif date_str and time_str and date_str.lower() != "nan" and time_str.lower() != "nan":
                 event_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
                 # 跟踪时间 - 最新轨迹时间
                 diff = us_now - event_time
@@ -76,7 +83,12 @@ def process_tracking_time1(file_path):
 
             if diff is not None:
                 hours = round(diff.total_seconds() / 3600, 2)
-                intervals.append(hours)
+
+                total_seconds = int(diff.total_seconds())
+                hours_part = total_seconds // 3600
+                minutes_part = (total_seconds % 3600) // 60
+                interval_str = f"{hours_part:02}:{minutes_part:02}"
+                intervals.append(interval_str)
 
                 if hours >= 72:
                     states.append("无法替换")
@@ -114,7 +126,7 @@ def create_fs_xlsx_file(file_path):
     # 定义表头
     columns = [
         "创建时间", "出库时间", "订单号", "运单号",
-        "轨迹状态", "最新轨迹位置", "最新轨迹时间", "追踪时间",
+        "轨迹状态", "最新轨迹位置", "最新轨迹时间", "上一条轨迹时间", "追踪时间",
         "时间间隔", "处理状态"
     ]
 
@@ -150,6 +162,7 @@ def export_yd_data(source_file, target_file):
         "追踪时间": df["Tacking_Time/追踪时间"],
         "时间间隔": df["TrackTimeInterval/跟踪时间间隔"],
         "处理状态": df["TrackTimeIntervalState/跟踪时间间隔状态"],
+        "上一条轨迹时间": df["LastEventSfTime/上一条轨迹时间"],
     })
 
     # 写入到目标文件（如果存在则覆盖）
@@ -176,8 +189,7 @@ def read_xlsx_as_nested_list(file_path):
 
 if __name__ == '__main__':
     # 订单号，运单号，发货时间，付款时间
-    # xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本.xlsx"
-    xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本2.xlsx"
+    xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本.xlsx"
 
     # check_and_add_courier_column(xlsx_path)
     # results = extract_and_process_data(xlsx_path, RowName.Courier, 100, wl_name='运单号')
