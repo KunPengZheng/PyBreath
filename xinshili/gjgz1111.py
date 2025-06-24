@@ -40,27 +40,26 @@ def process_tracking_time1(file_path):
 
     for idx, row in df_filtered.iterrows():
         try:
-            # # 优先使用 PossessionSfDate/揽收时间 或 OutboundTime/出库时间
             outbound_time_str = str(row.get("发货时间", "")).strip()
 
-            # base_us_time = None
-            # if outbound_time_str and outbound_time_str.lower() != "nan":
-            #     try:
-            #         creation_china_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
-            #         base_us_time = convert_china_to_utc(creation_china_time)
-            #     except Exception:
-            #         base_us_time = None
-            #
-            # if base_us_time:
-            #     base_diff = us_now - base_us_time
-            #     base_hours = round(base_diff.total_seconds() / 3600, 2)
-            #
-            #     if base_hours > 72:
-            #         intervals.append(base_hours)
-            #         states.append("超时")
-            #         yd_states.append("")
-            #         track_times.append(us_now)
-            #         continue  # 跳过后续判断
+            base_us_time = None
+            if outbound_time_str and outbound_time_str.lower() != "nan":
+                try:
+                    creation_china_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
+                    base_us_time = convert_china_to_utc(creation_china_time)
+                except Exception:
+                    base_us_time = None
+
+            if base_us_time:
+                base_diff = us_now - base_us_time
+                base_hours = round(base_diff.total_seconds() / 3600, 2)
+
+                if base_hours > 72:  # 如果 当前时间 - 发货时间 > 72 小时，默认不能再替换运单号。但是结果结果不一定卡死再72小时，而且不包含周末和节假日
+                    intervals.append(base_hours)
+                    states.append("超时")
+                    yd_states.append("")
+                    track_times.append(us_now)
+                    continue  # 跳过后续判断
 
             # 最新事件时间
             date_str = str(row.get("LatestEventSfDate/最新事件时间", "")).strip()
@@ -189,7 +188,6 @@ def read_xlsx_as_nested_list(file_path):
 
 
 if __name__ == '__main__':
-
     # 订单号，运单号，发货时间，付款时间
     # xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本.xlsx"
     xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本2.xlsx"
