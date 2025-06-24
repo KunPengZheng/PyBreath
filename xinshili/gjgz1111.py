@@ -140,9 +140,15 @@ def export_yd_data(source_file, target_file):
     # 筛选 "YD/yd状态" 为 "YD" 的行
     df_filtered = df[df["YD/yd状态"].astype(str).str.upper() == "YD"].copy()
 
-    # 构造“最新轨迹时间”字段：拼接 日期 + 空格 + 时间
-    df_filtered["最新轨迹时间"] = df_filtered["LatestEventSfDate/最新事件时间"].astype(str).str.strip() + " " + \
-                                  df_filtered["LatestEventSfTime/最新事件时间"].astype(str).str.strip()
+    def safe_concat_time(row):
+        date_part = str(row.get("LatestEventSfDate/最新事件时间", "")).strip()
+        time_part = str(row.get("LatestEventSfTime/最新事件时间", "")).strip()
+        if date_part.lower() not in ["", "nan"] and time_part.lower() not in ["", "nan"]:
+            return f"{date_part} {time_part}"
+        else:
+            return ""
+
+    df_filtered["最新轨迹时间"] = df_filtered.apply(safe_concat_time, axis=1)
 
     # 构造目标列的数据
     export_df = pd.DataFrame({
