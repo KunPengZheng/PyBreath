@@ -2,7 +2,7 @@ from datetime import datetime, timezone, timedelta
 
 import pandas as pd
 import os
-
+from openpyxl import load_workbook
 from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range
 from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
     update_courier_status
@@ -122,20 +122,6 @@ def process_tracking_time1(file_path):
     print(f"✅ 已处理并保存至：{file_path}")
 
 
-# def create_fs_xlsx_file(file_path):
-#     # 定义表头
-#     columns = [
-#         "付款时间", "发货时间", "订单号", "运单号",
-#         "轨迹状态", "最新轨迹位置", "最新轨迹时间", "上一条轨迹时间", "追踪时间",
-#         "时间间隔", "处理状态"
-#     ]
-#
-#     # 创建空的 DataFrame 并写入文件（覆盖或新建）
-#     df = pd.DataFrame(columns=columns)
-#     df.to_excel(file_path, index=False)
-#     print(f"✅ 文件已{'创建' if not os.path.exists(file_path) else '清空并重建'}：{file_path}")
-
-
 def export_yd_data(source_file, target_file):
     # 读取文件1（源文件）
     df = pd.read_excel(source_file)
@@ -187,49 +173,69 @@ def read_xlsx_as_nested_list(file_path):
     return nested_list
 
 
+def force_column_as_text(xlsx_path, column_names):
+    wb = load_workbook(xlsx_path)
+    ws = wb.active
+
+    # 获取第一行列名
+    headers = [cell.value for cell in ws[1]]
+    target_indexes = [i + 1 for i, col in enumerate(headers) if col in column_names]
+
+    for col_idx in target_indexes:
+        for row in ws.iter_rows(min_row=2, min_col=col_idx, max_col=col_idx):
+            for cell in row:
+                cell.number_format = '@'
+                if cell.value is not None:
+                    cell.value = str(cell.value)  # 强制转为字符串
+
+    wb.save(xlsx_path)
+
+
 if __name__ == '__main__':
     # 订单号，运单号，发货时间，付款时间
     xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本.xlsx"
 
-    # check_and_add_courier_column(xlsx_path)
-    # results = extract_and_process_data(xlsx_path, RowName.Courier, 100, wl_name='运单号')
-    #
-    # all_maps = {
-    #     CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
-    #     CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
-    #     CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
-    #     CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
-    #     CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
-    #     CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
-    #     CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
-    #     CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
-    #     CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
-    #     CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
-    #     CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
-    #     CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
-    # }
-    #
-    # column_mapping = {
-    #     CourierStateMapKey.not_yet_map: RowName.Courier,
-    #     CourierStateMapKey.pre_ship_map: RowName.Courier,
-    #     CourierStateMapKey.unpaid_map: RowName.Courier,
-    #     CourierStateMapKey.delivered_map: RowName.Courier,
-    #     CourierStateMapKey.no_tracking_map: RowName.Courier,
-    #     CourierStateMapKey.tracking_map: RowName.Courier,
-    #     CourierStateMapKey.alert_map: RowName.Courier,
-    #     CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
-    #     CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
-    #     CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
-    #     CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
-    #     CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
-    # }
-    #
-    # update_courier_status(xlsx_path, all_maps, wl='运单号', column_map=column_mapping)
+    check_and_add_courier_column(xlsx_path)
+    results = extract_and_process_data(xlsx_path, RowName.Courier, 100, wl_name='运单号')
+
+    all_maps = {
+        CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
+        CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
+        CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
+        CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
+        CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
+        CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
+        CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
+        CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
+        CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
+        CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
+        CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
+        CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
+    }
+
+    column_mapping = {
+        CourierStateMapKey.not_yet_map: RowName.Courier,
+        CourierStateMapKey.pre_ship_map: RowName.Courier,
+        CourierStateMapKey.unpaid_map: RowName.Courier,
+        CourierStateMapKey.delivered_map: RowName.Courier,
+        CourierStateMapKey.no_tracking_map: RowName.Courier,
+        CourierStateMapKey.tracking_map: RowName.Courier,
+        CourierStateMapKey.alert_map: RowName.Courier,
+        CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
+        CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
+        CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
+        CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
+        CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
+    }
+
+    update_courier_status(xlsx_path, all_maps, wl='运单号', column_map=column_mapping)
 
     process_tracking_time1(xlsx_path)
+    # force_column_as_text(xlsx_path, ["订单号"])
+
     xlsx2 = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl_track/xyl_track_merger_temp.xlsx"
-    # create_fs_xlsx_file(xlsx2)
     data_len = export_yd_data(xlsx_path, xlsx2)
+    # force_column_as_text(xlsx2, ["订单号"])
 
     # 示例调用
     # result = read_xlsx_as_nested_list(xlsx2)
