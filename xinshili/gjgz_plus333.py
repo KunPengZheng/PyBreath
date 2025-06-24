@@ -41,7 +41,7 @@ class RowName:
     SfDateInterval = "SfDateInterval/SF消息间隔"
     TrackTimeInterval = "TrackTimeInterval/跟踪时间间隔"
     TrackTimeIntervalState = "TrackTimeIntervalState/跟踪时间间隔状态"
-    YD_state = "YD/yd状态"
+    LastEventSfTime = "LastEventSfTime/上一条轨迹时间"
     Tacking_Time = "Tacking_Time/追踪时间"
     UnpaidDate = "UnpaidDate/unpaid记录时间"
     Recipient = "Recipient/收件人"
@@ -380,11 +380,7 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
 
 def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_map=None):
     """
-    批量更新多个状态，避免重复读取和写入文件，提高效率
-    :param filepath: Excel 文件路径
-    :param maps_list: 一个字典列表，包含多个 {tracking_no: status} 的映射
-    :param wl: 物流跟踪号列名
-    :param column_map: 需要更新的列 {状态映射: 对应的 Excel 列名}
+    批量更新多个状态，支持在更新"最新事件时间"前将原有轨迹时间备份到"上一条轨迹时间"
     """
     wb = openpyxl.load_workbook(filepath, data_only=True)
     sheet = wb.active
@@ -392,14 +388,27 @@ def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_ma
     headers = [cell.value for cell in sheet[1]]
     tracking_no_col = headers.index(wl) + 1
 
-    # 获取所有需要更新的列索引（包含主列 + unpaidDate）
     column_indices = {key: headers.index(col_name) + 1 for key, col_name in column_map.items()}
 
-    # 尝试获取 unpaidDate 列索引（如果有）
+    # 获取可能涉及的附加列索引
     try:
         unpaid_date_col_index = headers.index(RowName.UnpaidDate) + 1
     except ValueError:
-        unpaid_date_col_index = None  # unpaidDate 列不存在
+        unpaid_date_col_index = None
+
+    # 如果需要更新最新事件时间，确保相关列存在
+    latest_date_col = RowName.LatestEventSfDate
+    latest_time_col = RowName.LatestEventSfTime
+    previous_event_time_col = RowName.LastEventSfTime
+
+    try:
+        latest_date_col_index = headers.index(latest_date_col) + 1
+        latest_time_col_index = headers.index(latest_time_col) + 1
+        previous_event_col_index = headers.index(previous_event_time_col) + 1
+    except ValueError as ve:
+        # 如果 column_map 包含 latest_date_col，但目标列不存在 → 提醒
+        if latest_date_col in column_map.values():
+            raise ValueError(f"需要更新 {latest_date_col}，但文件中缺失相关列: {ve}")
 
     strftime = datetime.now().strftime("%Y-%m-%d")
 
@@ -410,15 +419,30 @@ def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_ma
         if tracking_no:
             tracking_no_rows.setdefault(tracking_no, []).append(row)
 
-    # 遍历所有映射并写入状态
     for state_map, col_name in column_map.items():
         col_index = column_indices[state_map]
+
         for tracking_no, status in maps_list.get(state_map, {}).items():
             if tracking_no in tracking_no_rows:
                 for row_index in tracking_no_rows[tracking_no]:
+
+                    # 特殊处理：若更新的是“LatestEventSfDate/最新事件时间”，先保存旧时间
+                    if col_name == latest_date_col:
+                        old_date = sheet.cell(row=row_index, column=latest_date_col_index).value
+                        old_time = sheet.cell(row=row_index, column=latest_time_col_index).value
+
+                        if old_date or old_time:
+                            # 统一转为字符串并去除空白，过滤 nan
+                            date_str = str(old_date).strip() if old_date not in [None, "nan", "NaT"] else ""
+                            time_str = str(old_time).strip() if old_time not in [None, "nan", "NaT"] else ""
+                            if date_str and time_str:
+                                combined = f"{date_str} {time_str}"
+                                sheet.cell(row=row_index, column=previous_event_col_index, value=combined)
+
+                    # 正常写入新状态
                     sheet.cell(row=row_index, column=col_index, value=status)
 
-                    # 如果是 unpaid_map，且 unpaidDate 列存在，且单元格为空 → 填写日期
+                    # 若是 unpaid_map 且 unpaid_date 列存在 → 写入日期
                     if state_map == CourierStateMapKey.unpaid_map and unpaid_date_col_index:
                         current_value = sheet.cell(row=row_index, column=unpaid_date_col_index).value
                         if current_value in [None, "", " "]:
@@ -870,8 +894,8 @@ def check_and_add_courier_column(file_path):
         if RowName.Tacking_Time not in data.columns:
             data[RowName.Tacking_Time] = ""
             flag = True
-        if RowName.YD_state not in data.columns:
-            data[RowName.YD_state] = ""
+        if RowName.LastEventSfTime not in data.columns:
+            data[RowName.LastEventSfTime] = ""
             flag = True
         # 保存修改后的文件
         data.to_excel(file_path, index=False, engine='openpyxl')
@@ -1966,114 +1990,11 @@ def go(analyse_obj, xlsx_path):
         fs_msg(FsUserID.LW_ID, result_fs_msg)
 
 
-def automatic(dir_path, analyse_obj, ignore=False):
-    is_morning = (datetime.now().hour) < 12
-    gz_time = datetime.strptime(getYmd(), "%Y/%m/%d")
-
-    # 获取所有文件（可选地限制为某种类型，如 .xlsx）
-    files = [f for f in os.listdir(dir_path) if f.lower().endswith(('.xlsx', '.xls'))]
-
-    # 按照自然顺序排序
-    files.sort(key=natural_key)
-
-    pattern = r"^(出库时间|创建时间)\d+_\d+\.xlsx$"
-
-    # 遍历排序后的文件
-    for file in files:
-        if re.match(pattern, file):
-            xlsx_path = os.path.join(dir_path, file)
-            print(f"正在处理文件: {xlsx_path}")
-
-            if ignore:
-                go(analyse_obj, xlsx_path)
-                continue
-
-            ck_time = get_days_difference(xlsx_path)
-            interval_time = (gz_time - datetime.strptime(ck_time, "%Y/%m/%d")).days
-
-            if interval_time == 1 and is_morning:
-                go(analyse_obj, xlsx_path)
-            else:
-                if is_morning:
-                    continue
-
-                if (check_and_add_courier_column(xlsx_path)):
-                    go(analyse_obj, xlsx_path)
-                else:
-                    shipment_received_interval2_list = get_shipment_received_numbers(xlsx_path, getYmd())
-                    change_shipment_received_count = len(shipment_received_interval2_list)
-
-                    output_file = os.path.splitext(xlsx_path)[0] + "_去重.xlsx"
-                    filter_tracking_numbers(xlsx_path, output_file)
-
-                    # 同一单会有多个sku，多个sku会生成多行数据，分析sku的时候不能去重，其它的需要去重
-                    total_count = remove_duplicates_by_column(output_file, output_file, RowName.Tracking_No)
-
-                    patterns = {
-                        CourierStateMapValue.no_track: Pattern.no_track,
-                        CourierStateMapValue.delivered: Pattern.delivered,
-                        CourierStateMapValue.unpaid: Pattern.unpaid,
-                        CourierStateMapValue.not_yet: Pattern.not_yet,
-                        CourierStateMapValue.pre_ship: Pattern.pre_ship,
-                        CourierStateMapValue.irregular_no_tracking: Pattern.irregular_no_tracking,
-                        CourierStateMapValue.no_tracking: Pattern.no_tracking,
-                        CourierStateMapValue.tracking: Pattern.tracking
-                    }
-
-                    count_dict = count_pattern_and_tracking_with_sf_date(output_file, RowName.Courier,
-                                                                         RowName.SfDateInterval, patterns)
-
-                    no_track_count = count_dict[CourierStateMapValue.no_track]
-                    delivered_count = count_dict[CourierStateMapValue.delivered]
-                    unpaid_count = count_dict[CourierStateMapValue.unpaid]
-                    not_yet_count = count_dict[CourierStateMapValue.not_yet]
-                    pre_ship_count = count_dict[CourierStateMapValue.pre_ship]
-                    irregular_no_tracking_count = count_dict[CourierStateMapValue.irregular_no_tracking]
-                    no_tracking_count = count_dict[CourierStateMapValue.no_tracking]
-                    tracking_count = count_dict[CourierStateMapValue.tracking]
-                    tracking_zero_count = count_dict["sfDateInterval"]
-
-                    # 先进行一次计算，并缓存结果
-                    total_count_int = int(total_count)
-                    no_track_count_int = int(no_track_count)
-                    track_count_int = total_count_int - no_track_count_int
-
-                    tracking_zero_count_int = int(tracking_zero_count)
-                    delivered_count_int = int(delivered_count)
-                    unpaid_count_int = int(unpaid_count)
-                    not_yet_count_int = int(not_yet_count)
-                    pre_ship_count_int = int(pre_ship_count)
-                    irregular_no_tracking_count_int = int(irregular_no_tracking_count)
-                    no_tracking_count_int = int(no_tracking_count)
-                    tracking_count_int = int(tracking_count)
-                    # real_no_track_count = no_track_count_int + tracking_zero_count_int  # 真正的未上网数
-                    # real_track_count = total_count_int - no_track_count  # 真正的上网数
-                    # real_tracking_count = tracking_count_int - tracking_zero_count_int
-
-                    # 计算百分比
-                    swl = round2(100 - ((no_track_count_int) / total_count_int * 100))
-                    wswl = round2(100 - swl)
-                    qsl = round2((delivered_count_int / total_count_int) * 100)
-                    unpaidl = round2((unpaid_count_int / total_count_int) * 100)
-                    not_yetl = round2((not_yet_count_int / total_count_int) * 100)
-                    pre_shipl = round2((pre_ship_count_int / total_count_int) * 100)
-                    irregular_no_trackingl = round2((irregular_no_tracking_count_int / total_count_int) * 100)
-                    no_tracking_countl = round2((no_tracking_count_int / total_count_int) * 100)
-                    tracking_countl = round2((tracking_count_int / total_count_int) * 100)
-                    tracking_zero_countl = round2((tracking_zero_count_int / total_count_int) * 100)
-                    change_shipment_received_countl = round2((change_shipment_received_count / total_count_int) * 100)
-
-                    delete_file(output_file)
-
-                    if swl < 99 or change_shipment_received_count >= 10 or unpaid_count > 0:
-                        go(analyse_obj, xlsx_path)
-
-
 def call2():
-    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False)
-    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False)
-    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True)
-    print_all_folders("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True)
 
 
 def is_time_difference_exceed(start_time_str, end_time_str):
@@ -2088,7 +2009,7 @@ def is_time_difference_exceed(start_time_str, end_time_str):
         return False
 
 
-def print_all_folders(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False):
+def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False):
     today = datetime.now()
     current_year = today.year
     current_month = today.month
