@@ -1,11 +1,15 @@
+import re
 from datetime import datetime, timezone, timedelta
 
 import pandas as pd
 import os
 from openpyxl import load_workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+import pandas as pd
 from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range
 from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
-    update_courier_status
+    update_courier_status, is_time_difference_exceed
+from xinshili.utils import natural_key
 
 
 def convert_china_to_utc(china_time: datetime) -> datetime:
@@ -122,8 +126,21 @@ def process_tracking_time1(file_path):
     print(f"✅ 已处理并保存至：{file_path}")
 
 
+def create_fs_xlsx_file(file_path):
+    # 定义表头
+    columns = [
+        "付款时间", "发货时间", "订单号", "运单号", "轨迹状态", "追踪时间",
+        "上一条轨迹时间", "最新轨迹位置", "最新轨迹时间", "时间间隔", "处理状态"
+    ]
+
+    # 创建空的 DataFrame 并写入文件（覆盖或新建）
+    df = pd.DataFrame(columns=columns)
+    df.to_excel(file_path, index=False)
+    print(f"✅ 文件已{'创建' if not os.path.exists(file_path) else '清空并重建'}：{file_path}")
+
+
 def export_yd_data(source_file, target_file):
-    # 读取文件1（源文件）
+    # 读取源文件
     df = pd.read_excel(source_file)
 
     def safe_concat_time(row):
@@ -151,9 +168,24 @@ def export_yd_data(source_file, target_file):
         "处理状态": df["TrackTimeIntervalState/跟踪时间间隔状态"],
     })
 
-    # 写入到目标文件（如果存在则覆盖）
-    export_df.to_excel(target_file, index=False)
-    print(f"✅ 已成功导出 YD 数据至：{target_file}")
+    # 判断目标文件是否存在
+    if not os.path.exists(target_file):
+        # 如果不存在，直接保存含标题的表格
+        export_df.to_excel(target_file, index=False)
+        print(f"✅ 创建新文件并导出至：{target_file}")
+        return len(export_df)
+
+    # 如果目标文件已存在 → 追加模式
+    wb = load_workbook(target_file)
+    ws = wb.active
+    start_row = ws.max_row + 1  # 从下一行开始写
+
+    for i, row in enumerate(dataframe_to_rows(export_df, index=False, header=False)):
+        for j, value in enumerate(row, 1):
+            ws.cell(row=start_row + i, column=j, value=value)
+
+    wb.save(target_file)
+    print(f"✅ 已追加导出 YD 数据至：{target_file}")
 
     return len(export_df)
 
@@ -173,10 +205,7 @@ def read_xlsx_as_nested_list(file_path):
     return nested_list
 
 
-if __name__ == '__main__':
-    # 订单号，运单号，发货时间，付款时间
-    xlsx_path = "/Users/zkp/Downloads/order_120250624135226262_1573179_副本.xlsx"
-
+def go(xlsx_path, dxm_xyl_track_merger):
     check_and_add_courier_column(xlsx_path)
     results = extract_and_process_data(xlsx_path, RowName.Courier, 100, wl_name='运单号')
 
@@ -213,14 +242,43 @@ if __name__ == '__main__':
     update_courier_status(xlsx_path, all_maps, wl='运单号', column_map=column_mapping)
 
     process_tracking_time1(xlsx_path)
-    xlsx2 = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl_track/xyl_track_merger_temp.xlsx"
-    data_len = export_yd_data(xlsx_path, xlsx2)
 
-    # 示例调用
-    # result = read_xlsx_as_nested_list(xlsx2)
-    # for row in result:
-    #     print(row)
-    #
-    # token = get_token()
-    # dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 10, majorDimension="COLUMNS")
-    # value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:K{len(result)}", result)
+    export_yd_data(xlsx_path, dxm_xyl_track_merger)
+
+
+def auto(root_dir):
+    dxm_xyl_track_merger = "/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track/dxm_xyl_track_merger.xlsx"
+    create_fs_xlsx_file(dxm_xyl_track_merger)
+
+    today = datetime.now()
+    current_year = today.year
+    current_month = today.month
+    current_day = today.day
+    current_time = f"{current_year}-{current_month}-{current_day}"
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        dirnames.sort(key=natural_key)
+        for dirname in dirnames:
+            sun_dir_path = os.path.join(dirpath, dirname)
+            parts = dirname.split(".")
+            year, month = parts[0], parts[1]
+            files = [f for f in os.listdir(sun_dir_path) if f.lower().endswith(('.xlsx', '.xls'))]
+            files.sort(key=natural_key)
+            for file in files:
+                xlsx_path = os.path.join(sun_dir_path, file)
+                match = re.search(r"发货时间(\d+)_", file)
+                if match:
+                    day = match.group(1)
+                    current_times = f"{year}-{month}-{day}"
+                    exceed = is_time_difference_exceed(current_time, current_times)
+                    if exceed <= 3:
+                        print(f"正在处理文件: {xlsx_path}")
+                        go(xlsx_path, dxm_xyl_track_merger)
+
+    result = read_xlsx_as_nested_list(dxm_xyl_track_merger)
+    token = get_token()
+    # dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 11, majorDimension="COLUMNS")
+    value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:K{len(result)}", result)
+
+
+if __name__ == '__main__':
+    auto("/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track")
