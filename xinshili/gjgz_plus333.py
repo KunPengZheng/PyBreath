@@ -46,6 +46,8 @@ class RowName:
     UnpaidDate = "UnpaidDate/unpaid记录时间"
     Recipient = "Recipient/收件人"
     Upload_Shipping_Label = "上传物流面单(Upload_Shipping_Label)"
+    YD_Number = 'YD_Number/阳单号'
+    YD_State = 'YD_State/阳单轨迹状态'
 
     Courier_File1 = 'Courier/快递_file1'
     SfDateInterval_File1 = 'SfDateInterval/SF消息间隔_file1'
@@ -69,6 +71,18 @@ class RowName:
     Width = 'Width/宽'
     Height = 'Height/高'
     Unit = 'Unit/单位'
+
+    Pay_Time = "付款时间"
+    Ship_Time = "发货时间"
+    Track_State = "轨迹状态"
+    Analyse_State = "追踪时间"
+    Last_Track_Time = "上一条轨迹时间"
+    Latest_Track_Site = "最新轨迹位置"
+    Latest_Track_Time = "最新轨迹时间"
+    Interval_Time = "时间间隔"
+    Process_Time = "处理状态"
+    YD_Number2 = "阳单号"
+    YD_State2 = "阳单轨迹状态"
 
 
 @dataclass(frozen=True)
@@ -832,16 +846,16 @@ def analyze_time_segments(file_path, data_map, time_column, courier_column, sf_d
         return "", ""
 
 
-def process_tracking_no(file_path: str):
+def process_tracking_no(file_path: str, row_name=RowName.Tracking_No):
     # 读取 Excel 文件
     data = pd.read_excel(file_path, dtype=str)  # 将数据全部读取为字符串类型
 
     # 确保 'Tracking No./物流跟踪号' 列存在
-    if RowName.Tracking_No not in data.columns:
-        raise ValueError(f"文件中缺少 '{RowName.Tracking_No}' 列")
+    if row_name not in data.columns:
+        raise ValueError(f"文件中缺少 '{row_name}' 列")
 
     # 处理 'Tracking No./物流跟踪号' 列：去除空格并确保每个值是字符串，兼容 None 或空值
-    data[RowName.Tracking_No] = data[RowName.Tracking_No].apply(
+    data[row_name] = data[row_name].apply(
         lambda x: str(x).replace(" ", "") if x is not None and pd.notna(x) else "")
 
     # 保存处理后的数据
@@ -851,13 +865,6 @@ def process_tracking_no(file_path: str):
 
 
 def check_and_add_courier_column(file_path):
-    """
-    检查 Excel 文件是否存在 '快递' 列，如果没有，则在最后一列添加该列。
-
-    :param file_path: Excel 文件路径
-    :param courier_column: 快递列名，默认为 'Courier/快递'
-    :return: None
-    """
     try:
         # 加载 Excel 文件
         data = pd.read_excel(file_path, engine='openpyxl')
@@ -897,9 +904,14 @@ def check_and_add_courier_column(file_path):
         if RowName.LastEventSfTime not in data.columns:
             data[RowName.LastEventSfTime] = ""
             flag = True
+        if RowName.YD_Number not in data.columns:
+            data[RowName.YD_Number] = ""
+            flag = True
+        if RowName.YD_State not in data.columns:
+            data[RowName.YD_State] = ""
+            flag = True
         # 保存修改后的文件
         data.to_excel(file_path, index=False, engine='openpyxl')
-        # print("check_and_add_courier_column 方法执行完成")
         return flag
     except Exception as e:
         print(f"发生错误: {e}")
