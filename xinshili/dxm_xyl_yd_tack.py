@@ -121,7 +121,7 @@ def process_tracking_time1(file_path):
     df_filtered[RowName.TrackTimeInterval] = intervals
     df_filtered[RowName.TrackTimeIntervalState] = states
     df_filtered[RowName.Tacking_Time] = [t.strftime("%Y-%m-%d %H:%M:%S") if isinstance(t, datetime) else "" for t in
-                                            track_times]
+                                         track_times]
 
     # 用处理后数据更新原始表
     df.update(df_filtered)
@@ -132,8 +132,10 @@ def process_tracking_time1(file_path):
 def create_fs_xlsx_file(file_path):
     # 定义表头
     columns = [
-        RowName.Pay_Time, RowName.Ship_Time, RowName.Order_Num, RowName.Track_Num, RowName.Track_State, RowName.Analyse_State,
-        RowName.Last_Track_Time, RowName.Latest_Track_Site, RowName.Latest_Track_Time, RowName.Interval_Time, RowName.Process_Time
+        RowName.Pay_Time, RowName.Ship_Time, RowName.Order_Num, RowName.Track_Num,
+        RowName.Track_State, RowName.Analyse_State, RowName.Last_Track_Time,
+        RowName.Latest_Track_Site, RowName.Latest_Track_Time, RowName.Interval_Time, RowName.Process_Time,
+        RowName.YD_Number2, RowName.YD_State2
     ]
 
     # 创建空的 DataFrame 并写入文件（覆盖或新建）
