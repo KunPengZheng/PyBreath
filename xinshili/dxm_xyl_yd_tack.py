@@ -168,6 +168,8 @@ def export_yd_data(source_file, target_file):
         "最新轨迹时间": df["最新轨迹时间"],
         "时间间隔": df["TrackTimeInterval/跟踪时间间隔"],
         "处理状态": df["TrackTimeIntervalState/跟踪时间间隔状态"],
+        "阳单号": df[RowName.YD_Number],
+        "阳单轨迹状态": df[RowName.YD_State],
     })
 
     # 判断目标文件是否存在
@@ -238,47 +240,81 @@ def force_write_order_ids_to_excel(file_path: str, order_ids: list[str], column_
     wb.save(file_path)
 
 
+def usps_track(xlsx_path, wl_name):
+    results = extract_and_process_data(xlsx_path, RowName.Courier, 100, wl_name=wl_name)
+    all_maps = {}
+    column_mapping = {}
+    if wl_name == RowName.Track_Num:
+        all_maps = {
+            CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
+            CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
+            CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
+            CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
+            CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
+            CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
+            CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
+            CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
+            CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
+            CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
+            CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
+            CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
+        }
+        column_mapping = {
+            CourierStateMapKey.not_yet_map: RowName.Courier,
+            CourierStateMapKey.pre_ship_map: RowName.Courier,
+            CourierStateMapKey.unpaid_map: RowName.Courier,
+            CourierStateMapKey.delivered_map: RowName.Courier,
+            CourierStateMapKey.no_tracking_map: RowName.Courier,
+            CourierStateMapKey.tracking_map: RowName.Courier,
+            CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
+            CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
+            CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
+            CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
+            CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
+            CourierStateMapKey.alert_map: RowName.Courier,
+        }
+    else:
+        all_maps = {
+            CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
+            CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
+            CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
+            CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
+            CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
+            CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
+            # CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
+            # CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
+            # CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
+            # CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
+            # CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
+            CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
+        }
+        column_mapping = {
+            CourierStateMapKey.not_yet_map: RowName.YD_State,
+            CourierStateMapKey.pre_ship_map: RowName.YD_State,
+            CourierStateMapKey.unpaid_map: RowName.YD_State,
+            CourierStateMapKey.delivered_map: RowName.YD_State,
+            CourierStateMapKey.no_tracking_map: RowName.YD_State,
+            CourierStateMapKey.tracking_map: RowName.YD_State,
+            # CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
+            # CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
+            # CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
+            # CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
+            # CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
+            CourierStateMapKey.alert_map: RowName.YD_State,
+        }
+
+    update_courier_status(xlsx_path, all_maps, wl=wl_name, column_map=column_mapping)
+
+
 def go(xlsx_path, dxm_xyl_track_merger):
     order_ids = extract_order_ids_as_str()
     check_and_add_courier_column(xlsx_path)
-    results = extract_and_process_data(xlsx_path, RowName.Courier, 100, wl_name='运单号')
 
-    all_maps = {
-        CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
-        CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
-        CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
-        CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
-        CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
-        CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
-        CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
-        CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
-        CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
-        CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
-        CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
-        CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
-    }
-
-    column_mapping = {
-        CourierStateMapKey.not_yet_map: RowName.Courier,
-        CourierStateMapKey.pre_ship_map: RowName.Courier,
-        CourierStateMapKey.unpaid_map: RowName.Courier,
-        CourierStateMapKey.delivered_map: RowName.Courier,
-        CourierStateMapKey.no_tracking_map: RowName.Courier,
-        CourierStateMapKey.tracking_map: RowName.Courier,
-        CourierStateMapKey.alert_map: RowName.Courier,
-        CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
-        CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
-        CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
-        CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
-        CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
-    }
-
-    update_courier_status(xlsx_path, all_maps, wl='运单号', column_map=column_mapping)
+    usps_track(xlsx_path, RowName.Track_Num)
+    usps_track(xlsx_path, RowName.YD_Number)
 
     process_tracking_time1(xlsx_path)
-
     force_write_order_ids_to_excel(xlsx_path, order_ids)
-
     export_yd_data(xlsx_path, dxm_xyl_track_merger)
 
 
@@ -313,12 +349,12 @@ def auto(root_dir):
     result = read_xlsx_as_nested_list(dxm_xyl_track_merger)
     token = get_token()
     # dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 11, majorDimension="COLUMNS")
-    value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:K{len(result)}", result)
+    value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:M{len(result)}", result)
 
 
 if __name__ == '__main__':
-    # auto("/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track")
-    xx = "/Users/zkp/Downloads/order_120250624214559243_1573179_副本.xlsx"
+    auto("/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track")
+    # xx = "/Users/zkp/Downloads/order_120250624214559243_1573179_副本.xlsx"
     # order_ids = extract_order_ids_as_str(xx)
     # check_and_add_courier_column(xx)
     # force_write_order_ids_to_excel(xx, order_ids)
