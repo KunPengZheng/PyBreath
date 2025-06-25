@@ -28,6 +28,7 @@ class FsConstants:
 class FsUserID:
     WP_ID = "a337894d"
     LW_ID = "e96f3846"
+    LJ_ID = "lijing"
 
 
 @dataclass(frozen=True)
