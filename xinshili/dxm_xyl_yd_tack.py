@@ -6,11 +6,10 @@ import os
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.utils import get_column_letter
-from openpyxl.styles import numbers
 from openpyxl import Workbook
 from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range
 from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
-    update_courier_status, is_time_difference_exceed
+    update_courier_status, is_time_difference_exceed, process_tracking_no
 from xinshili.utils import natural_key
 
 
@@ -155,12 +154,12 @@ def export_yd_data(source_file, target_file):
 
     df["最新轨迹时间"] = df.apply(safe_concat_time, axis=1)
 
-    # 构造目标列的数据
+    # 构造目标列的数据（强制转换为字符串以防止科学计数法）
     export_df = pd.DataFrame({
         "付款时间": df["付款时间"],
         "发货时间": df["发货时间"],
-        "订单号": df["订单号"],
-        "运单号": df["运单号"],
+        "订单号": df["订单号"].astype(str),
+        "运单号": df["运单号"].astype(str),
         "轨迹状态": df["Courier/快递"],
         "追踪时间": df["Tacking_Time/追踪时间"],
         "上一条轨迹时间": df["LastEventSfTime/上一条轨迹时间"],
@@ -174,23 +173,39 @@ def export_yd_data(source_file, target_file):
 
     # 判断目标文件是否存在
     if not os.path.exists(target_file):
-        # 如果不存在，直接保存含标题的表格
-        export_df.to_excel(target_file, index=False)
+        # 创建新文件
+        wb = Workbook()
+        ws = wb.active
+
+        for i, row in enumerate(dataframe_to_rows(export_df, index=False, header=True)):
+            for j, value in enumerate(row, 1):
+                cell = ws.cell(row=i + 1, column=j, value=value)
+
+                # 设置“订单号”和“运单号”为文本格式
+                if ws.cell(row=1, column=j).value in ["订单号", "运单号"]:
+                    cell.number_format = "@"
+
+        wb.save(target_file)
         print(f"✅ 创建新文件并导出至：{target_file}")
         return len(export_df)
 
-    # 如果目标文件已存在 → 追加模式
+    # 文件已存在 → 打开并追加
     wb = load_workbook(target_file)
     ws = wb.active
-    start_row = ws.max_row + 1  # 从下一行开始写
+    start_row = ws.max_row + 1
 
     for i, row in enumerate(dataframe_to_rows(export_df, index=False, header=False)):
         for j, value in enumerate(row, 1):
-            ws.cell(row=start_row + i, column=j, value=value)
+            cell = ws.cell(row=start_row + i, column=j, value=value)
+
+            # 设置为文本格式以防止科学计数法
+            header = ws.cell(row=1, column=j).value
+            if header in ["订单号", "运单号"]:
+                cell.number_format = "@"
+                cell.value = str(value)  # 强制转为字符串
 
     wb.save(target_file)
     print(f"✅ 已追加导出 YD 数据至：{target_file}")
-
     return len(export_df)
 
 
@@ -307,7 +322,10 @@ def usps_track(xlsx_path, wl_name):
 
 
 def go(xlsx_path, dxm_xyl_track_merger):
-    order_ids = extract_order_ids_as_str()
+    order_ids = extract_order_ids_as_str(xlsx_path)
+
+    process_tracking_no(xlsx_path, "订单号")
+    process_tracking_no(xlsx_path, "阳单号")
     check_and_add_courier_column(xlsx_path)
 
     usps_track(xlsx_path, RowName.Track_Num)
@@ -346,10 +364,10 @@ def auto(root_dir):
                         print(f"正在处理文件: {xlsx_path}")
                         go(xlsx_path, dxm_xyl_track_merger)
 
-    result = read_xlsx_as_nested_list(dxm_xyl_track_merger)
-    token = get_token()
-    # dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 11, majorDimension="COLUMNS")
-    value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:M{len(result)}", result)
+    # result = read_xlsx_as_nested_list(dxm_xyl_track_merger)
+    # token = get_token()
+    # # dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 11, majorDimension="COLUMNS")
+    # value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:M{len(result)}", result)
 
 
 if __name__ == '__main__':
