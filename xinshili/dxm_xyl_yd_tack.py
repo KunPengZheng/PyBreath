@@ -9,7 +9,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl import Workbook
 from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range
 from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
-    update_courier_status, is_time_difference_exceed, process_tracking_no
+    update_courier_status, is_time_difference_exceed, process_tracking_no, CourierStateMapValue
 from xinshili.utils import natural_key
 
 
@@ -33,7 +33,9 @@ def process_tracking_time1(file_path):
     df = pd.read_excel(file_path)
 
     # 先排除状态为 unpaid、delivered、irregular_no_tracking 的行
-    df_filtered = df[~df['Courier/快递'].str.lower().isin(['unpaid', 'delivered', "irregular_no_tracking"])].copy()
+    df_filtered = df[~df[RowName.Courier].str.lower().isin([CourierStateMapValue.unpaid,
+                                                            CourierStateMapValue.delivered,
+                                                            CourierStateMapValue.irregular_no_tracking])].copy()
 
     intervals = []
     states = []
@@ -65,9 +67,9 @@ def process_tracking_time1(file_path):
                     continue  # 跳过后续判断
 
             # 最新事件时间
-            date_str = str(row.get("LatestEventSfDate/最新事件时间", "")).strip()
-            time_str = str(row.get("LatestEventSfTime/最新事件时间", "")).strip()
-            last_time_str = str(row.get("LastEventSfTime/上一条轨迹时间", "")).strip()
+            date_str = str(row.get(RowName.LatestEventSfDate, "")).strip()
+            time_str = str(row.get(RowName.LatestEventSfTime, "")).strip()
+            last_time_str = str(row.get(RowName.LastEventSfTime, "")).strip()
 
             if last_time_str and date_str and time_str and \
                     last_time_str.lower() != "nan" and date_str.lower() != "nan" and time_str.lower() != "nan":
@@ -116,9 +118,9 @@ def process_tracking_time1(file_path):
             track_times.append(us_now)
 
     # 写入结果列
-    df_filtered["TrackTimeInterval/跟踪时间间隔"] = intervals
-    df_filtered["TrackTimeIntervalState/跟踪时间间隔状态"] = states
-    df_filtered["Tacking_Time/追踪时间"] = [t.strftime("%Y-%m-%d %H:%M:%S") if isinstance(t, datetime) else "" for t in
+    df_filtered[RowName.TrackTimeInterval] = intervals
+    df_filtered[RowName.TrackTimeIntervalState] = states
+    df_filtered[RowName.Tacking_Time] = [t.strftime("%Y-%m-%d %H:%M:%S") if isinstance(t, datetime) else "" for t in
                                             track_times]
 
     # 用处理后数据更新原始表
@@ -130,8 +132,8 @@ def process_tracking_time1(file_path):
 def create_fs_xlsx_file(file_path):
     # 定义表头
     columns = [
-        "付款时间", "发货时间", "订单号", "运单号", "轨迹状态", "追踪时间",
-        "上一条轨迹时间", "最新轨迹位置", "最新轨迹时间", "时间间隔", "处理状态"
+        RowName.Pay_Time, RowName.Ship_Time, RowName.Order_Num, RowName.Track_Num, RowName.Track_State, RowName.Analyse_State,
+        RowName.Last_Track_Time, RowName.Latest_Track_Site, RowName.Latest_Track_Time, RowName.Interval_Time, RowName.Process_Time
     ]
 
     # 创建空的 DataFrame 并写入文件（覆盖或新建）
@@ -145,30 +147,30 @@ def export_yd_data(source_file, target_file):
     df = pd.read_excel(source_file)
 
     def safe_concat_time(row):
-        date_part = str(row.get("LatestEventSfDate/最新事件时间", "")).strip()
-        time_part = str(row.get("LatestEventSfTime/最新事件时间", "")).strip()
+        date_part = str(row.get(RowName.LatestEventSfDate, "")).strip()
+        time_part = str(row.get(RowName.LatestEventSfTime, "")).strip()
         if date_part.lower() not in ["", "nan"] and time_part.lower() not in ["", "nan"]:
             return f"{date_part} {time_part}"
         else:
             return ""
 
-    df["最新轨迹时间"] = df.apply(safe_concat_time, axis=1)
+    df[RowName.Latest_Track_Time] = df.apply(safe_concat_time, axis=1)
 
     # 构造目标列的数据（强制转换为字符串以防止科学计数法）
     export_df = pd.DataFrame({
-        "付款时间": df["付款时间"],
-        "发货时间": df["发货时间"],
-        "订单号": df["订单号"].astype(str),
-        "运单号": df["运单号"].astype(str),
-        "轨迹状态": df["Courier/快递"],
-        "追踪时间": df["Tacking_Time/追踪时间"],
-        "上一条轨迹时间": df["LastEventSfTime/上一条轨迹时间"],
-        "最新轨迹位置": df["LatestEventSfSite/最新事件地点"],
-        "最新轨迹时间": df["最新轨迹时间"],
-        "时间间隔": df["TrackTimeInterval/跟踪时间间隔"],
-        "处理状态": df["TrackTimeIntervalState/跟踪时间间隔状态"],
-        "阳单号": df[RowName.YD_Number],
-        "阳单轨迹状态": df[RowName.YD_State],
+        RowName.Pay_Time: df[RowName.Pay_Time],
+        RowName.Ship_Time: df[RowName.Ship_Time],
+        RowName.Order_Num: df[RowName.Order_Num].astype(str),
+        RowName.Track_Num: df[RowName.Track_Num].astype(str),
+        RowName.Track_State: df[RowName.Courier],
+        RowName.Analyse_State: df[RowName.Tacking_Time],
+        RowName.Last_Track_Time: df[RowName.LastEventSfTime],
+        RowName.Latest_Track_Site: df[RowName.LatestEventSfSite],
+        RowName.Latest_Track_Time: df[RowName.Latest_Track_Time],
+        RowName.Interval_Time: df[RowName.TrackTimeInterval],
+        RowName.Process_Time: df[RowName.TrackTimeIntervalState],
+        RowName.YD_Number2: df[RowName.YD_Number],
+        RowName.YD_State2: df[RowName.YD_State],
     })
 
     # 判断目标文件是否存在
@@ -182,7 +184,7 @@ def export_yd_data(source_file, target_file):
                 cell = ws.cell(row=i + 1, column=j, value=value)
 
                 # 设置“订单号”和“运单号”为文本格式
-                if ws.cell(row=1, column=j).value in ["订单号", "运单号"]:
+                if ws.cell(row=1, column=j).value in [RowName.Order_Num, RowName.Track_Num]:
                     cell.number_format = "@"
 
         wb.save(target_file)
@@ -200,7 +202,7 @@ def export_yd_data(source_file, target_file):
 
             # 设置为文本格式以防止科学计数法
             header = ws.cell(row=1, column=j).value
-            if header in ["订单号", "运单号"]:
+            if header in [RowName.Order_Num, RowName.Track_Num]:
                 cell.number_format = "@"
                 cell.value = str(value)  # 强制转为字符串
 
@@ -224,7 +226,7 @@ def read_xlsx_as_nested_list(file_path):
     return nested_list
 
 
-def extract_order_ids_as_str(file_path: str, column_name="订单号") -> list[str]:
+def extract_order_ids_as_str(file_path: str, column_name=RowName.Order_Num) -> list[str]:
     """
     读取 Excel 中的“订单号”列，确保其以字符串形式提取出来。
     """
@@ -232,7 +234,7 @@ def extract_order_ids_as_str(file_path: str, column_name="订单号") -> list[st
     return df[column_name].fillna("").astype(str).tolist()
 
 
-def force_write_order_ids_to_excel(file_path: str, order_ids: list[str], column_name="订单号"):
+def force_write_order_ids_to_excel(file_path: str, order_ids: list[str], column_name=RowName.Order_Num):
     """
     强制将订单号列写成字符串格式，避免 Excel 自动转为科学计数法。
     """
@@ -324,8 +326,8 @@ def usps_track(xlsx_path, wl_name):
 def go(xlsx_path, dxm_xyl_track_merger):
     order_ids = extract_order_ids_as_str(xlsx_path)
 
-    process_tracking_no(xlsx_path, "订单号")
-    process_tracking_no(xlsx_path, "阳单号")
+    process_tracking_no(xlsx_path, RowName.Order_Num)
+    process_tracking_no(xlsx_path, RowName.YD_Number2)
     check_and_add_courier_column(xlsx_path)
 
     usps_track(xlsx_path, RowName.Track_Num)
