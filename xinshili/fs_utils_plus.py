@@ -22,6 +22,8 @@ class FsConstants:
     gjgz_token = "BGrnsxMFfhfoumtUDF8cXM8jnGg"
     xyl_sales_repertory_token = "DbiRsNu1BhEDd1tmOKlcVv3Vn3c"
     sanrio_sales_repertory_token = "InsHs1yV7hQxN0tIVsic0rVWnoh"
+    ROWS = "ROWS"
+    COLUMNS = "COLUMNS"
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,7 @@ class ClientConstants:
     ckoms = "ckoms"
     yy = "yy"
     xyl_sales_repertory = "xyl_sales_repertory"
+    dxm_xyl_yd = "dxm_xyl_yd"
 
 
 FsOrderSheetMap = {
@@ -75,6 +78,7 @@ ClientMapConstants = {
     ClientConstants.khhz: "Q7LQzA",
     ClientConstants.ckoms: "83VoQ2",
     ClientConstants.yy: "JYtXLd",
+    ClientConstants.dxm_xyl_yd: "yTIUrm",
     ClientConstants.xyl_sales_repertory: {MapFields.xyl_sku: "8e023c",
                                           MapFields.xyl_store: "yZxXEU"},
 }
@@ -498,7 +502,7 @@ def fs_msg(user_id, text_content, receive_id_type="user_id"):
     lark.logger.info(lark.JSON.marshal(response.data, indent=4))
 
 
-def insert_col_row(tat, spreadsheet_token, sheetId, startIndex, endIndex, majorDimension="COLUMNS"):
+def insert_col_row(tat, spreadsheet_token, sheetId, startIndex, endIndex, majorDimension):
     """
     majorDimension:
         - ROWS：行
@@ -551,7 +555,7 @@ def get_data(tat, spreadsheet_token, sheetId, range):
     return jsons["data"]["valueRange"]["values"]
 
 
-def dimension_range(tat, spreadsheet_token, sheetId, startIndex, endIndex, majorDimension="ROWS"):
+def dimension_range(tat, spreadsheet_token, sheetId, startIndex, endIndex, majorDimension):
     url = f"{FsConstants.spreadsheets_base_url}{spreadsheet_token}/{FsConstants.dimension_range}"
 
     headers = {
