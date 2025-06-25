@@ -257,8 +257,8 @@ def force_write_order_ids_to_excel(file_path: str, order_ids: list[str], column_
     wb.save(file_path)
 
 
-def usps_track(xlsx_path, wl_name):
-    results = extract_and_process_data(xlsx_path, RowName.Courier, 100, wl_name=wl_name)
+def usps_track(xlsx_path, column_name, wl_name):
+    results = extract_and_process_data(xlsx_path, column_name, 100, wl_name=wl_name)
     all_maps = {}
     column_mapping = {}
     if wl_name == RowName.Track_Num:
@@ -326,12 +326,13 @@ def usps_track(xlsx_path, wl_name):
 def go(xlsx_path, dxm_xyl_track_merger):
     order_ids = extract_order_ids_as_str(xlsx_path)
 
-    process_tracking_no(xlsx_path, RowName.Order_Num)
-    process_tracking_no(xlsx_path, RowName.YD_Number2)
     check_and_add_courier_column(xlsx_path)
 
-    usps_track(xlsx_path, RowName.Track_Num)
-    usps_track(xlsx_path, RowName.YD_Number)
+    process_tracking_no(xlsx_path, RowName.Track_Num)
+    process_tracking_no(xlsx_path, RowName.YD_Number)
+
+    usps_track(xlsx_path, RowName.Courier, RowName.Track_Num)
+    usps_track(xlsx_path, RowName.YD_State, RowName.YD_Number)
 
     process_tracking_time1(xlsx_path)
     force_write_order_ids_to_excel(xlsx_path, order_ids)
@@ -347,6 +348,7 @@ def auto(root_dir):
     current_month = today.month
     current_day = today.day
     current_time = f"{current_year}-{current_month}-{current_day}"
+
     for dirpath, dirnames, filenames in os.walk(root_dir):
         dirnames.sort(key=natural_key)
         for dirname in dirnames:
@@ -366,10 +368,11 @@ def auto(root_dir):
                         print(f"正在处理文件: {xlsx_path}")
                         go(xlsx_path, dxm_xyl_track_merger)
 
-    result = get_xlsx_data_len(dxm_xyl_track_merger)
-    token = get_token()
-    # # dimension_range(token, FsConstants.gjgz_token,  ClientMapConstants[ClientConstants.dxm_xyl_yd], 1, 12, majorDimension=FsConstants.COLUMNS)
-    value_range(token, FsConstants.gjgz_token, ClientMapConstants[ClientConstants.dxm_xyl_yd], f"A1:M{len(result)}", result)
+    # result = get_xlsx_data_len(dxm_xyl_track_merger)
+    # token = get_token()
+    # # # dimension_range(token, FsConstants.gjgz_token,  ClientMapConstants[ClientConstants.dxm_xyl_yd], 1, 12, majorDimension=FsConstants.COLUMNS)
+    # value_range(token, FsConstants.gjgz_token, ClientMapConstants[ClientConstants.dxm_xyl_yd], f"A1:M{len(result)}",
+    #             result)
 
 
 if __name__ == '__main__':
