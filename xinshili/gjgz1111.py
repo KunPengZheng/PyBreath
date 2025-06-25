@@ -5,7 +5,9 @@ import pandas as pd
 import os
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
-import pandas as pd
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import numbers
+from openpyxl import Workbook
 from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range
 from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
     update_courier_status, is_time_difference_exceed
@@ -205,7 +207,39 @@ def read_xlsx_as_nested_list(file_path):
     return nested_list
 
 
+def extract_order_ids_as_str(file_path: str, column_name="订单号") -> list[str]:
+    """
+    读取 Excel 中的“订单号”列，确保其以字符串形式提取出来。
+    """
+    df = pd.read_excel(file_path, dtype={column_name: str})
+    return df[column_name].fillna("").astype(str).tolist()
+
+
+def force_write_order_ids_to_excel(file_path: str, order_ids: list[str], column_name="订单号"):
+    """
+    强制将订单号列写成字符串格式，避免 Excel 自动转为科学计数法。
+    """
+    wb = load_workbook(file_path)
+    ws = wb.active
+
+    # 找出列索引
+    header = [cell.value for cell in ws[1]]
+    if column_name not in header:
+        raise ValueError(f"列名“{column_name}”未在 Excel 表头中找到")
+
+    col_index = header.index(column_name) + 1
+    col_letter = get_column_letter(col_index)
+
+    for i, value in enumerate(order_ids, start=2):  # 从第2行开始写入
+        cell = ws[f"{col_letter}{i}"]
+        cell.value = str(value)
+        cell.number_format = '@'  # '@' 表示文本格式
+
+    wb.save(file_path)
+
+
 def go(xlsx_path, dxm_xyl_track_merger):
+    order_ids = extract_order_ids_as_str()
     check_and_add_courier_column(xlsx_path)
     results = extract_and_process_data(xlsx_path, RowName.Courier, 100, wl_name='运单号')
 
@@ -243,6 +277,8 @@ def go(xlsx_path, dxm_xyl_track_merger):
 
     process_tracking_time1(xlsx_path)
 
+    force_write_order_ids_to_excel(xlsx_path, order_ids)
+
     export_yd_data(xlsx_path, dxm_xyl_track_merger)
 
 
@@ -270,7 +306,7 @@ def auto(root_dir):
                     day = match.group(1)
                     current_times = f"{year}-{month}-{day}"
                     exceed = is_time_difference_exceed(current_time, current_times)
-                    if exceed <= 3:
+                    if exceed <= 7:
                         print(f"正在处理文件: {xlsx_path}")
                         go(xlsx_path, dxm_xyl_track_merger)
 
@@ -281,4 +317,8 @@ def auto(root_dir):
 
 
 if __name__ == '__main__':
-    auto("/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track")
+    # auto("/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track")
+    xx = "/Users/zkp/Downloads/order_120250624214559243_1573179_副本.xlsx"
+    # order_ids = extract_order_ids_as_str(xx)
+    # check_and_add_courier_column(xx)
+    # force_write_order_ids_to_excel(xx, order_ids)
