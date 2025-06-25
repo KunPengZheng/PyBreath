@@ -298,9 +298,8 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                                                  CourierStateMapValue.no_tracking,
                                                  CourierStateMapValue.alert
                                                  ])]
-
-    # 提取符合条件的 'Tracking No./物流跟踪号' 列数据
-    items = filtered_data[wl_name].tolist()
+    # 提取符合条件的 'Tracking No./物流跟踪号' 列数据，并剔除wl_name列中 NaN，去除字符串前后空格，排除只含空格或本身为空的字符串
+    items = [x.strip() for x in filtered_data[wl_name].dropna().astype(str) if x.strip() != '']
 
     # 按组划分数据
     grouped_items = [items[i:i + group_size] for i in range(0, len(items), group_size)]
