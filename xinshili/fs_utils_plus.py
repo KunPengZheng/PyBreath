@@ -79,14 +79,21 @@ ClientMapConstants = {
                                           MapFields.xyl_store: "yZxXEU"},
 }
 
+_tat = ""
+
 
 def get_token():
-    # 应用凭证里的 app id 和 app secret
-    post_data = {"app_id": FsConstants.app_id, "app_secret": FsConstants.app_secret}
-    r = requests.post(FsConstants.token_url, data=post_data)
-    tat = r.json()["tenant_access_token"]  # token
-    print(f"token:{tat}")
-    return tat
+    global _tat
+    if len(_tat) > 0:
+        return _tat
+    else:
+        # 应用凭证里的 app id 和 app secret
+        post_data = {"app_id": FsConstants.app_id, "app_secret": FsConstants.app_secret}
+        r = requests.post(FsConstants.token_url, data=post_data)
+        tat = r.json()["tenant_access_token"]  # token
+        _tat = tat
+        print(f"token:{tat}")
+        return tat
 
 
 def get_map_url(analyse_obj):
