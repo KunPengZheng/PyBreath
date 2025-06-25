@@ -7,7 +7,8 @@ from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.utils import get_column_letter
 from openpyxl import Workbook
-from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range
+from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range, ClientMapConstants, \
+    ClientConstants
 from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
     update_courier_status, is_time_difference_exceed, process_tracking_no, CourierStateMapValue
 from xinshili.utils import natural_key
@@ -213,16 +214,13 @@ def export_yd_data(source_file, target_file):
     return len(export_df)
 
 
-def read_xlsx_as_nested_list(file_path):
+def get_xlsx_data_len(file_path):
     # 读取 Excel 文件，保留空值为 ""，禁用自动类型转换
     df = pd.read_excel(file_path, dtype=object).fillna("")
-
     # 获取列名作为第一行
     header = list(df.columns)
-
     # 获取数据行
     data_rows = df.values.tolist()
-
     # 将列头插入到数据最前面
     nested_list = [header] + data_rows
     return nested_list
@@ -368,10 +366,10 @@ def auto(root_dir):
                         print(f"正在处理文件: {xlsx_path}")
                         go(xlsx_path, dxm_xyl_track_merger)
 
-    # result = read_xlsx_as_nested_list(dxm_xyl_track_merger)
-    # token = get_token()
-    # # dimension_range(token, FsConstants.gjgz_token, "yTIUrm", 1, 11, majorDimension="COLUMNS")
-    # value_range(token, FsConstants.gjgz_token, "yTIUrm", f"A1:M{len(result)}", result)
+    result = get_xlsx_data_len(dxm_xyl_track_merger)
+    token = get_token()
+    # # dimension_range(token, FsConstants.gjgz_token,  ClientMapConstants[ClientConstants.dxm_xyl_yd], 1, 12, majorDimension=FsConstants.COLUMNS)
+    value_range(token, FsConstants.gjgz_token, ClientMapConstants[ClientConstants.dxm_xyl_yd], f"A1:M{len(result)}", result)
 
 
 if __name__ == '__main__':
