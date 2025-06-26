@@ -72,22 +72,29 @@ def process_tracking_time1(file_path):
             time_str = str(row.get(RowName.LatestEventSfTime, "")).strip()
             last_time_str = str(row.get(RowName.LastEventSfTime, "")).strip()
 
-            if last_time_str and date_str and time_str and \
-                    last_time_str.lower() != "nan" and date_str.lower() != "nan" and time_str.lower() != "nan":
-                last_time = datetime.strptime(f"{last_time_str}", "%Y-%m-%d %H:%M")
-                event_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-                # 最新轨迹时间 - 上一条轨迹时间
-                diff = event_time - last_time
-            elif date_str and time_str and date_str.lower() != "nan" and time_str.lower() != "nan":
-                event_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-                # 跟踪时间 - 最新轨迹时间
-                diff = us_now - event_time
-            elif outbound_time_str and outbound_time_str.lower() != "nan":
-                creation_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
-                # 跟踪时间 - 发货时间
-                diff = us_now - convert_china_to_utc(creation_time)
+            date_flag = date_str and date_str.lower() != "nan"
+            time_flag = time_str and time_str.lower() != "nan"
+            last_flag = last_time_str and last_time_str.lower() != "nan"
+            outbound_time_flag = outbound_time_str and outbound_time_str.lower() != "nan"
+
+            latest_date_time_str = ""
+            diff = None
+
+            if date_flag:  # 存在最新事件日期
+                if time_flag:  # 存在最新事件时间
+                    latest_date_time_str = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+                else:  # 不存在最新事件时间
+                    latest_date_time_str = datetime.strptime(f"{date_str}", "%Y-%m-%d")
+                if last_flag:  # 存在上一条事件时间
+                    diff = latest_date_time_str - datetime.strptime(f"{last_time_str}", "%Y-%m-%d %H:%M")
+                else:  # 不存在上一条事件时间
+                    diff = us_now - latest_date_time_str
             else:
-                diff = None
+                if outbound_time_flag:
+                    creation_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
+                    diff = us_now - convert_china_to_utc(creation_time)
+                else:
+                    diff = None
 
             if diff is not None:
                 hours = round(diff.total_seconds() / 3600, 2)
@@ -152,8 +159,11 @@ def export_yd_data(source_file, target_file):
     def safe_concat_time(row):
         date_part = str(row.get(RowName.LatestEventSfDate, "")).strip()
         time_part = str(row.get(RowName.LatestEventSfTime, "")).strip()
-        if date_part.lower() not in ["", "nan"] and time_part.lower() not in ["", "nan"]:
-            return f"{date_part} {time_part}"
+        if date_part.lower() not in ["", "nan"]:
+            if time_part.lower() not in ["", "nan"]:
+                return f"{date_part} {time_part}"
+            else:
+                return date_part
         else:
             return ""
 
@@ -375,5 +385,62 @@ def auto(root_dir):
                 result)
 
 
+def update_yd_number(source_file, folder_path):
+    # 读取源文件（文件1）
+    df_source = pd.read_excel(source_file, dtype=str)
+    df_source.fillna('', inplace=True)
+
+    if "订单编号" not in df_source.columns or "平台回传单号" not in df_source.columns:
+        print("❌ 文件1中缺少必要列：订单编号 或 平台回传单号")
+        return
+
+    # 构建映射：订单编号 → 平台回传单号
+    mapping = dict(zip(df_source["订单编号"].str.strip(), df_source["平台回传单号"].str.strip()))
+    print(mapping)
+
+    # 遍历文件夹中的所有xlsx文件
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".xlsx"):
+            file_path = os.path.join(folder_path, filename)
+            try:
+                df = pd.read_excel(file_path, dtype=str)
+                df.fillna('', inplace=True)
+
+                # 如果“订单号”列存在
+                if "订单号" in df.columns:
+                    # 若“YD_Number/阳单号”列不存在，则创建
+                    if "YD_Number/阳单号" not in df.columns:
+                        df["YD_Number/阳单号"] = ""
+
+                    matched = False
+                    for i, order_id in df["订单号"].items():
+                        order_id = str(order_id).strip()
+                        print(order_id)
+                        if order_id in mapping:
+                            yd_number = mapping[order_id]
+                            df.at[i, "YD_Number/阳单号"] = yd_number
+                            print(f"✅ 匹配成功：文件：{file_path}，订单编号：{order_id}，平台回传单号：{yd_number}")
+                            matched = True
+
+                    if matched:
+                        df.to_excel(file_path, index=False)
+                else:
+                    print(f"⚠️ 文件 {file_path} 缺少“订单号”列，跳过")
+
+            except Exception as e:
+                print(f"❌ 文件 {file_path} 处理失败: {e}")
+
+
 if __name__ == '__main__':
-    auto("/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track")
+    select = "请选择功能："
+    select += "\n1：☀️写入阳单号"
+    select += "\n2：📊轨迹分析️"
+    select += "\n"
+    select_input = input(select)
+    if select_input == "1":
+        sun_path = input("请输入阳单号文件的路径:")
+        update_yd_number(sun_path, "/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track/2025.6")
+    elif select_input == "2":
+        auto("/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track")
+    else:
+        print("🈚️此项功能！")
