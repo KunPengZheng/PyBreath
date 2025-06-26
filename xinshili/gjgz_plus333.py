@@ -448,8 +448,11 @@ def update_courier_status(filepath, maps_list, wl=RowName.Tracking_No, column_ma
                             # 统一转为字符串并去除空白，过滤 nan
                             date_str = str(old_date).strip() if old_date not in [None, "nan", "NaT"] else ""
                             time_str = str(old_time).strip() if old_time not in [None, "nan", "NaT"] else ""
-                            if date_str and time_str:
-                                combined = f"{date_str} {time_str}"
+                            if date_str:
+                                if time_str:
+                                    combined = f"{date_str} {time_str}"
+                                else:
+                                    combined = f"{date_str} 00:00"
                                 sheet.cell(row=row_index, column=previous_event_col_index, value=combined)
 
                     # 正常写入新状态
