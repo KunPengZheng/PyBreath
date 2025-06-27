@@ -366,6 +366,7 @@ def auto(root_dir):
     value_range(token, FsConstants.gjgz_token, ClientMapConstants[ClientConstants.dxm_xyl_yd], f"A1:M{len(result)}",
                 result)
 
+
 def update_yd_number(source_file, folder_path):
     # 读取源文件（文件1）
     df_source = pd.read_excel(source_file, dtype=str)
@@ -375,8 +376,16 @@ def update_yd_number(source_file, folder_path):
         print("❌ 文件1中缺少必要列：订单编号 或 平台回传单号")
         return
 
+    # ✅ 仅保留“订单编号”和“平台回传单号”都不为空的有效记录
+    df_valid = df_source[
+        (df_source["订单编号"].str.strip() != "") &
+        (df_source["平台回传单号"].str.strip() != "")
+        ]
+
+    print(f"📋 阳单源文件中有效记录数：{len(df_valid)} 条")
+
     # 构建映射：订单编号 → 平台回传单号
-    mapping = dict(zip(df_source["订单编号"].str.strip(), df_source["平台回传单号"].str.strip()))
+    mapping = dict(zip(df_valid["订单编号"].str.strip(), df_valid["平台回传单号"].str.strip()))
 
     # 遍历文件夹中的所有 xlsx 文件
     for filename in os.listdir(folder_path):
