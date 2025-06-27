@@ -366,7 +366,6 @@ def auto(root_dir):
     value_range(token, FsConstants.gjgz_token, ClientMapConstants[ClientConstants.dxm_xyl_yd], f"A1:M{len(result)}",
                 result)
 
-
 def update_yd_number(source_file, folder_path):
     # 读取源文件（文件1）
     df_source = pd.read_excel(source_file, dtype=str)
@@ -378,9 +377,8 @@ def update_yd_number(source_file, folder_path):
 
     # 构建映射：订单编号 → 平台回传单号
     mapping = dict(zip(df_source["订单编号"].str.strip(), df_source["平台回传单号"].str.strip()))
-    print(mapping)
 
-    # 遍历文件夹中的所有xlsx文件
+    # 遍历文件夹中的所有 xlsx 文件
     for filename in os.listdir(folder_path):
         if filename.endswith(".xlsx"):
             file_path = os.path.join(folder_path, filename)
@@ -388,24 +386,22 @@ def update_yd_number(source_file, folder_path):
                 df = pd.read_excel(file_path, dtype=str)
                 df.fillna('', inplace=True)
 
-                # 如果“订单号”列存在
                 if "订单号" in df.columns:
-                    # 若“YD_Number/阳单号”列不存在，则创建
                     if "YD_Number/阳单号" not in df.columns:
                         df["YD_Number/阳单号"] = ""
 
-                    matched = False
+                    match_count = 0
                     for i, order_id in df["订单号"].items():
                         order_id = str(order_id).strip()
-                        print(order_id)
                         if order_id in mapping:
                             yd_number = mapping[order_id]
                             df.at[i, "YD_Number/阳单号"] = yd_number
                             print(f"✅ 匹配成功：文件：{file_path}，订单编号：{order_id}，平台回传单号：{yd_number}")
-                            matched = True
+                            match_count += 1
 
-                    if matched:
+                    if match_count > 0:
                         df.to_excel(file_path, index=False)
+                        print(f"📊 文件 {filename} 共匹配成功 {match_count} 条记录")
                 else:
                     print(f"⚠️ 文件 {file_path} 缺少“订单号”列，跳过")
 
