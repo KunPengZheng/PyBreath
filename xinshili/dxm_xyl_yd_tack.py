@@ -34,9 +34,10 @@ def process_tracking_time1(file_path):
     df = pd.read_excel(file_path)
 
     # 先排除状态为 unpaid、delivered、irregular_no_tracking 的行
-    df_filtered = df[~df[RowName.Courier].str.lower().isin([CourierStateMapValue.unpaid,
-                                                            CourierStateMapValue.delivered,
-                                                            CourierStateMapValue.irregular_no_tracking])].copy()
+    df_filtered = df[~df[RowName.Courier].str.lower().isin([
+        # CourierStateMapValue.unpaid,
+        # CourierStateMapValue.delivered,
+        CourierStateMapValue.irregular_no_tracking])].copy()
 
     intervals = []
     states = []
@@ -50,8 +51,15 @@ def process_tracking_time1(file_path):
             courier = str(row.get(RowName.Courier, "")).strip().lower()
             yd_number = str(row.get(RowName.YD_Number, "")).strip()
 
+            # 优先判断是否unpaid
+            if courier == CourierStateMapValue.unpaid:
+                intervals.append("")
+                states.append("邮资未付")
+                track_times.append(us_now)
+                continue
+
             # 优先判断是否已交付或已换阳单
-            if courier == "delivered":
+            if courier == CourierStateMapValue.delivered:
                 intervals.append("")
                 states.append("已经交付")
                 track_times.append(us_now)
