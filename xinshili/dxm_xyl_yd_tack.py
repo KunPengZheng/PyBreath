@@ -51,13 +51,6 @@ def process_tracking_time1(file_path):
             courier = str(row.get(RowName.Courier, "")).strip().lower()
             yd_number = str(row.get(RowName.YD_Number, "")).strip()
 
-            # 优先判断是否unpaid
-            if courier == CourierStateMapValue.unpaid:
-                intervals.append("")
-                states.append("邮资未付")
-                track_times.append(us_now)
-                continue
-
             # 优先判断是否已交付或已换阳单
             if courier == CourierStateMapValue.delivered:
                 intervals.append("")
@@ -65,7 +58,8 @@ def process_tracking_time1(file_path):
                 track_times.append(us_now)
                 continue
 
-            if yd_number and yd_number.lower() != "nan":
+            # 原来的运单号不能是unpaid，如果是unpaid要接着往下执行，进行补发提示
+            if yd_number and yd_number.lower() != "nan" and courier != CourierStateMapValue.unpaid:
                 intervals.append("")
                 states.append("已换阳单")
                 track_times.append(us_now)
@@ -118,6 +112,15 @@ def process_tracking_time1(file_path):
                 minutes_part = (total_seconds % 3600) // 60
                 interval_str = f"{hours_part:02}:{minutes_part:02}"
                 intervals.append(interval_str)
+
+                # 优先判断是否unpaid
+                if courier == CourierStateMapValue.unpaid:
+                    if hours <= 192:  # <=8天
+                        states.append("邮资未付<8天-需补发")
+                    else:
+                        states.append("邮资未付>8天-不补发")
+                    track_times.append(us_now)
+                    continue
 
                 if hours >= 72:
                     states.append("无法替换")
