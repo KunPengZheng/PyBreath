@@ -228,18 +228,56 @@ def extract_signature_receipt_time(text):
         return ""
 
 
-def extract_tracking_site_and_time(text):
-    # 提取时间并转为 24 小时格式
-    time_match = re.search(r'\bat\s+([\d:]+\s*[apAP][mM])', text)
+def extract_tracking_site_and_time11111(text, old_date: str = "", old_time: str = "", new_date: str = ""):
+    """
+    提取轨迹中的时间（24小时格式）和地址信息，并判断是否比已有时间更新。
+    只有当 (new_date + 提取时间) > (old_date + old_time) 才返回新时间，否则返回 ""。
+
+    :param text: 轨迹文本
+    :param old_date: 原始记录的日期（YYYY-MM-DD）
+    :param old_time: 原始记录的时间（HH:MM）
+    :param new_date: 当前最新记录日期（YYYY-MM-DD）
+    :return: (24小时格式时间字符串, 位置字符串)
+    """
     time_24h = ""
+
+    # 提取时间
+    time_match = re.search(r'\bat\s+([\d:]+\s*[apAP][mM])', text)
+    candidate_time = None
     if time_match:
         time_str = time_match.group(1).strip()
         try:
             time_obj = datetime.strptime(time_str, "%I:%M %p")
-            time_24h = time_obj.strftime("%H:%M")
+            candidate_time = time_obj.strftime("%H:%M")
         except ValueError:
-            time_24h = "时间格式错误"
+            pass  # 保持 candidate_time 为 None
 
+    # 判断是否要更新 time
+    try:
+        has_old_date = old_date and old_date.lower() not in ["", "nan"]  # 旧的日期存在且不是空或 nan
+        has_old_time = old_time and old_time.lower() not in ["", "nan"]  # has_old_time：旧的时间存在且不是空或 nan
+        has_new_date = new_date and new_date.lower() not in ["", "nan"]  # has_new_date：新的时间所对应的日期必须有效
+        has_candidate_time = candidate_time is not None  # 是否成功提取出新时间（如“17:41”）
+
+        if has_new_date and (has_old_date or has_old_time):  # 有新日期，并且之前的时间或日期有一个有效，就进入比较逻辑
+            old_time_fixed = old_time if has_old_time else "00:00"  # 如果旧时间为空，则默认它为当天凌晨 00:00
+            old_dt = datetime.strptime(f"{old_date} {old_time_fixed}", "%Y-%m-%d %H:%M")
+            new_time_fixed = candidate_time if has_candidate_time else "00:00"  # 如果没有提取出新时间，就假设是 00:00，这样也能与旧时间比较。
+            new_dt = datetime.strptime(f"{new_date} {new_time_fixed}", "%Y-%m-%d %H:%M")
+
+            if new_dt > old_dt:  # 只有当新时间整体比旧时间“更晚”才更新。
+                # ✅ 如果有新时间，就用新时间（如 17:41）; ❌ 如果没有提取出时间（例如 “in transit…”），返回 ""
+                time_24h = candidate_time if has_candidate_time else ""
+            else:
+                # 这个逻辑基本不会执行到
+                time_24h = ""
+        else:
+            # 没有 old_time/old_date，可接受新时间
+            time_24h = candidate_time if has_candidate_time else ""
+    except Exception:
+        time_24h = candidate_time if candidate_time else ""
+
+    # 提取地点
     moving = "transit to the next facility"
     # 尝试匹配 "in xxx." 这种结构（例如 in NORCO, CA 92860.）
     in_match = re.search(r'\bin\s+([A-Z0-9 ,\-]+)[\.\n]?', text)
@@ -253,14 +291,12 @@ def extract_tracking_site_and_time(text):
         location = in_match.group(1).strip()
     elif our_on_match:
         location = our_on_match.group(1).strip()
-    else:
-        "未知地点"
 
     return time_24h, location
 
 
 def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
-                             request_interval: float = 30.0, ckjs_flag=False):
+                             request_interval: float = 30.0, ckjs_flag=False, dxm_xyl_yd_flag=False):
     data = pd.read_excel(filepath)
 
     if column_name not in data.columns:
@@ -331,24 +367,6 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                 else:
                     statusLong = info.get('statusLong')
                     statusCategory = info.get('statusCategory')
-                    if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
-                            statusLong:
-                        results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
-                    elif "Delivered" in statusCategory or "Delivered to Agent" in statusCategory:
-                        results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
-                        receipt_time = extract_signature_receipt_time(statusLong)
-                        results_map[CourierStateMapKey.delivered_time_map][package_id] = receipt_time
-                    elif "Alert" in statusCategory:
-                        results_map[CourierStateMapKey.alert_map][package_id] = CourierStateMapValue.alert
-                        time_24h, site_location = extract_tracking_site_and_time(statusLong)
-                        results_map[CourierStateMapKey.latest_event_sf_time_map][package_id] = time_24h
-                        results_map[CourierStateMapKey.latest_event_sf_site_map][package_id] = site_location
-                    else:
-                        results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
-                        time_24h, site_location = extract_tracking_site_and_time(statusLong)
-                        results_map[CourierStateMapKey.latest_event_sf_time_map][package_id] = time_24h
-                        results_map[CourierStateMapKey.latest_event_sf_site_map][package_id] = site_location
-
                     latestEventSfDateTimeStr = info.get("latestEventSfDateTime")
                     possessionSfDateTimeStr = info.get("possessionSfDateTime")
                     statusShortStr = info.get("statusShort")
@@ -381,6 +399,52 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                     results_map[CourierStateMapKey.possession_sf_date_map][package_id] = possessionSfDateTimeGroup
                     results_map[CourierStateMapKey.latest_event_sf_date_map][package_id] = latestEventSfDateTimeGroup
                     results_map[CourierStateMapKey.sf_date_equality_map][package_id] = int(days_diff)
+
+                    if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
+                            statusLong:
+                        results_map[CourierStateMapKey.unpaid_map][package_id] = CourierStateMapValue.unpaid
+                    elif "Delivered" in statusCategory or "Delivered to Agent" in statusCategory:
+                        results_map[CourierStateMapKey.delivered_map][package_id] = CourierStateMapValue.delivered
+                        receipt_time = extract_signature_receipt_time(statusLong)
+                        results_map[CourierStateMapKey.delivered_time_map][package_id] = receipt_time
+                    elif "Alert" in statusCategory:
+                        results_map[CourierStateMapKey.alert_map][package_id] = CourierStateMapValue.alert
+
+                        if dxm_xyl_yd_flag:
+                            # 提取已有时间以供比较
+                            existing_date = data.loc[data[wl_name] == package_id, RowName.LatestEventSfDate].values[
+                                0] \
+                                if RowName.LatestEventSfDate in data.columns else ""
+                            existing_time = data.loc[data[wl_name] == package_id, RowName.LatestEventSfTime].values[
+                                0] \
+                                if RowName.LatestEventSfTime in data.columns else ""
+
+                            time_24h, site_location = extract_tracking_site_and_time11111(statusLong,
+                                                                                          str(existing_date),
+                                                                                          str(existing_time),
+                                                                                          latestEventSfDateTimeGroup)
+
+                            results_map[CourierStateMapKey.latest_event_sf_time_map][package_id] = time_24h
+                            results_map[CourierStateMapKey.latest_event_sf_site_map][package_id] = site_location
+                    else:
+                        results_map[CourierStateMapKey.tracking_map][package_id] = CourierStateMapValue.tracking
+
+                        if dxm_xyl_yd_flag:
+                            # 提取已有时间以供比较
+                            existing_date = data.loc[data[wl_name] == package_id, RowName.LatestEventSfDate].values[
+                                0] \
+                                if RowName.LatestEventSfDate in data.columns else ""
+                            existing_time = data.loc[data[wl_name] == package_id, RowName.LatestEventSfTime].values[
+                                0] \
+                                if RowName.LatestEventSfTime in data.columns else ""
+
+                            time_24h, site_location = extract_tracking_site_and_time11111(statusLong,
+                                                                                          str(existing_date),
+                                                                                          str(existing_time),
+                                                                                          latestEventSfDateTimeGroup)
+
+                            results_map[CourierStateMapKey.latest_event_sf_time_map][package_id] = time_24h
+                            results_map[CourierStateMapKey.latest_event_sf_site_map][package_id] = site_location
 
             # 等待指定的间隔时间，避免请求频率过高
             time.sleep(request_interval)
