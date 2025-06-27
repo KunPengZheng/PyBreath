@@ -57,15 +57,15 @@ def process_tracking_time1(file_path):
                 except Exception:
                     base_us_time = None
 
-            if base_us_time:
-                base_diff = us_now - base_us_time
-                base_hours = round(base_diff.total_seconds() / 3600, 2)
-
-                if base_hours > 72:  # 如果 当前时间 - 发货时间 > 72 小时，默认不能再替换运单号。但是结果结果不一定卡死再72小时，而且不包含周末和节假日
-                    intervals.append(base_hours)
-                    states.append("无法替换")
-                    track_times.append(us_now)
-                    continue  # 跳过后续判断
+            # if base_us_time:
+            #     base_diff = us_now - base_us_time
+            #     base_hours = round(base_diff.total_seconds() / 3600, 2)
+            #
+            #     if base_hours > 72:  # 如果 当前时间 - 发货时间 > 72 小时，默认不能再替换运单号。但是结果结果不一定卡死再72小时，而且不包含周末和节假日
+            #         intervals.append(base_hours)
+            #         states.append("无法替换")
+            #         track_times.append(us_now)
+            #         continue  # 跳过后续判断
 
             # 最新事件时间
             date_str = str(row.get(RowName.LatestEventSfDate, "")).strip()
@@ -85,10 +85,10 @@ def process_tracking_time1(file_path):
                     latest_date_time_str = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
                 else:  # 不存在最新事件时间
                     latest_date_time_str = datetime.strptime(f"{date_str}", "%Y-%m-%d")
-                if last_flag:  # 存在上一条事件时间
-                    diff = latest_date_time_str - datetime.strptime(f"{last_time_str}", "%Y-%m-%d %H:%M")
-                else:  # 不存在上一条事件时间
-                    diff = us_now - latest_date_time_str
+                # if last_flag:  # 存在上一条事件时间
+                #     diff = latest_date_time_str - datetime.strptime(f"{last_time_str}", "%Y-%m-%d %H:%M")
+                # else:  # 不存在上一条事件时间
+                diff = us_now - latest_date_time_str
             else:
                 if outbound_time_flag:
                     creation_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
@@ -141,7 +141,8 @@ def create_fs_xlsx_file(file_path):
     # 定义表头
     columns = [
         RowName.Pay_Time, RowName.Ship_Time, RowName.Order_Num, RowName.Track_Num,
-        RowName.Track_State, RowName.Analyse_State, RowName.Last_Track_Time,
+        RowName.Track_State, RowName.Analyse_State,
+        # RowName.Last_Track_Time,
         RowName.Latest_Track_Site, RowName.Latest_Track_Time, RowName.Interval_Time, RowName.Process_Time,
         RowName.YD_Number2, RowName.YD_State2
     ]
@@ -177,7 +178,7 @@ def export_yd_data(source_file, target_file):
         RowName.Track_Num: df[RowName.Track_Num].astype(str),
         RowName.Track_State: df[RowName.Courier],
         RowName.Analyse_State: df[RowName.Tacking_Time],
-        RowName.Last_Track_Time: df[RowName.LastEventSfTime],
+        # RowName.Last_Track_Time: df[RowName.LastEventSfTime],
         RowName.Latest_Track_Site: df[RowName.LatestEventSfSite],
         RowName.Latest_Track_Time: df[RowName.Latest_Track_Time],
         RowName.Interval_Time: df[RowName.TrackTimeInterval],
@@ -250,7 +251,7 @@ def force_write_order_ids_to_excel(file_path: str, order_ids: list[str], column_
 
 
 def usps_track(xlsx_path, column_name, wl_name):
-    results = extract_and_process_data(xlsx_path, column_name, 100, wl_name=wl_name)
+    results = extract_and_process_data(xlsx_path, column_name, 100, wl_name=wl_name, dxm_xyl_yd_flag=True)
     all_maps = {}
     column_mapping = {}
     if wl_name == RowName.Track_Num:
@@ -316,19 +317,19 @@ def usps_track(xlsx_path, column_name, wl_name):
 
 
 def go(xlsx_path, dxm_xyl_track_merger):
-    order_ids = extract_order_ids_as_str(xlsx_path)
-
-    check_and_add_courier_column(xlsx_path)
-
-    process_tracking_no(xlsx_path, RowName.Track_Num)
-    process_tracking_no(xlsx_path, RowName.YD_Number)
-
-    usps_track(xlsx_path, RowName.Courier, RowName.Track_Num)
-    usps_track(xlsx_path, RowName.YD_State, RowName.YD_Number)
+    # order_ids = extract_order_ids_as_str(xlsx_path)
+    #
+    # check_and_add_courier_column(xlsx_path)
+    #
+    # process_tracking_no(xlsx_path, RowName.Track_Num)
+    # process_tracking_no(xlsx_path, RowName.YD_Number)
+    #
+    # usps_track(xlsx_path, RowName.Courier, RowName.Track_Num)
+    # usps_track(xlsx_path, RowName.YD_State, RowName.YD_Number)
 
     process_tracking_time1(xlsx_path)
-    force_write_order_ids_to_excel(xlsx_path, order_ids)
-    export_yd_data(xlsx_path, dxm_xyl_track_merger)
+    # force_write_order_ids_to_excel(xlsx_path, order_ids)
+    # export_yd_data(xlsx_path, dxm_xyl_track_merger)
 
 
 def auto(root_dir):
@@ -360,11 +361,11 @@ def auto(root_dir):
                         print(f"正在处理文件: {xlsx_path}")
                         go(xlsx_path, dxm_xyl_track_merger)
 
-    result = get_xlsx_data_len(dxm_xyl_track_merger)
-    token = get_token()
-    # dimension_range(token, FsConstants.gjgz_token,  ClientMapConstants[ClientConstants.dxm_xyl_yd], 1, 12, majorDimension=FsConstants.COLUMNS)
-    value_range(token, FsConstants.gjgz_token, ClientMapConstants[ClientConstants.dxm_xyl_yd], f"A1:M{len(result)}",
-                result)
+    # result = get_xlsx_data_len(dxm_xyl_track_merger)
+    # token = get_token()
+    # # dimension_range(token, FsConstants.gjgz_token,  ClientMapConstants[ClientConstants.dxm_xyl_yd], 1, 12, majorDimension=FsConstants.COLUMNS)
+    # value_range(token, FsConstants.gjgz_token, ClientMapConstants[ClientConstants.dxm_xyl_yd], f"A1:L{len(result)}",
+    #             result)
 
 
 def update_yd_number(source_file, folder_path):
