@@ -364,6 +364,8 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                     results_map[CourierStateMapKey.possession_sf_date_map][package_id] = ""
                     results_map[CourierStateMapKey.latest_event_sf_date_map][package_id] = ""
                     results_map[CourierStateMapKey.sf_date_equality_map][package_id] = 0
+                    results_map[CourierStateMapKey.latest_event_sf_time_map][package_id] = ""
+                    results_map[CourierStateMapKey.latest_event_sf_site_map][package_id] = ""
                 else:
                     statusLong = info.get('statusLong')
                     statusCategory = info.get('statusCategory')
@@ -399,6 +401,8 @@ def extract_and_process_data(filepath: str, column_name: str, group_size: int, w
                     results_map[CourierStateMapKey.possession_sf_date_map][package_id] = possessionSfDateTimeGroup
                     results_map[CourierStateMapKey.latest_event_sf_date_map][package_id] = latestEventSfDateTimeGroup
                     results_map[CourierStateMapKey.sf_date_equality_map][package_id] = int(days_diff)
+                    results_map[CourierStateMapKey.latest_event_sf_time_map][package_id] = ""
+                    results_map[CourierStateMapKey.latest_event_sf_site_map][package_id] = ""
 
                     if "The package associated with this tracking number did not have proper postage applied and will not be delivered" in \
                             statusLong:
