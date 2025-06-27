@@ -186,24 +186,6 @@ def export_yd_data(source_file, target_file):
         RowName.YD_State2: df[RowName.YD_State],
     })
 
-    # 判断目标文件是否存在
-    if not os.path.exists(target_file):
-        # 创建新文件
-        wb = Workbook()
-        ws = wb.active
-
-        for i, row in enumerate(dataframe_to_rows(export_df, index=False, header=True)):
-            for j, value in enumerate(row, 1):
-                cell = ws.cell(row=i + 1, column=j, value=value)
-
-                # 设置“订单号”和“运单号”为文本格式
-                if ws.cell(row=1, column=j).value in [RowName.Order_Num, RowName.Track_Num]:
-                    cell.number_format = "@"
-
-        wb.save(target_file)
-        print(f"✅ 创建新文件并导出至：{target_file}")
-        return len(export_df)
-
     # 文件已存在 → 打开并追加
     wb = load_workbook(target_file)
     ws = wb.active
