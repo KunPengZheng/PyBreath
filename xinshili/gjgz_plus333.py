@@ -265,7 +265,7 @@ def extract_tracking_site_and_time11111(text, old_date: str = "", old_time: str 
             new_time_fixed = candidate_time if has_candidate_time else "00:00"  # 如果没有提取出新时间，就假设是 00:00，这样也能与旧时间比较。
             new_dt = datetime.strptime(f"{new_date} {new_time_fixed}", "%Y-%m-%d %H:%M")
 
-            if new_dt > old_dt:  # 只有当新时间整体比旧时间“更晚”才更新。
+            if new_dt >= old_dt:  # 只有当新时间整体比旧时间“更晚”才更新。
                 # ✅ 如果有新时间，就用新时间（如 17:41）; ❌ 如果没有提取出时间（例如 “in transit…”），返回 ""
                 time_24h = candidate_time if has_candidate_time else ""
             else:
