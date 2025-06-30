@@ -68,13 +68,13 @@ def process_tracking_time1(file_path):
             # 如果没有触发上面两个判断，则进入常规时间判断逻辑
             outbound_time_str = str(row.get("发货时间", "")).strip()
 
-            base_us_time = None
-            if outbound_time_str and outbound_time_str.lower() != "nan":
-                try:
-                    creation_china_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
-                    base_us_time = convert_china_to_utc(creation_china_time)
-                except Exception:
-                    base_us_time = None
+            # base_us_time = None
+            # if outbound_time_str and outbound_time_str.lower() != "nan":
+            #     try:
+            #         creation_china_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
+            #         base_us_time = convert_china_to_utc(creation_china_time)
+            #     except Exception:
+            #         base_us_time = None
 
             # if base_us_time:
             #     base_diff = us_now - base_us_time
@@ -116,9 +116,9 @@ def process_tracking_time1(file_path):
                 # 优先判断是否unpaid
                 if courier == CourierStateMapValue.unpaid:
                     if hours <= 192:  # <=8天
-                        states.append("邮资未付<8天-需补发")
+                        states.append("邮资未付<=8天")
                     else:
-                        states.append("邮资未付>8天-不补发")
+                        states.append("邮资未付>8天")
                     track_times.append(us_now)
                     continue
 
