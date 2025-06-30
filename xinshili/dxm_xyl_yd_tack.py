@@ -411,16 +411,16 @@ def update_yd_number(source_file, folder_path):
                 df = pd.read_excel(file_path, dtype=str)
                 df.fillna('', inplace=True)
 
-                if "订单号" in df.columns:
-                    if "YD_Number/阳单号" not in df.columns:
-                        df["YD_Number/阳单号"] = ""
+                if RowName.Order_Num in df.columns:
+                    if RowName.YD_Number not in df.columns:
+                        df[RowName.YD_Number] = ""
 
                     match_count = 0
-                    for i, order_id in df["订单号"].items():
+                    for i, order_id in df[RowName.Order_Num].items():
                         order_id = str(order_id).strip()
                         if order_id in mapping:
                             yd_number = mapping[order_id]
-                            df.at[i, "YD_Number/阳单号"] = yd_number
+                            df.at[i, RowName.YD_Number] = yd_number
                             print(f"✅ 匹配成功：文件：{file_path}，订单编号：{order_id}，平台回传单号：{yd_number}")
                             match_count += 1
 
