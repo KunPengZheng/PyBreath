@@ -27,8 +27,8 @@ zbw轨迹跟踪分析
 class RowName:
     Tracking_No = 'Tracking No./物流跟踪号'
     Courier = 'Courier/快递'
-    OutboundTime = "Creation time/创建时间"
-    OutboundTime2 = "OutboundTime/出库时间"
+    CreationTime = "Creation time/创建时间"
+    OutboundTime = "OutboundTime/出库时间"
     Warehouse = "Warehouse/仓库"
     Client = "Client/客户"
     CreationWaveTime = "Create wave time/生成波次时间"
@@ -987,7 +987,7 @@ def check_and_add_courier_column(file_path):
         print(f"发生错误: {e}")
 
 
-def get_days_difference(file_path, column_name=RowName.OutboundTime):
+def get_days_difference(file_path, column_name=RowName.CreationTime):
     try:
         workbook = load_workbook(file_path, data_only=True)
         sheet = workbook.active
@@ -1093,7 +1093,7 @@ def get_shipment_received_numbers(filepath, gz_time):
     header = [cell.value for cell in sheet[1]]
 
     # 确保所有必要的列都存在
-    required_columns = [RowName.Courier, RowName.SfDateInterval, RowName.OutboundTime2, RowName.Tracking_No]
+    required_columns = [RowName.Courier, RowName.SfDateInterval, RowName.OutboundTime, RowName.Tracking_No]
 
     # 获取每个必要列的索引（列索引从 0 开始）
     column_indices = {}
@@ -1110,7 +1110,7 @@ def get_shipment_received_numbers(filepath, gz_time):
     for row in sheet.iter_rows(min_row=2, values_only=True):
         courier = row[column_indices[RowName.Courier]]
         sf_date_interval = row[column_indices[RowName.SfDateInterval]]
-        outbound_time = row[column_indices[RowName.OutboundTime2]]
+        outbound_time = row[column_indices[RowName.OutboundTime]]
         tracking_no = row[column_indices[RowName.Tracking_No]]
 
         # 筛选条件：Courier == 'tracking' 且 SfDateInterval == '0'
@@ -1148,7 +1148,7 @@ def get_filtered_count(filepath, gz_time, target_column, target_value):
     df = pd.read_excel(filepath, dtype=str)
 
     # 确保需要的列存在
-    required_columns = {RowName.Courier, RowName.SfDateInterval, RowName.OutboundTime2, target_column}
+    required_columns = {RowName.Courier, RowName.SfDateInterval, RowName.OutboundTime, target_column}
     if not required_columns.issubset(df.columns):
         raise ValueError(f"Excel 文件缺少必要的列: {required_columns - set(df.columns)}")
 
@@ -1184,7 +1184,7 @@ def get_filtered_count(filepath, gz_time, target_column, target_value):
         except ValueError:
             return False  # 解析失败则跳过
 
-    filtered_df = filtered_df[filtered_df[RowName.OutboundTime2].apply(check_outbound_time)]
+    filtered_df = filtered_df[filtered_df[RowName.OutboundTime].apply(check_outbound_time)]
 
     # 返回符合条件的数据数量
     return len(filtered_df)
@@ -1572,8 +1572,6 @@ def go(analyse_obj, xlsx_path):
 
     text = ""
 
-    # 当前时间
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # 文件的创建时间
     ck_time = get_days_difference(xlsx_path)
     # 获取跟踪日期（调用程序的当天）
@@ -1599,7 +1597,7 @@ def go(analyse_obj, xlsx_path):
     date_obj1 = datetime.strptime(gz_time, "%Y/%m/%d").date()
     previous_day1 = date_obj1 - timedelta(days=1)
     Update_Time = ""
-    Update_Time += current_time
+    Update_Time += datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     Update_Time += f"\n{get_weekday(gz_time)}"
     us_holiday1 = get_american_holiday(previous_day1)
     if us_holiday1:
