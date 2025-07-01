@@ -14,7 +14,7 @@ from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_proc
 from xinshili.utils import natural_key
 
 
-def convert_china_to_utc(china_time: datetime) -> datetime:
+def convert_china_to_utc0(china_time: datetime) -> datetime:
     """
     将中国时间转换为零时区（UTC/Zulu Time），忽略夏令时
     :param china_time: 中国时间 datetime 对象（无 tzinfo 或本地时间）
@@ -44,7 +44,7 @@ def process_tracking_time1(file_path):
     track_times = []
 
     # 当前中国时间转换为零时区时间，因为usps接口返回的时间是领时区的
-    us_now = convert_china_to_utc(datetime.now())
+    utc0_now = convert_china_to_utc0(datetime.now())
 
     for idx, row in df_filtered.iterrows():
         try:
@@ -55,14 +55,14 @@ def process_tracking_time1(file_path):
             if courier == CourierStateMapValue.delivered:
                 intervals.append("")
                 states.append("已经交付")
-                track_times.append(us_now)
+                track_times.append(utc0_now)
                 continue
 
             # 原来的运单号不能是unpaid，如果是unpaid要接着往下执行，进行补发提示
             if yd_number and yd_number.lower() != "nan" and courier != CourierStateMapValue.unpaid:
                 intervals.append("")
                 states.append("已换阳单")
-                track_times.append(us_now)
+                track_times.append(utc0_now)
                 continue
 
             # 如果没有触发上面两个判断，则进入常规时间判断逻辑
@@ -77,13 +77,13 @@ def process_tracking_time1(file_path):
             #         base_us_time = None
 
             # if base_us_time:
-            #     base_diff = us_now - base_us_time
+            #     base_diff = utc0_now - base_us_time
             #     base_hours = round(base_diff.total_seconds() / 3600, 2)
             #
             #     if base_hours > 72:  # 如果 当前时间 - 发货时间 > 72 小时，默认不能再替换运单号。但是结果结果不一定卡死再72小时，而且不包含周末和节假日
             #         intervals.append(base_hours)
             #         states.append("无法替换")
-            #         track_times.append(us_now)
+            #         track_times.append(utc0_now)
             #         continue  # 跳过后续判断
 
             # 最新事件时间
@@ -100,10 +100,10 @@ def process_tracking_time1(file_path):
                     latest_date_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
                 else:
                     latest_date_time = datetime.strptime(f"{date_str}", "%Y-%m-%d")
-                diff = us_now - latest_date_time
+                diff = utc0_now - latest_date_time
             elif outbound_time_flag:
                 creation_time = datetime.strptime(ship_time_str, "%Y-%m-%d %H:%M:%S")
-                diff = us_now - convert_china_to_utc(creation_time)
+                diff = utc0_now - convert_china_to_utc0(creation_time)
 
             if diff is not None:
                 hours = round(diff.total_seconds() / 3600, 2)
@@ -119,7 +119,7 @@ def process_tracking_time1(file_path):
                         states.append("邮资未付<=8天")
                     else:
                         states.append("邮资未付>8天")
-                    track_times.append(us_now)
+                    track_times.append(utc0_now)
                     continue
 
                 if hours >= 72:
@@ -134,13 +134,13 @@ def process_tracking_time1(file_path):
                 intervals.append(None)
                 states.append("")
 
-            track_times.append(us_now)
+            track_times.append(utc0_now)
 
         except Exception as e:
             print(f"⚠️ 第 {idx} 行处理失败: {e}")
             intervals.append(None)
             states.append("")
-            track_times.append(us_now)
+            track_times.append(utc0_now)
 
     df_filtered[RowName.TrackTimeInterval] = intervals
     df_filtered[RowName.TrackTimeIntervalState] = states
