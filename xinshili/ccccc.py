@@ -1,14 +1,10 @@
 import pandas as pd
 import shutil
 import os
+from collections import defaultdict
 
 
-def update_sales_data(file1_path, file2_path, output_dir):
-    # 创建输出文件路径（复制一份文件2）
-    base_name = os.path.basename(file2_path)
-    output_path = os.path.join(output_dir, f"updated_{base_name}")
-    shutil.copy(file2_path, output_path)
-
+def update_sales_data(file1_path, output_path):
     # 读取文件1和复制后的文件2
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
     df2 = pd.read_excel(output_path, sheet_name=None, dtype=str)
@@ -37,7 +33,11 @@ def update_sales_data(file1_path, file2_path, output_dir):
             sheet["数量"] = sheet["SKU"].apply(lambda x: sku_sum_map.get(str(x).strip(), 0))
         updated_sheets["销量更新"] = sheet
 
-    # 保存修改后的复制文件
+    # --- 库存更新表（直接复制） ---
+    if "库存更新" in df2:
+        updated_sheets["库存更新"] = df2["库存更新"].copy()
+
+    # 写入更新后的 sheet
     with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
         for sheet_name, df_sheet in updated_sheets.items():
             df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
@@ -74,7 +74,14 @@ if __name__ == '__main__':
     data_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics/order_120250630095056152_1573179.xlsx"
     dir_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics"
     template_path = f"{dir_path}/xyl运营统计.xlsx"
-    update_sales_data(data_path, template_path, dir_path)
+    template_copy_path = f"{dir_path}/xyl运营统计_copy.xlsx"
+
+    # 创建输出文件路径（复制一份文件2）
+    template_copy_path = os.path.join(template_path, template_copy_path)
+    shutil.copy(template_path, template_copy_path)
+
+    # 更新店铺和sku的销量
+    update_sales_data(data_path, template_copy_path)
 
     oms_store_dir = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics/oms_store"
     oms_store_merger_path = f"{oms_store_dir}/oms_store_merger.xlsx"
