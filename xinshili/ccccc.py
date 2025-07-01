@@ -70,6 +70,44 @@ def merge_excels_in_folder(folder_path, output_path):
     print(f"\n✅ 合并完成，保存路径：{output_path}")
 
 
+def update_available_inventory(file1_path, file2_path, output_path):
+    # 读取文件1
+    df1 = pd.read_excel(file1_path, dtype=str)
+    df1.fillna('', inplace=True)
+
+    # 构建 SKU → 可用库存总和 map
+    sku_inventory_map = defaultdict(float)
+    for _, row in df1.iterrows():
+        sku = row.get("SKU", "").strip()
+        inv = row.get("Available Inventory/可用库存", "").strip()
+        try:
+            inv_val = float(inv)
+        except:
+            inv_val = 0
+        if sku:
+            sku_inventory_map[sku] += inv_val
+
+    # 读取文件2所有 Sheet
+    df2_sheets = pd.read_excel(file2_path, sheet_name=None, dtype=str)
+
+    # 修改库存更新 Sheet
+    if "库存更新" in df2_sheets:
+        df_kc = df2_sheets["库存更新"].copy()
+        df_kc.fillna('', inplace=True)
+        if "SKU" in df_kc.columns and "可用量" in df_kc.columns:
+            df_kc["可用量"] = df_kc["SKU"].apply(lambda x: sku_inventory_map.get(str(x).strip(), 0))
+        df2_sheets["库存更新"] = df_kc
+    else:
+        print("⚠️ 文件2中未找到 sheet：库存更新，已跳过更新")
+
+    # 写入所有 sheet（保留原有的）
+    with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+        for sheet_name, df_sheet in df2_sheets.items():
+            df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    print(f"✅ 已更新“库存更新”并保存至：{output_path}")
+
+
 if __name__ == '__main__':
     data_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics/order_120250630095056152_1573179.xlsx"
     dir_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics"
@@ -86,3 +124,5 @@ if __name__ == '__main__':
     oms_store_dir = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics/oms_store"
     oms_store_merger_path = f"{oms_store_dir}/oms_store_merger.xlsx"
     merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
+
+    update_available_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
