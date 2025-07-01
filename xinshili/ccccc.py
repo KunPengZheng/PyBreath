@@ -108,6 +108,48 @@ def update_available_inventory(file1_path, file2_path, output_path):
     print(f"✅ 已更新“库存更新”并保存至：{output_path}")
 
 
+def update_shipping_inventory(file1_path, file2_path, output_path):
+    # 读取文件1
+    df1 = pd.read_excel(file1_path, dtype=str).fillna("")
+
+    print(df1.columns.tolist())
+
+    # 数值列先转换为 float 以便求和
+    df1["海运在途"] = pd.to_numeric(df1.get("海运在途", 0), errors="coerce").fillna(0)
+    df1["空运在途"] = pd.to_numeric(df1.get("空运在途", 0), errors="coerce").fillna(0)
+
+    # SKU → 海运在途/空运在途 的映射
+    sea_map = defaultdict(float)
+    air_map = defaultdict(float)
+
+    for _, row in df1.iterrows():
+        sku = row.get("SKU", "").strip()
+        if sku:
+            sea_map[sku] += row["海运在途"]
+            air_map[sku] += row["空运在途"]
+
+    # 打开文件2，读取所有 sheet
+    xls = pd.ExcelFile(file2_path)
+    writer = pd.ExcelWriter(output_path, engine="openpyxl")
+
+    for sheet_name in xls.sheet_names:
+        df_sheet = pd.read_excel(xls, sheet_name=sheet_name, dtype=str).fillna("")
+
+        if sheet_name == "库存更新":
+            if "SKU" in df_sheet.columns:
+                # 创建/更新 “海运在途” 和 “空运在途” 两列
+                df_sheet["海运在途"] = df_sheet["SKU"].apply(
+                    lambda x: sea_map.get(str(x).strip(), 0))
+                df_sheet["空运在途"] = df_sheet["SKU"].apply(
+                    lambda x: air_map.get(str(x).strip(), 0))
+
+        # 保存所有 sheet（不论是否更新）
+        df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    writer.close()
+    print(f"✅ 更新已保存至：{output_path}")
+
+
 if __name__ == '__main__':
     data_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics/order_120250630095056152_1573179.xlsx"
     dir_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics"
@@ -121,8 +163,11 @@ if __name__ == '__main__':
     # 更新店铺和sku的销量
     update_sales_data(data_path, template_copy_path)
 
-    oms_store_dir = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics/oms_store"
+    oms_store_dir = f"{dir_path}/oms_store"
     oms_store_merger_path = f"{oms_store_dir}/oms_store_merger.xlsx"
     merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
 
+    dszs_shipping_freight = f"{dir_path}/table_1 (1).csv"
+
     update_available_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
+    update_shipping_inventory(dszs_shipping_freight, template_copy_path, template_copy_path)
