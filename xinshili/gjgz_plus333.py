@@ -1572,12 +1572,18 @@ def go(analyse_obj, xlsx_path):
 
     text = ""
 
+    # 当前时间
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # 文件的创建时间
     ck_time = get_days_difference(xlsx_path)
+    # 获取跟踪日期（调用程序的当天）
     gz_time = getYmd()
+    # 跟踪日期 - 创建时间
     interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
+    # 创建时间是否为美国周末
     is_usweekend = is_us_weekend(ck_time)
     date_obj = datetime.strptime(ck_time, "%Y/%m/%d").date()
+    # 创建时间的前一天
     previous_day = date_obj - timedelta(days=1)
 
     Outbound_Time = ""
