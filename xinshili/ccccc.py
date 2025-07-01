@@ -108,17 +108,15 @@ def update_available_inventory(file1_path, file2_path, output_path):
     print(f"✅ 已更新“库存更新”并保存至：{output_path}")
 
 
-def update_shipping_inventory(file1_path, file2_path, output_path):
-    # 读取文件1
-    df1 = pd.read_excel(file1_path, dtype=str).fillna("")
+def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
+    # 读取 CSV 文件（文件1）
+    df1 = pd.read_csv(csv_file_path, dtype=str).fillna("")
 
-    print(df1.columns.tolist())
-
-    # 数值列先转换为 float 以便求和
+    # 转换为数值，便于求和
     df1["海运在途"] = pd.to_numeric(df1.get("海运在途", 0), errors="coerce").fillna(0)
     df1["空运在途"] = pd.to_numeric(df1.get("空运在途", 0), errors="coerce").fillna(0)
 
-    # SKU → 海运在途/空运在途 的映射
+    # 构建 SKU → 海/空 运在途数量 Map
     sea_map = defaultdict(float)
     air_map = defaultdict(float)
 
@@ -128,26 +126,24 @@ def update_shipping_inventory(file1_path, file2_path, output_path):
             sea_map[sku] += row["海运在途"]
             air_map[sku] += row["空运在途"]
 
-    # 打开文件2，读取所有 sheet
-    xls = pd.ExcelFile(file2_path)
-    writer = pd.ExcelWriter(output_path, engine="openpyxl")
+    # 读取 Excel 所有工作表
+    xls = pd.read_excel(xlsx_file_path, sheet_name=None, dtype=str)
+    updated_sheets = {}
 
-    for sheet_name in xls.sheet_names:
-        df_sheet = pd.read_excel(xls, sheet_name=sheet_name, dtype=str).fillna("")
+    for sheet_name, df_sheet in xls.items():
+        df_sheet = df_sheet.fillna("")
+        if sheet_name == "库存更新" and "SKU" in df_sheet.columns:
+            # 更新库存更新表的海运在途和空运在途
+            df_sheet["海运在途"] = df_sheet["SKU"].apply(lambda x: sea_map.get(str(x).strip(), 0))
+            df_sheet["空运在途"] = df_sheet["SKU"].apply(lambda x: air_map.get(str(x).strip(), 0))
+        updated_sheets[sheet_name] = df_sheet
 
-        if sheet_name == "库存更新":
-            if "SKU" in df_sheet.columns:
-                # 创建/更新 “海运在途” 和 “空运在途” 两列
-                df_sheet["海运在途"] = df_sheet["SKU"].apply(
-                    lambda x: sea_map.get(str(x).strip(), 0))
-                df_sheet["空运在途"] = df_sheet["SKU"].apply(
-                    lambda x: air_map.get(str(x).strip(), 0))
+    # 写入到新文件，保留所有 sheet
+    with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
+        for sheet_name, df_sheet in updated_sheets.items():
+            df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
 
-        # 保存所有 sheet（不论是否更新）
-        df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
-
-    writer.close()
-    print(f"✅ 更新已保存至：{output_path}")
+    print(f"✅ 所有工作表已写入，库存更新已处理并保存至：{output_path}")
 
 
 if __name__ == '__main__':
