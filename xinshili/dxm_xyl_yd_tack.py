@@ -66,12 +66,12 @@ def process_tracking_time1(file_path):
                 continue
 
             # 如果没有触发上面两个判断，则进入常规时间判断逻辑
-            outbound_time_str = str(row.get("发货时间", "")).strip()
+            ship_time_str = str(row.get("发货时间", "")).strip()
 
             # base_us_time = None
-            # if outbound_time_str and outbound_time_str.lower() != "nan":
+            # if ship_time_str and ship_time_str.lower() != "nan":
             #     try:
-            #         creation_china_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
+            #         creation_china_time = datetime.strptime(ship_time_str, "%Y-%m-%d %H:%M:%S")
             #         base_us_time = convert_china_to_utc(creation_china_time)
             #     except Exception:
             #         base_us_time = None
@@ -92,7 +92,7 @@ def process_tracking_time1(file_path):
 
             date_flag = date_str and date_str.lower() != "nan"
             time_flag = time_str and time_str.lower() != "nan"
-            outbound_time_flag = outbound_time_str and outbound_time_str.lower() != "nan"
+            outbound_time_flag = ship_time_str and ship_time_str.lower() != "nan"
 
             diff = None
             if date_flag:
@@ -102,7 +102,7 @@ def process_tracking_time1(file_path):
                     latest_date_time = datetime.strptime(f"{date_str}", "%Y-%m-%d")
                 diff = us_now - latest_date_time
             elif outbound_time_flag:
-                creation_time = datetime.strptime(outbound_time_str, "%Y-%m-%d %H:%M:%S")
+                creation_time = datetime.strptime(ship_time_str, "%Y-%m-%d %H:%M:%S")
                 diff = us_now - convert_china_to_utc(creation_time)
 
             if diff is not None:
