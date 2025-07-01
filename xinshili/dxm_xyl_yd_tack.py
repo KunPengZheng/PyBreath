@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 
 import pandas as pd
 import os
+from zoneinfo import ZoneInfo
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.utils import get_column_letter
@@ -67,26 +68,6 @@ def process_tracking_time1(file_path):
 
             # 如果没有触发上面两个判断，则进入常规时间判断逻辑
             ship_time_str = str(row.get("发货时间", "")).strip()
-
-            # base_us_time = None
-            # if ship_time_str and ship_time_str.lower() != "nan":
-            #     try:
-            #         creation_china_time = datetime.strptime(ship_time_str, "%Y-%m-%d %H:%M:%S")
-            #         base_us_time = convert_china_to_utc(creation_china_time)
-            #     except Exception:
-            #         base_us_time = None
-
-            # if base_us_time:
-            #     base_diff = utc0_now - base_us_time
-            #     base_hours = round(base_diff.total_seconds() / 3600, 2)
-            #
-            #     if base_hours > 72:  # 如果 当前时间 - 发货时间 > 72 小时，默认不能再替换运单号。但是结果结果不一定卡死再72小时，而且不包含周末和节假日
-            #         intervals.append(base_hours)
-            #         states.append("无法替换")
-            #         track_times.append(utc0_now)
-            #         continue  # 跳过后续判断
-
-            # 最新事件时间
             date_str = str(row.get(RowName.LatestEventSfDate, "")).strip()
             time_str = str(row.get(RowName.LatestEventSfTime, "")).strip()
 
@@ -113,6 +94,23 @@ def process_tracking_time1(file_path):
                 interval_str = f"{hours_part:02}:{minutes_part:02}"
                 intervals.append(interval_str)
 
+                # 默认无法替换判断时间为 72 小时
+                delay_hours = 72
+
+                # ✅ 判断付款时间是否为美国周五、六、日，如果是则延迟 48 小时
+                pay_time_str = str(row.get("付款时间", "")).strip()
+                if pay_time_str and pay_time_str.lower() != "nan":
+                    try:
+                        pay_time_china = datetime.strptime(pay_time_str, "%Y-%m-%d %H:%M:%S")
+                        pay_time_utc0 = convert_china_to_utc0(pay_time_china)
+                        # 转为美国东部时间（或你实际使用的 USPS 时区）
+                        pay_time_us = pay_time_utc0.replace(tzinfo=timezone.utc).astimezone(
+                            ZoneInfo("America/New_York"))
+                        if pay_time_us.weekday() in [4, 5, 6]:  # 星期五、六、日
+                            delay_hours += 48
+                    except Exception as e:
+                        print(f"⚠️ 第 {idx} 行付款时间解析失败: {e}")
+
                 # 优先判断是否unpaid
                 if courier == CourierStateMapValue.unpaid:
                     if hours <= 192:  # <=8天
@@ -122,7 +120,7 @@ def process_tracking_time1(file_path):
                     track_times.append(utc0_now)
                     continue
 
-                if hours >= 72:
+                if hours >= delay_hours:
                     states.append("无法替换")
                 elif hours >= 48:
                     states.append("阳单替换")
@@ -144,8 +142,9 @@ def process_tracking_time1(file_path):
 
     df_filtered[RowName.TrackTimeInterval] = intervals
     df_filtered[RowName.TrackTimeIntervalState] = states
-    df_filtered[RowName.Tacking_Time] = [t.strftime("%Y-%m-%d %H:%M:%S") if isinstance(t, datetime) else "" for t in
-                                         track_times]
+    df_filtered[RowName.Tacking_Time] = [
+        t.strftime("%Y-%m-%d %H:%M:%S") if isinstance(t, datetime) else "" for t in track_times
+    ]
 
     df.update(df_filtered)
     df.to_excel(file_path, index=False)
