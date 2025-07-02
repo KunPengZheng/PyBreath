@@ -147,23 +147,22 @@ def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
 
 
 if __name__ == '__main__':
-    data_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics/order_120250630095056152_1573179.xlsx"
-    dir_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics"
+    dir_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics/xyl"
+    dxm_order_path = f"{dir_path}/order_120250630095056152_1573179.xlsx"
     template_path = f"{dir_path}/xyl运营统计.xlsx"
     template_copy_path = f"{dir_path}/xyl运营统计_copy.xlsx"
+    oms_store_dir = f"{dir_path}/oms_store"
+    oms_store_merger_path = f"{oms_store_dir}/oms_store_merger.xlsx"
+    dszs_shipping_freight = f"{dir_path}/table_1 (1).csv"
 
     # 创建输出文件路径（复制一份文件2）
     template_copy_path = os.path.join(template_path, template_copy_path)
     shutil.copy(template_path, template_copy_path)
 
     # 更新店铺和sku的销量
-    update_sales_data(data_path, template_copy_path)
+    update_sales_data(dxm_order_path, template_copy_path)
 
-    oms_store_dir = f"{dir_path}/oms_store"
-    oms_store_merger_path = f"{oms_store_dir}/oms_store_merger.xlsx"
     merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
-
-    dszs_shipping_freight = f"{dir_path}/table_1 (1).csv"
 
     update_available_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
     update_shipping_inventory(dszs_shipping_freight, template_copy_path, template_copy_path)
