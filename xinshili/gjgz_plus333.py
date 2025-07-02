@@ -1463,17 +1463,24 @@ def generate_distribution_report2(distribution, no_track_distribution, sku_no_tr
                                        "strs": strs}
 
     resultList = []
+    fs_lowest_sku_result_list = []
     for key, value in lowest_entities.items():
+        count = value["count"]
         no_track_counts = value["no_track_count"]
         strss = value["strs"]
-        if (interval_time >= 3):
+
+        if interval_time >= 3:
             resultList.append(strss)
         else:
-            if (no_track_counts >= 4):
+            if no_track_counts >= 4:
                 resultList.append(strss)
 
+        # sku数量和未上网数量一致 且 数量>=4
+        if count >= 4 and count == no_track_counts:
+            fs_lowest_sku_result_list.append(value)
+
     data_map[data_map_key] = report_text  # 将结果存储到 data_map
-    return report_text, resultList, report_text2
+    return report_text, resultList, report_text2, fs_lowest_sku_result_list
 
 
 def filter_tracking_numbers(input_path, output_path):
@@ -1678,7 +1685,7 @@ def go(analyse_obj, xlsx_path):
     sku_distribution, sku_no_track_distribution, sku_no_tracking_distribution, sku_pre_ship_distribution, \
         sku_not_yet_distribution, sku_delivered_distribution, sku_unpaid_distribution, key_tracking_sf_zero_counter = count_distribution_and_no_track3(
         xlsx_path, key_column=RowName.SKU)
-    sku_text, lowest_sku, sku_text2 = generate_distribution_report2(
+    sku_text, lowest_sku, sku_text2, fs_lowest_sku_result_list = generate_distribution_report2(
         sku_distribution, sku_no_track_distribution, sku_no_tracking_distribution, sku_pre_ship_distribution,
         sku_not_yet_distribution, sku_delivered_distribution, sku_unpaid_distribution, key_tracking_sf_zero_counter,
         data_map, CellKey.sku_condition,
@@ -1869,11 +1876,9 @@ def go(analyse_obj, xlsx_path):
     actual_interval = 0
     if is_usweekend == 6:  # 6是中国周日，美国周六
         sum_up_text = "美国时间：周六（和中国相差13-16个小时）\n"
-        # actual_interval = "（-2）"
         actual_interval = 2
     elif is_usweekend == 0:  # 0是中国周一，美国周日
         sum_up_text = "美国时间：周日（相差13-16个小时）\n"
-        # actual_interval = "（-1）"
         actual_interval = 1
 
     # if (len(irregular_number_list) > 0):
@@ -1892,6 +1897,7 @@ def go(analyse_obj, xlsx_path):
         (3, 97, "❄️异常", "未达97%！", "#F1C1BD"),
     ]
 
+    # 跟踪时间 - 创建时间 - （创建时间美国周末）
     actual_interval_time = interval_time - actual_interval
     # sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
     sum_up_text += f"\n间隔第{actual_interval_time}天"
@@ -1899,15 +1905,15 @@ def go(analyse_obj, xlsx_path):
     for days, threshold, icon, message, color in warning_levels:
         if actual_interval_time == days and swl < threshold:
             sum_up_text += f"\n{icon}：上网率为{swl}%，{message}"
-            swl_flag = True
-            if (actual_interval_time >= 2):
+            if actual_interval_time >= 2:
+                swl_flag = True
                 bg = color
             break
     else:  # ✅ 只有 for 没有 break 时才会执行
-        if (actual_interval_time >= 4):
-            if (swl >= 99):
+        if actual_interval_time >= 4:
+            if swl >= 99:
                 sum_up_text += f"\n☀️上网率为{swl}%，优秀🌈"
-            elif (swl >= 97 and swl < 99):
+            elif 97 <= swl < 99:
                 sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
             else:
                 sum_up_text += f"\n⚡️异常：上网率为{swl}%，未达️97%"
@@ -1931,10 +1937,10 @@ def go(analyse_obj, xlsx_path):
             # qsl_flag = True
             break
     else:
-        if (actual_interval_time >= 10):
-            if (qsl >= 95):
+        if actual_interval_time >= 10:
+            if qsl >= 95:
                 sum_up_text += f"\n☀️签收率为{qsl}%，优秀！🌈"
-            elif (qsl >= 90 and qsl < 95):
+            elif qsl >= 90 and qsl < 95:
                 sum_up_text += f"\n☀️签收率为{qsl}%，达标！✅"
             else:
                 sum_up_text += f"\n⚡️异常：️签收率为{qsl}%，未达️90%"
@@ -1952,17 +1958,17 @@ def go(analyse_obj, xlsx_path):
     exception_text = ""
     bgFlag = False
 
-    if (qsl_flag):
+    if qsl_flag:
         exception_text += "\n✍️签收率异常（签收率目前无法量化，只为提醒⏰）"
         bgFlag = True
-    if (change_shipment_received_count >= 10):
+    if change_shipment_received_count >= 10:
         bg = "#B3D600"
         exception_text += "\n📒提货单未更新轨迹（>=2天） 异常"
         bgFlag = True
-    if (swl_flag):
+    if swl_flag:
         exception_text += "\n📦上网率异常"
         bgFlag = True
-    if (unpaid_count_int > 0):
+    if unpaid_count_int > 0:
         bg = "#A684F0"
         exception_text += "\n💰unpaid 异常"
         bgFlag = True
@@ -2071,8 +2077,19 @@ def go(analyse_obj, xlsx_path):
         fs_msg_flag = True
 
     if swl_flag:
-        result_fs_msg += f"上网率异常: {swl}%\n"
-        fs_msg_flag = True
+        swl_text = "⚠️未上网数和应发数量一致：\n"
+        swl_text_flag = False
+        for lowest_sku in fs_lowest_sku_result_list:
+            count = lowest_sku["count"]
+            no_track_counts = lowest_sku["no_track_count"]
+            entity = lowest_sku["entity"]
+            swl_text += f"({entity}：{count})\n"
+            swl_text_flag = True
+
+        if swl <= 90 or swl_text_flag:
+            result_fs_msg += f"上网率异常: {swl}%\n"
+            result_fs_msg += swl_text
+            fs_msg_flag = True
 
     if fs_msg_flag:
         # print(result_fs_msg)
