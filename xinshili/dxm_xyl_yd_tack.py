@@ -403,34 +403,39 @@ def update_yd_number(source_file, folder_path):
     mapping = dict(zip(df_valid["订单编号"].str.strip(), df_valid["平台回传单号"].str.strip()))
 
     # 遍历文件夹中的所有 xlsx 文件
-    for filename in os.listdir(folder_path):
-        if filename.endswith(".xlsx"):
-            file_path = os.path.join(folder_path, filename)
-            try:
-                df = pd.read_excel(file_path, dtype=str)
-                df.fillna('', inplace=True)
+    for dirpath, dirnames, filenames in os.walk(folder_path):
+        dirnames.sort(key=natural_key)
+        for dirname in dirnames:
+            sun_dir_path = os.path.join(dirpath, dirname)
+            files = [f for f in os.listdir(sun_dir_path) if f.lower().endswith(('.xlsx', '.xls'))]
+            files.sort(key=natural_key)
+            for file in files:
+                file_path = os.path.join(sun_dir_path, file)
+                try:
+                    df = pd.read_excel(file_path, dtype=str)
+                    df.fillna('', inplace=True)
 
-                if RowName.Order_Num in df.columns:
-                    if RowName.YD_Number not in df.columns:
-                        df[RowName.YD_Number] = ""
+                    if RowName.Order_Num in df.columns:
+                        if RowName.YD_Number not in df.columns:
+                            df[RowName.YD_Number] = ""
 
-                    match_count = 0
-                    for i, order_id in df[RowName.Order_Num].items():
-                        order_id = str(order_id).strip()
-                        if order_id in mapping:
-                            yd_number = mapping[order_id]
-                            df.at[i, RowName.YD_Number] = yd_number
-                            print(f"✅ 匹配成功：文件：{file_path}，订单编号：{order_id}，平台回传单号：{yd_number}")
-                            match_count += 1
+                        match_count = 0
+                        for i, order_id in df[RowName.Order_Num].items():
+                            order_id = str(order_id).strip()
+                            if order_id in mapping:
+                                yd_number = mapping[order_id]
+                                df.at[i, RowName.YD_Number] = yd_number
+                                print(f"✅ 匹配成功：文件：{file_path}，订单编号：{order_id}，平台回传单号：{yd_number}")
+                                match_count += 1
 
-                    if match_count > 0:
-                        df.to_excel(file_path, index=False)
-                        print(f"📊 文件 {filename} 共匹配成功 {match_count} 条记录")
-                else:
-                    print(f"⚠️ 文件 {file_path} 缺少“订单号”列，跳过")
+                        if match_count > 0:
+                            df.to_excel(file_path, index=False)
+                            print(f"📊 文件 {file_path} 共匹配成功 {match_count} 条记录")
+                    else:
+                        print(f"⚠️ 文件 {file_path} 缺少“订单号”列，跳过")
 
-            except Exception as e:
-                print(f"❌ 文件 {file_path} 处理失败: {e}")
+                except Exception as e:
+                    print(f"❌ 文件 {file_path} 处理失败: {e}")
 
 
 if __name__ == '__main__':
@@ -441,7 +446,7 @@ if __name__ == '__main__':
     select_input = input(select)
     if select_input == "1":
         sun_path = input("请输入阳单号文件的路径:")
-        update_yd_number(sun_path, "/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track/2025.6")
+        update_yd_number(sun_path, "/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track/")
     elif select_input == "2":
         auto("/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track")
     else:
