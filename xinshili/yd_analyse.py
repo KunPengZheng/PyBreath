@@ -18,7 +18,7 @@ def compare_tracking_numbers(file1_path, file2_path, output_dir):
     tracking_col_1 = RowName.Track_Num  # df1 中的运单号
     order_col_2 = RowName.Platform_Num  # df2 中的订单号（平台单号）
     tracking_col_2 = RowName.Package1_Tracking  # df2 中的运单号
-    create_time_col_2 = RowName.OutboundTime  # df2 中的创建时间列
+    create_time_col_2 = RowName.CreationTime  # df2 中的创建时间列
     create_time_out_col = RowName.Create_Time  # 输出文件中的创建时间列名
     store_col = "店铺账号"  # df1 中的店铺账号列
 
