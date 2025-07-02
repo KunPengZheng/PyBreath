@@ -1,14 +1,29 @@
 import pandas as pd
 from datetime import datetime
 import os
+import re
 
 from xinshili import utils
+
+
+def clean_order_id(order_id: str) -> str:
+    """
+    去除订单编号中最后一个 `-xxx` 后缀，例如：
+    '123456-a' -> '123456'
+    'ABC-123-sds' -> 'ABC-123'
+    """
+    order_id = order_id.strip()
+    return re.sub(r"-[^-]+$", "", order_id)
 
 
 def transfer_order_data(file1_path, file2_template_path, output_dir):
     # 读取两个 Excel 文件
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
     df2 = pd.read_excel(file2_template_path, dtype=str).fillna("")
+
+    # 清理订单编号后缀
+    if "订单编号" in df1.columns:
+        df1["订单编号"] = df1["订单编号"].apply(clean_order_id)
 
     # 列映射：文件1 ➜ 模板（文件2）
     mapping = {
