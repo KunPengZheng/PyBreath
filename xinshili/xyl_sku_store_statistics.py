@@ -27,7 +27,8 @@ def update_sales_data(file1_path, output_path):
     if RowName.Store_Sales in df2:
         sheet = df2[RowName.Store_Sales].copy()
         if RowName.Store_Name in sheet.columns and RowName.Order_Sales in sheet.columns:
-            sheet[RowName.Order_Sales] = sheet[RowName.Store_Name].apply(lambda x: store_count_map.get(str(x).strip(), 0))
+            sheet[RowName.Order_Sales] = sheet[RowName.Store_Name].apply(
+                lambda x: store_count_map.get(str(x).strip(), 0))
         updated_sheets[RowName.Store_Sales] = sheet
 
     # --- 销量更新表 ---
@@ -99,7 +100,8 @@ def update_available_inventory(file1_path, file2_path, output_path):
         df_kc = df2_sheets[RowName.Inventory_Update].copy()
         df_kc.fillna('', inplace=True)
         if RowName.SKU in df_kc.columns and RowName.Available_Quantity in df_kc.columns:
-            df_kc[RowName.Available_Quantity] = df_kc[RowName.SKU].apply(lambda x: sku_inventory_map.get(str(x).strip(), 0))
+            df_kc[RowName.Available_Quantity] = df_kc[RowName.SKU].apply(
+                lambda x: sku_inventory_map.get(str(x).strip(), 0))
         df2_sheets[RowName.Inventory_Update] = df_kc
     else:
         print("⚠️ 文件2中未找到 sheet：库存更新，已跳过更新")
@@ -166,7 +168,10 @@ if __name__ == '__main__':
     # 更新店铺和sku的销量
     update_sales_data(dxm_order_path, template_copy_path)
 
+    # 合并oms库存文件
     merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
 
+    # 更新库存
     update_available_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
+    # 更新海运空运
     update_shipping_inventory(dszs_shipping_freight, template_copy_path, template_copy_path)
