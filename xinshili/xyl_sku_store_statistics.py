@@ -1,7 +1,11 @@
+from dataclasses import dataclass
+
 import pandas as pd
 import shutil
 import os
 from collections import defaultdict
+
+from xinshili.gjgz_plus333 import RowName
 
 
 def update_sales_data(file1_path, output_path):
@@ -10,32 +14,32 @@ def update_sales_data(file1_path, output_path):
     df2 = pd.read_excel(output_path, sheet_name=None, dtype=str)
 
     # 产品总数要能转为数字以便汇总
-    if "产品总数" in df1.columns:
-        df1["产品总数"] = pd.to_numeric(df1["产品总数"], errors="coerce").fillna(0)
+    if RowName.Total_Of_Product in df1.columns:
+        df1[RowName.Total_Of_Product] = pd.to_numeric(df1[RowName.Total_Of_Product], errors="coerce").fillna(0)
 
     # --- 构建映射 ---
-    store_count_map = df1["店铺账号"].value_counts().to_dict()
-    sku_sum_map = df1.groupby("SKU")["产品总数"].sum().to_dict()
+    store_count_map = df1[RowName.Store_Account].value_counts().to_dict()
+    sku_sum_map = df1.groupby(RowName.SKU)[RowName.Total_Of_Product].sum().to_dict()
 
     updated_sheets = {}
 
     # --- 店铺销量表 ---
-    if "店铺销量" in df2:
-        sheet = df2["店铺销量"].copy()
-        if "店铺名称" in sheet.columns and "订单数量" in sheet.columns:
-            sheet["订单数量"] = sheet["店铺名称"].apply(lambda x: store_count_map.get(str(x).strip(), 0))
-        updated_sheets["店铺销量"] = sheet
+    if RowName.Store_Sales in df2:
+        sheet = df2[RowName.Store_Sales].copy()
+        if RowName.Store_Name in sheet.columns and RowName.Order_Sales in sheet.columns:
+            sheet[RowName.Order_Sales] = sheet[RowName.Store_Name].apply(lambda x: store_count_map.get(str(x).strip(), 0))
+        updated_sheets[RowName.Store_Sales] = sheet
 
     # --- 销量更新表 ---
-    if "销量更新" in df2:
-        sheet = df2["销量更新"].copy()
-        if "SKU" in sheet.columns and "数量" in sheet.columns:
-            sheet["数量"] = sheet["SKU"].apply(lambda x: sku_sum_map.get(str(x).strip(), 0))
-        updated_sheets["销量更新"] = sheet
+    if RowName.Sales_Update in df2:
+        sheet = df2[RowName.Sales_Update].copy()
+        if RowName.SKU in sheet.columns and RowName.Quantity in sheet.columns:
+            sheet[RowName.Quantity] = sheet[RowName.SKU].apply(lambda x: sku_sum_map.get(str(x).strip(), 0))
+        updated_sheets[RowName.Sales_Update] = sheet
 
     # --- 库存更新表（直接复制） ---
-    if "库存更新" in df2:
-        updated_sheets["库存更新"] = df2["库存更新"].copy()
+    if RowName.Inventory_Update in df2:
+        updated_sheets[RowName.Inventory_Update] = df2[RowName.Inventory_Update].copy()
 
     # 写入更新后的 sheet
     with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
@@ -78,8 +82,8 @@ def update_available_inventory(file1_path, file2_path, output_path):
     # 构建 SKU → 可用库存总和 map
     sku_inventory_map = defaultdict(float)
     for _, row in df1.iterrows():
-        sku = row.get("SKU", "").strip()
-        inv = row.get("Available Inventory/可用库存", "").strip()
+        sku = row.get(RowName.SKU, "").strip()
+        inv = row.get(RowName.Available_Inventory, "").strip()
         try:
             inv_val = float(inv)
         except:
@@ -91,12 +95,12 @@ def update_available_inventory(file1_path, file2_path, output_path):
     df2_sheets = pd.read_excel(file2_path, sheet_name=None, dtype=str)
 
     # 修改库存更新 Sheet
-    if "库存更新" in df2_sheets:
-        df_kc = df2_sheets["库存更新"].copy()
+    if RowName.Inventory_Update in df2_sheets:
+        df_kc = df2_sheets[RowName.Inventory_Update].copy()
         df_kc.fillna('', inplace=True)
-        if "SKU" in df_kc.columns and "可用量" in df_kc.columns:
-            df_kc["可用量"] = df_kc["SKU"].apply(lambda x: sku_inventory_map.get(str(x).strip(), 0))
-        df2_sheets["库存更新"] = df_kc
+        if RowName.SKU in df_kc.columns and RowName.Available_Quantity in df_kc.columns:
+            df_kc[RowName.Available_Quantity] = df_kc[RowName.SKU].apply(lambda x: sku_inventory_map.get(str(x).strip(), 0))
+        df2_sheets[RowName.Inventory_Update] = df_kc
     else:
         print("⚠️ 文件2中未找到 sheet：库存更新，已跳过更新")
 
@@ -113,18 +117,18 @@ def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
     df1 = pd.read_csv(csv_file_path, dtype=str).fillna("")
 
     # 转换为数值，便于求和
-    df1["海运在途"] = pd.to_numeric(df1.get("海运在途", 0), errors="coerce").fillna(0)
-    df1["空运在途"] = pd.to_numeric(df1.get("空运在途", 0), errors="coerce").fillna(0)
+    df1[RowName.Sea_transportation] = pd.to_numeric(df1.get(RowName.Sea_transportation, 0), errors="coerce").fillna(0)
+    df1[RowName.Air_transportation] = pd.to_numeric(df1.get(RowName.Air_transportation, 0), errors="coerce").fillna(0)
 
     # 构建 SKU → 海/空 运在途数量 Map
     sea_map = defaultdict(float)
     air_map = defaultdict(float)
 
     for _, row in df1.iterrows():
-        sku = row.get("SKU", "").strip()
+        sku = row.get(RowName.SKU, "").strip()
         if sku:
-            sea_map[sku] += row["海运在途"]
-            air_map[sku] += row["空运在途"]
+            sea_map[sku] += row[RowName.Sea_transportation]
+            air_map[sku] += row[RowName.Air_transportation]
 
     # 读取 Excel 所有工作表
     xls = pd.read_excel(xlsx_file_path, sheet_name=None, dtype=str)
@@ -132,10 +136,10 @@ def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
 
     for sheet_name, df_sheet in xls.items():
         df_sheet = df_sheet.fillna("")
-        if sheet_name == "库存更新" and "SKU" in df_sheet.columns:
+        if sheet_name == RowName.Inventory_Update and RowName.SKU in df_sheet.columns:
             # 更新库存更新表的海运在途和空运在途
-            df_sheet["海运在途"] = df_sheet["SKU"].apply(lambda x: sea_map.get(str(x).strip(), 0))
-            df_sheet["空运在途"] = df_sheet["SKU"].apply(lambda x: air_map.get(str(x).strip(), 0))
+            df_sheet[RowName.Sea_transportation] = df_sheet[RowName.SKU].apply(lambda x: sea_map.get(str(x).strip(), 0))
+            df_sheet[RowName.Air_transportation] = df_sheet[RowName.SKU].apply(lambda x: air_map.get(str(x).strip(), 0))
         updated_sheets[sheet_name] = df_sheet
 
     # 写入到新文件，保留所有 sheet

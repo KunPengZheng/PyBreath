@@ -84,6 +84,19 @@ class RowName:
     YD_Number2 = "阳单号"
     YD_State2 = "阳单轨迹状态"
 
+    Total_Of_Product = "产品总数"
+    Store_Account = "店铺账号"
+    Store_Sales = "店铺销量"
+    Store_Name = "店铺名称"
+    Order_Sales = "订单数量"
+    Sales_Update = "销量更新"
+    Quantity = "数量"
+    Inventory_Update = "库存更新"
+    Sea_transportation = "海运在途"
+    Air_transportation = "空运在途"
+    Available_Quantity = "可用量"
+    Available_Inventory = "Available Inventory/可用库存"
+
 
 @dataclass(frozen=True)
 class CourierStateMapKey:
