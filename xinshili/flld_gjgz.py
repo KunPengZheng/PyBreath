@@ -397,8 +397,9 @@ def go(input_path):
         fs_msg_flag = True
 
     if swl_flag:
-        result_fs_msg += f"上网率异常: {swl}%\n"
-        fs_msg_flag = True
+        if no_track_count > 10:
+            result_fs_msg += f"上网率异常: {swl}%\n"
+            fs_msg_flag = True
 
     if fs_msg_flag:
         # print(result_fs_msg)
