@@ -5,6 +5,7 @@ import shutil
 import os
 from collections import defaultdict
 
+from xinshili import utils
 from xinshili.gjgz_plus333 import RowName
 
 
@@ -58,13 +59,14 @@ def merge_excels_in_folder(folder_path, output_path):
     for filename in all_files:
         file_path = os.path.join(folder_path, filename)
         try:
-            df = pd.read_excel(file_path)
+            # 始终使用 header=0 保证列头是从文件中第一行读的
+            df = pd.read_excel(file_path, header=0)
 
             if not header_saved:
                 combined_df = pd.concat([combined_df, df], ignore_index=True)
                 header_saved = True
             else:
-                combined_df = pd.concat([combined_df, df.iloc[1:]], ignore_index=True)  # 跳过列头行
+                combined_df = pd.concat([combined_df, df], ignore_index=True)  # 直接合并，无需 iloc[1:]
 
             print(f"✅ 已处理文件：{filename}")
         except Exception as e:
@@ -219,6 +221,7 @@ def call(analyse_obj):
     update_sales_data(dxm_order_path, template_copy_path)
 
     # 合并oms库存文件
+    utils.delete_file(oms_store_merger_path)
     merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
 
     if analyse_obj == "xyl":
@@ -231,5 +234,5 @@ def call(analyse_obj):
 
 
 if __name__ == '__main__':
-    call("xyl")
-    # call("sanrio")
+    # call("xyl")
+    call("sanrio")
