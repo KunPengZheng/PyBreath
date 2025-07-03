@@ -16,14 +16,17 @@ class FsConstants:
     spreadsheets_base_url = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/"
     # 表格的写入方式：values_prepend:它会在指定位置上方新增一行，而不是直接覆盖现有数据; values:若指定范围内已有数据，将被新写入的数据覆盖。
     values_spreadsheets_write_way = "/values"
+    values_batch_update = "/values_batch_update"
     styles_batch_update = "/styles_batch_update"
     insert_dimension_range = "/insert_dimension_range"
     dimension_range = "/dimension_range"
     gjgz_token = "BGrnsxMFfhfoumtUDF8cXM8jnGg"
-    xyl_sales_repertory_token = "DbiRsNu1BhEDd1tmOKlcVv3Vn3c"
+    xyl_sales_repertory_token = "E1zSse18MhqhIWtnu4XcoDGPnKd"
     sanrio_sales_repertory_token = "InsHs1yV7hQxN0tIVsic0rVWnoh"
     ROWS = "ROWS"
     COLUMNS = "COLUMNS"
+    BEFORE = "BEFORE"
+    AFTER = "AFTER"
 
 
 @dataclass(frozen=True)
@@ -64,6 +67,8 @@ class MapFields:
     brief = "brief"
     xyl_sku = "xyl_sku"
     xyl_store = "xyl_store"
+    xyl_sku_zjhz = "xyl_sku_zjhz"
+    xyl_sku_ejyxhz = "xyl_sku_ejyxhz"
 
 
 ClientMapConstants = {
@@ -79,8 +84,9 @@ ClientMapConstants = {
     ClientConstants.ckoms: "83VoQ2",
     ClientConstants.yy: "JYtXLd",
     ClientConstants.dxm_xyl_yd: "yTIUrm",
-    ClientConstants.xyl_sales_repertory: {MapFields.xyl_sku: "8e023c",
-                                          MapFields.xyl_store: "yZxXEU"},
+    ClientConstants.xyl_sales_repertory: {MapFields.xyl_sku_zjhz: "s2p3Eu",
+                                          MapFields.xyl_sku_ejyxhz: "57ac23",
+                                          MapFields.xyl_store: "0g0OmJ"},
 }
 
 _tat = ""
@@ -502,7 +508,8 @@ def fs_msg(user_id, text_content, receive_id_type="user_id"):
     lark.logger.info(lark.JSON.marshal(response.data, indent=4))
 
 
-def insert_col_row(tat, spreadsheet_token, sheetId, startIndex, endIndex, majorDimension):
+def insert_col_row(tat, spreadsheet_token, sheetId, startIndex, endIndex, majorDimension,
+                   inheritStyle=FsConstants.BEFORE):
     """
     majorDimension:
         - ROWS：行
@@ -593,3 +600,27 @@ def value_range(tat, spreadsheet_token, sheetId, range, lists):
     # values_prepend 需要使用post请求方式，values需要使用put请求方式
     r2 = requests.put(url, data=json.dumps(post_data), headers=header)
     print(r2.json())  # 输出来判断写入是否成功
+
+
+def values_batch_update(tat, spreadsheet_token, post_data):
+    url = f"{FsConstants.spreadsheets_base_url}{spreadsheet_token}/{FsConstants.values_batch_update}"
+
+    header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
+
+    # values_prepend 需要使用post请求方式，values需要使用put请求方式
+    r2 = requests.put(url, data=json.dumps(post_data), headers=header)
+    print(r2.json())  # 输出来判断写入是否成功
+
+
+def fs_col_to_index(col: str) -> int:
+    """
+    将 Excel 列字母（如 'A', 'B', ..., 'AA'）转换为列号（如 1, 2, ..., 27）
+    """
+    col = col.upper()
+    num = 0
+    for c in col:
+        if 'A' <= c <= 'Z':
+            num = num * 26 + (ord(c) - ord('A') + 1)
+        else:
+            raise ValueError(f"非法列名字符: {c}")
+    return num
