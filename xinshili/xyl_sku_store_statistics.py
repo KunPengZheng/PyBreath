@@ -265,9 +265,15 @@ def get_range_column_row_data(file_path, sheet_name, start_row, end_row, start_c
     df = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
     df.fillna('', inplace=True)
 
-    start_col_num = fs_col_to_index(start_col)
-    end_col_num = fs_col_to_index(end_col)
-    region = df.iloc[start_row:end_row + 1, start_col_num:end_col_num + 1]
+    # 将 Excel 行号（从 1 开始）转换为 Pandas 行索引（从 0 开始）
+    pandas_start_row = start_row - 1
+    pandas_end_row = end_row - 1
+
+    # 将列名（如 "C"）转换为列索引（从 0 开始）
+    start_col_num = fs_col_to_index(start_col) - 1
+    end_col_num = fs_col_to_index(end_col) - 1
+
+    region = df.iloc[pandas_start_row:pandas_end_row + 1, start_col_num:end_col_num + 1]
     return region.values.tolist()
 
 
