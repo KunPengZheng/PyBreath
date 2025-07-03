@@ -1,11 +1,12 @@
-from dataclasses import dataclass
-
+from datetime import datetime
 import pandas as pd
 import shutil
 import os
 from collections import defaultdict
 
 from xinshili import utils
+from xinshili.fs_utils_plus import insert_col_row, FsConstants, get_token, ClientMapConstants, ClientConstants, \
+    MapFields, fs_col_to_index, value_range
 from xinshili.gjgz_plus333 import RowName
 
 
@@ -13,6 +14,18 @@ def update_sales_data(file1_path, output_path):
     # 读取文件1和复制后的文件2
     df1 = pd.read_excel(file1_path).fillna("")
     df2 = pd.read_excel(output_path, sheet_name=None)
+
+    # 👉 获取下单时间第一条有效数据并格式化为 "7月2日"
+    order_time_str = df1.get("下单时间", "").astype(str).str.strip().replace("nan", "").values
+    order_time = next((t for t in order_time_str if t), None)
+    formatted_date = ""
+    if order_time:
+        try:
+            dt = datetime.strptime(order_time, "%Y-%m-%d %H:%M:%S")
+            formatted_date = f"{dt.month}月{dt.day}日"
+            print(f"📅 首个下单时间对应日期为：{formatted_date}")
+        except Exception as e:
+            print(f"⚠️ 日期格式错误：{e}")
 
     # 产品总数要能转为数字以便汇总
     if RowName.Total_Of_Product in df1.columns:
@@ -49,6 +62,7 @@ def update_sales_data(file1_path, output_path):
             df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
 
     print(f"✅ 已更新并保存到：{output_path}")
+    return formatted_date
 
 
 def merge_excels_in_folder(folder_path, output_path):
@@ -205,6 +219,112 @@ def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
     print(f"✅ 所有工作表已写入，库存更新已处理并保存至：{output_path}")
 
 
+import pandas as pd
+
+def get_range_column_data(file_path, sheet_name, column_name, start_row=1, end_row=None):
+    """
+    获取指定 Excel 文件中指定 sheet 的指定列在指定范围内的值列表。
+    注意：start_row=1 表示第一行（包含列头）开始。
+
+    :param file_path: Excel 文件路径
+    :param sheet_name: 工作表名称
+    :param column_name: 要读取的列名
+    :param start_row: 起始行号（从 1 开始，包括列头）
+    :param end_row: 结束行号（包含）
+    :return: 列表形式返回数据（包含列头行）
+    """
+    try:
+        df = pd.read_excel(file_path, sheet_name=sheet_name, dtype=object).fillna("")
+
+        if column_name not in df.columns:
+            raise ValueError(f"❌ 指定列名 '{column_name}' 不存在于工作表 '{sheet_name}' 中。")
+
+        data = df[column_name].tolist()
+
+        # ✅ 不排除列头，start_row=1 表示第1行，索引为 0
+        start_idx = max(1, start_row) - 1
+        end_idx = end_row if end_row is not None else len(data)
+
+        return data[start_idx:end_idx]
+
+    except Exception as e:
+        print(f"⚠️ 读取失败: {e}")
+        return []
+
+
+def get_range_column_row_data(file_path, sheet_name, start_row, end_row, start_col, end_col):
+    """
+    获取 Excel 指定 sheet 中指定行列区域的数据，返回二维数组形式。
+
+    :param file_path: Excel 文件路径
+    :param sheet_name: 表名（Sheet 名）
+    :param start_row: 起始行号（从 0 开始，包含）
+    :param end_row: 结束行号（从 0 开始，包含）
+    :param start_col: 起始列号（从 0 开始，包含）
+    :param end_col: 结束列号（从 0 开始，包含）
+    :return: 二维数组（嵌套列表）
+    """
+    df = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
+    df.fillna('', inplace=True)
+
+    start_col_num = fs_col_to_index(start_col)
+    end_col_num = fs_col_to_index(end_col)
+    region = df.iloc[start_row:end_row + 1, start_col_num:end_col_num + 1]
+    return region.values.tolist()
+
+
+def xyl_fs(formatted_date, template_copy_path):
+    # token = get_token()
+    # startIndex = fs_col_to_index("K")
+    # endIndex = fs_col_to_index("L")
+
+    # insert_col_row(token, FsConstants.xyl_sales_repertory_token,
+    #                ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz],
+    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    # insert_col_row(token, FsConstants.xyl_sales_repertory_token,
+    #                ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz],
+    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    # insert_col_row(token, FsConstants.xyl_sales_repertory_token,
+    #                ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_store],
+    #                fs_col_to_index("D"), fs_col_to_index("E"), FsConstants.COLUMNS, FsConstants.AFTER)
+
+    xyl_sku_zjhz_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 2, 124)
+    xyl_sku_zjhz_arr.insert(0, formatted_date)
+    print(f"1111:{len(xyl_sku_zjhz_arr)}")
+    xyl_sku_zjhz_arr.append({"type": "formula", "text": f"=SUM(L2:L124"})
+
+    xyl_sku_ejyxhz_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 126, 234)
+    xyl_sku_ejyxhz_arr.insert(0, formatted_date)
+    print(f"2222:{len(xyl_sku_ejyxhz_arr)}")
+    xyl_sku_ejyxhz_arr.append({"type": "formula", "text": f"=SUM(L2:L110"})
+
+    xyl_store_arr = get_range_column_data(template_copy_path, RowName.Store_Sales, RowName.Order_Sales, 2, 45)
+    xyl_store_arr.insert(0, formatted_date)
+    print(f"3333:{len(xyl_store_arr)}")
+    xyl_store_arr.append({"type": "formula", "text": f"=SUM(E2:E48"})
+
+    print(xyl_sku_zjhz_arr)
+    print(xyl_sku_ejyxhz_arr)
+    print(xyl_store_arr)
+
+    # value_range(token, FsConstants.xyl_sales_repertory_token,
+    #             ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz],
+    #             f"L1:L{len(xyl_sku_zjhz_arr)}", xyl_sku_zjhz_arr)
+    # value_range(token, FsConstants.xyl_sales_repertory_token,
+    #             ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz],
+    #             f"L1:L{len(xyl_sku_ejyxhz_arr)}", xyl_sku_ejyxhz_arr)
+    # value_range(token, FsConstants.xyl_sales_repertory_token,
+    #             ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_store],
+    #             f"E1:E{len(xyl_store_arr)}", xyl_store_arr)
+
+    xyl_sku_inventory_zjhz_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 2, 124, "C",
+                                                           "E")
+    xyl_sku_inventory_ejyxhz_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 126, 234,
+                                                             "C", "E")
+    print(xyl_sku_inventory_zjhz_arr)
+    print(xyl_sku_inventory_ejyxhz_arr)
+
+
 def call(analyse_obj):
     root_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics"
     analyse_dir_path = f"{root_path}/{analyse_obj}"
@@ -220,7 +340,7 @@ def call(analyse_obj):
     shutil.copy(template_path, template_copy_path)
 
     # 更新店铺和sku的销量
-    update_sales_data(dxm_order_path, template_copy_path)
+    formatted_date = update_sales_data(dxm_order_path, template_copy_path)
 
     # 合并oms库存文件
     merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
@@ -230,6 +350,8 @@ def call(analyse_obj):
         update_available_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
         # 更新海运空运
         update_shipping_inventory(dszs_inventory_path, template_copy_path, template_copy_path)
+        # 数据写入飞书表格
+        xyl_fs(formatted_date, template_copy_path)
     elif analyse_obj == "sanrio":
         update_total_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
 
