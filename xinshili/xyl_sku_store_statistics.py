@@ -84,7 +84,7 @@ def update_available_inventory(file1_path, file2_path, output_path):
     sku_inventory_map = defaultdict(float)
     for _, row in df1.iterrows():
         sku = row.get(RowName.SKU, "").strip()
-        inv = row.get(RowName.Available_Inventory, "").strip()
+        inv = row.get(RowName.Available_Inventory, "")
         try:
             inv_val = float(inv)
         except:
@@ -231,5 +231,5 @@ def call(analyse_obj):
 
 
 if __name__ == '__main__':
-    # call("xyl")
-    call("sanrio")
+    call("xyl")
+    # call("sanrio")
