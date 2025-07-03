@@ -52,6 +52,8 @@ def update_sales_data(file1_path, output_path):
 
 
 def merge_excels_in_folder(folder_path, output_path):
+    utils.delete_file(output_path)
+
     all_files = [f for f in os.listdir(folder_path) if f.endswith((".xlsx", ".xls"))]
     combined_df = pd.DataFrame()
     header_saved = False  # 只保留第一个文件的列头
@@ -221,7 +223,6 @@ def call(analyse_obj):
     update_sales_data(dxm_order_path, template_copy_path)
 
     # 合并oms库存文件
-    utils.delete_file(oms_store_merger_path)
     merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
 
     if analyse_obj == "xyl":
