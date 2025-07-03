@@ -219,8 +219,6 @@ def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
     print(f"✅ 所有工作表已写入，库存更新已处理并保存至：{output_path}")
 
 
-import pandas as pd
-
 def get_range_column_data(file_path, sheet_name, column_name, start_row=1, end_row=None):
     """
     获取指定 Excel 文件中指定 sheet 的指定列在指定范围内的值列表。
