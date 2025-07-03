@@ -11,7 +11,8 @@ from openpyxl import Workbook
 from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range, ClientMapConstants, \
     ClientConstants
 from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
-    update_courier_status, is_time_difference_exceed, process_tracking_no, CourierStateMapValue
+    update_courier_status, is_time_difference_exceed, process_tracking_no, CourierStateMapValue, \
+    find_irregular_tracking_numbers, update_courier_status1
 from xinshili.utils import natural_key
 
 
@@ -337,6 +338,10 @@ def go(xlsx_path, dxm_xyl_track_merger):
 
     process_tracking_no(xlsx_path, RowName.Track_Num)
     process_tracking_no(xlsx_path, RowName.YD_Number)
+
+    irregular_number_map = find_irregular_tracking_numbers(xlsx_path, RowName.Track_Num)
+    if irregular_number_map:
+        update_courier_status1(xlsx_path, irregular_number_map, RowName.Track_Num)
 
     usps_track(xlsx_path, RowName.Courier, RowName.Track_Num)
     usps_track(xlsx_path, RowName.YD_State, RowName.YD_Number)
