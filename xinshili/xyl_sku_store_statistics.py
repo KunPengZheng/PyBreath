@@ -219,17 +219,16 @@ def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
     print(f"✅ 所有工作表已写入，库存更新已处理并保存至：{output_path}")
 
 
-def get_range_column_data(file_path, sheet_name, column_name, start_row=1, end_row=None):
+def get_range_column_data(file_path, sheet_name, column_name, start_row, end_row):
     """
-    获取指定 Excel 文件中指定 sheet 的指定列在指定范围内的值列表。
-    注意：start_row=1 表示第一行（包含列头）开始。
+    获取 Excel 指定 sheet 的某一列数据（包含列头），支持行区间选择。
 
     :param file_path: Excel 文件路径
     :param sheet_name: 工作表名称
     :param column_name: 要读取的列名
-    :param start_row: 起始行号（从 1 开始，包括列头）
-    :param end_row: 结束行号（包含）
-    :return: 列表形式返回数据（包含列头行）
+    :param start_row: 起始行号（从 0 开始，0 表示包含列头）
+    :param end_row: 结束行号（包含，None 表示到末尾）
+    :return: 列表形式返回数据
     """
     try:
         df = pd.read_excel(file_path, sheet_name=sheet_name, dtype=object).fillna("")
@@ -237,16 +236,17 @@ def get_range_column_data(file_path, sheet_name, column_name, start_row=1, end_r
         if column_name not in df.columns:
             raise ValueError(f"❌ 指定列名 '{column_name}' 不存在于工作表 '{sheet_name}' 中。")
 
-        data = df[column_name].tolist()
+        # 列数据（包含列头）
+        data_with_header = [column_name] + df[column_name].tolist()
 
-        # ✅ 不排除列头，start_row=1 表示第1行，索引为 0
-        start_idx = max(1, start_row) - 1
-        end_idx = end_row if end_row is not None else len(data)
+        # 切片区间（包含列头），行号从 0 开始，包含 end_row
+        start_idx = max(0, start_row - 1)
+        end_idx = end_row + 1 if end_row is not None else None
 
-        return data[start_idx:end_idx]
+        return data_with_header[start_idx:end_idx]
 
     except Exception as e:
-        print(f"⚠️ 读取失败: {e}")
+        print(f"⚠️ 获取失败: {e}")
         return []
 
 
