@@ -235,5 +235,5 @@ def call(analyse_obj):
 
 
 if __name__ == '__main__':
-    # call("xyl")
-    call("sanrio")
+    call("xyl")
+    # call("sanrio")
