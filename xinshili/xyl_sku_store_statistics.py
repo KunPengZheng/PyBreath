@@ -10,8 +10,8 @@ from xinshili.gjgz_plus333 import RowName
 
 def update_sales_data(file1_path, output_path):
     # 读取文件1和复制后的文件2
-    df1 = pd.read_excel(file1_path, dtype=str).fillna("")
-    df2 = pd.read_excel(output_path, sheet_name=None, dtype=str)
+    df1 = pd.read_excel(file1_path).fillna("")
+    df2 = pd.read_excel(output_path, sheet_name=None)
 
     # 产品总数要能转为数字以便汇总
     if RowName.Total_Of_Product in df1.columns:
@@ -58,7 +58,7 @@ def merge_excels_in_folder(folder_path, output_path):
     for filename in all_files:
         file_path = os.path.join(folder_path, filename)
         try:
-            df = pd.read_excel(file_path, dtype=str)
+            df = pd.read_excel(file_path)
 
             if not header_saved:
                 combined_df = pd.concat([combined_df, df], ignore_index=True)
@@ -77,7 +77,7 @@ def merge_excels_in_folder(folder_path, output_path):
 
 def update_available_inventory(file1_path, file2_path, output_path):
     # 读取文件1
-    df1 = pd.read_excel(file1_path, dtype=str)
+    df1 = pd.read_excel(file1_path)
     df1.fillna('', inplace=True)
 
     # 构建 SKU → 可用库存总和 map
@@ -93,7 +93,7 @@ def update_available_inventory(file1_path, file2_path, output_path):
             sku_inventory_map[sku] += inv_val
 
     # 读取文件2所有 Sheet
-    df2_sheets = pd.read_excel(file2_path, sheet_name=None, dtype=str)
+    df2_sheets = pd.read_excel(file2_path, sheet_name=None)
 
     # 修改库存更新 Sheet
     if RowName.Inventory_Update in df2_sheets:
@@ -116,7 +116,7 @@ def update_available_inventory(file1_path, file2_path, output_path):
 
 def update_total_inventory(file1_path, file2_path, output_path):
     # 读取文件1，填充空值
-    df1 = pd.read_excel(file1_path, dtype=str)
+    df1 = pd.read_excel(file1_path)
     df1.fillna('', inplace=True)
 
     # 将库存数值列转换为 float
@@ -136,7 +136,7 @@ def update_total_inventory(file1_path, file2_path, output_path):
             transit_map[sku] += row["In-transit inventory/在途库存"]
 
     # 读取文件2的所有 sheet
-    df2_sheets = pd.read_excel(file2_path, sheet_name=None, dtype=str)
+    df2_sheets = pd.read_excel(file2_path, sheet_name=None)
 
     # 处理“库存更新”sheet
     sheet_name_target = "库存更新"
@@ -165,7 +165,7 @@ def update_total_inventory(file1_path, file2_path, output_path):
 
 def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
     # 读取 CSV 文件（文件1）
-    df1 = pd.read_csv(csv_file_path, dtype=str).fillna("")
+    df1 = pd.read_csv(csv_file_path).fillna("")
 
     # 转换为数值，便于求和
     df1[RowName.Sea_transportation] = pd.to_numeric(df1.get(RowName.Sea_transportation, 0), errors="coerce").fillna(0)
@@ -182,7 +182,7 @@ def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
             air_map[sku] += row[RowName.Air_transportation]
 
     # 读取 Excel 所有工作表
-    xls = pd.read_excel(xlsx_file_path, sheet_name=None, dtype=str)
+    xls = pd.read_excel(xlsx_file_path, sheet_name=None)
     updated_sheets = {}
 
     for sheet_name, df_sheet in xls.items():
