@@ -14,6 +14,7 @@ from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_proc
     update_courier_status, is_time_difference_exceed, process_tracking_no, CourierStateMapValue, \
     find_irregular_tracking_numbers, update_courier_status1
 from xinshili.utils import natural_key
+from xinshili.yd_to_dxm import clean_order_id
 
 
 def convert_china_to_utc0(china_time: datetime) -> datetime:
@@ -405,7 +406,7 @@ def update_yd_number(source_file, folder_path):
     print(f"📋 阳单源文件中有效记录数：{len(df_valid)} 条")
 
     # 构建映射：订单编号 → 平台回传单号
-    mapping = dict(zip(df_valid["订单编号"].str.strip(), df_valid["平台回传单号"].str.strip()))
+    mapping = dict(zip(df_valid["订单编号"].apply(clean_order_id), df_valid["平台回传单号"].str.strip()))
 
     # 遍历文件夹中的所有 xlsx 文件
     for dirpath, dirnames, filenames in os.walk(folder_path):
