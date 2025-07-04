@@ -381,57 +381,85 @@ def sanrio_fs(formatted_date, template_copy_path):
     sanrio_sku_inventory_ph_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 250, 306,
                                                             "C", "D")
 
-    # token = get_token()
-    # startIndex = fs_col_to_index("G")
-    # endIndex = fs_col_to_index("H")
-    #
-    # insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
-    #                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjshypl],
-    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
-    # insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
-    #                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjl],
-    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
-    # insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
-    #                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_snb],
-    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
-    # insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
-    #                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_ph],
-    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
-    # insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
-    #                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_dpxl],
-    #                fs_col_to_index("C"), fs_col_to_index("D"), FsConstants.COLUMNS, FsConstants.AFTER)
+    token = get_token()
+    startIndex = fs_col_to_index("G")
+    endIndex = fs_col_to_index("H")
 
-    # values_batch_update(token, FsConstants.sanrio_sales_repertory_token,
-    #                     post_data={
-    #                         "valueRange": [
-    #                             {
-    #                                 "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.xyl_sku_zjhz]}!L1:L{len(sanrio_sku_wjshypl_arr)}",
-    #                                 "values": sanrio_sku_wjshypl_arr
-    #                             },
-    #                             {
-    #                                 "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.xyl_sku_zjhz]}!D2:F{len(xyl_sku_inventory_zjhz_arr)}",
-    #                                 "values": xyl_sku_inventory_zjhz_arr
-    #                             }
-    #                         ]
-    #                     })
-    #
-    # values_batch_update(token, FsConstants.sanrio_sales_repertory_token,
-    #                     post_data={
-    #                         "valueRange": [
-    #                             {
-    #                                 "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.xyl_sku_ejyxhz]}!L1:L{len(xyl_sku_ejyxhz_arr)}",
-    #                                 "values": xyl_sku_ejyxhz_arr
-    #                             },
-    #                             {
-    #                                 "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.xyl_sku_ejyxhz]}!D2:F{len(xyl_sku_inventory_ejyxhz_arr)}",
-    #                                 "values": xyl_sku_inventory_ejyxhz_arr
-    #                             }
-    #                         ]
-    #                     })
-    #
-    # value_range(token, FsConstants.sanrio_sales_repertory_token,
-    #             ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.xyl_store],
-    #             f"E1:E{len(sanrio_sku_wjl_arr)}", sanrio_sku_wjl_arr)
+    insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
+                   ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjshypl],
+                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
+                   ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjl],
+                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
+                   ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_snb],
+                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
+                   ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_ph],
+                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
+                   ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_dpxl],
+                   fs_col_to_index("C"), fs_col_to_index("D"), FsConstants.COLUMNS, FsConstants.AFTER)
+
+    values_batch_update(token, FsConstants.sanrio_sales_repertory_token,
+                        post_data={
+                            "valueRange": [
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjshypl]}!H1:H{len(sanrio_sku_wjshypl_arr)}",
+                                    "values": sanrio_sku_wjshypl_arr
+                                },
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjshypl]}!C2:D{len(sanrio_sku_inventory_wjshypl_arr)}",
+                                    "values": sanrio_sku_inventory_wjshypl_arr
+                                }
+                            ]
+                        })
+
+    values_batch_update(token, FsConstants.sanrio_sales_repertory_token,
+                        post_data={
+                            "valueRange": [
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjl]}!H1:H{len(sanrio_sku_wjl_arr)}",
+                                    "values": sanrio_sku_wjl_arr
+                                },
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjl]}!C2:D{len(sanrio_sku_inventory_wjl_arr)}",
+                                    "values": sanrio_sku_inventory_wjl_arr
+                                }
+                            ]
+                        })
+
+    values_batch_update(token, FsConstants.sanrio_sales_repertory_token,
+                        post_data={
+                            "valueRange": [
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_snb]}!H1:H{len(sanrio_sku_snb_arr)}",
+                                    "values": sanrio_sku_snb_arr
+                                },
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_snb]}!C2:D{len(sanrio_sku_inventory_snb_arr)}",
+                                    "values": sanrio_sku_inventory_snb_arr
+                                }
+                            ]
+                        })
+
+    values_batch_update(token, FsConstants.sanrio_sales_repertory_token,
+                        post_data={
+                            "valueRange": [
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_ph]}!H1:H{len(sanrio_sku_ph_arr)}",
+                                    "values": sanrio_sku_ph_arr
+                                },
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_ph]}!C2:D{len(sanrio_sku_inventory_ph_arr)}",
+                                    "values": sanrio_sku_inventory_ph_arr
+                                }
+                            ]
+                        })
+
+    value_range(token, FsConstants.sanrio_sales_repertory_token,
+                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_dpxl],
+                f"E1:E{len(sanrio_sku_dpxl_arr)}", sanrio_sku_dpxl_arr)
 
 
 def call(analyse_obj):
