@@ -52,6 +52,7 @@ class ClientConstants:
     ckoms = "ckoms"
     yy = "yy"
     xyl_sales_repertory = "xyl_sales_repertory"
+    sanrio_sales_repertory = "sanrio_sales_repertory"
     dxm_xyl_yd = "dxm_xyl_yd"
 
 
@@ -69,6 +70,11 @@ class MapFields:
     xyl_store = "xyl_store"
     xyl_sku_zjhz = "xyl_sku_zjhz"
     xyl_sku_ejyxhz = "xyl_sku_ejyxhz"
+    sanrio_sku_wjshypl = "sanrio_sku_wjshypl"
+    sanrio_sku_wjl = "sanrio_sku_wjl"
+    sanrio_sku_snb = "sanrio_sku_snb"
+    sanrio_sku_ph = "sanrio_sku_ph"
+    sanrio_sku_dpxl = "sanrio_sku_dpxl"
 
 
 ClientMapConstants = {
@@ -87,6 +93,11 @@ ClientMapConstants = {
     ClientConstants.xyl_sales_repertory: {MapFields.xyl_sku_zjhz: "s2p3Eu",
                                           MapFields.xyl_sku_ejyxhz: "57ac23",
                                           MapFields.xyl_store: "0g0OmJ"},
+    ClientConstants.sanrio_sales_repertory: {MapFields.sanrio_sku_wjshypl: "34a234",
+                                             MapFields.sanrio_sku_wjl: "gGz58i",
+                                             MapFields.sanrio_sku_snb: "M6AQqX",
+                                             MapFields.sanrio_sku_ph: "E8jFwk",
+                                             MapFields.sanrio_sku_dpxl: "essLWe"},
 }
 
 _tat = ""
