@@ -351,6 +351,80 @@ def xyl_fs(formatted_date, template_copy_path):
                 f"E1:E{len(xyl_store_arr)}", xyl_store_arr)
 
 
+def sanrio_fs(formatted_date, template_copy_path):
+    token = get_token()
+    startIndex = fs_col_to_index("K")
+    endIndex = fs_col_to_index("L")
+
+    insert_col_row(token, FsConstants.xyl_sales_repertory_token,
+                   ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz],
+                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    insert_col_row(token, FsConstants.xyl_sales_repertory_token,
+                   ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz],
+                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    insert_col_row(token, FsConstants.xyl_sales_repertory_token,
+                   ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_store],
+                   fs_col_to_index("D"), fs_col_to_index("E"), FsConstants.COLUMNS, FsConstants.AFTER)
+
+    xyl_sku_zjhz_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 2, 124)
+    xyl_sku_zjhz_arr.insert(0, formatted_date)
+    # print(f"1111:{len(xyl_sku_zjhz_arr)}")
+    xyl_sku_zjhz_arr.append({"type": "formula", "text": f"=SUM(L2:L124"})
+
+    xyl_sku_ejyxhz_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 126, 234)
+    xyl_sku_ejyxhz_arr.insert(0, formatted_date)
+    # print(f"2222:{len(xyl_sku_ejyxhz_arr)}")
+    xyl_sku_ejyxhz_arr.append({"type": "formula", "text": f"=SUM(L2:L110"})
+
+    xyl_store_arr = get_range_column_data(template_copy_path, RowName.Store_Sales, RowName.Order_Sales, 2, 45)
+    xyl_store_arr.insert(0, formatted_date)
+    # print(f"3333:{len(xyl_store_arr)}")
+    xyl_store_arr.append({"type": "formula", "text": f"=SUM(E2:E48"})
+
+    # print(xyl_sku_zjhz_arr)
+    # print(xyl_sku_ejyxhz_arr)
+    # print(xyl_store_arr)
+
+    xyl_sku_inventory_zjhz_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 2, 124, "C",
+                                                           "E")
+    xyl_sku_inventory_ejyxhz_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 126, 234,
+                                                             "C", "E")
+    # print(xyl_sku_inventory_zjhz_arr)
+    # print(xyl_sku_inventory_ejyxhz_arr)
+
+    values_batch_update(token, FsConstants.xyl_sales_repertory_token,
+                        post_data={
+                            "valueRange": [
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz]}!L1:L{len(xyl_sku_zjhz_arr)}",
+                                    "values": xyl_sku_zjhz_arr
+                                },
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz]}!D2:F{len(xyl_sku_inventory_zjhz_arr)}",
+                                    "values": xyl_sku_inventory_zjhz_arr
+                                }
+                            ]
+                        })
+
+    values_batch_update(token, FsConstants.xyl_sales_repertory_token,
+                        post_data={
+                            "valueRange": [
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz]}!L1:L{len(xyl_sku_ejyxhz_arr)}",
+                                    "values": xyl_sku_ejyxhz_arr
+                                },
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz]}!D2:F{len(xyl_sku_inventory_ejyxhz_arr)}",
+                                    "values": xyl_sku_inventory_ejyxhz_arr
+                                }
+                            ]
+                        })
+
+    value_range(token, FsConstants.xyl_sales_repertory_token,
+                ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_store],
+                f"E1:E{len(xyl_store_arr)}", xyl_store_arr)
+
+
 def call(analyse_obj):
     root_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics"
     analyse_dir_path = f"{root_path}/{analyse_obj}"
@@ -377,9 +451,10 @@ def call(analyse_obj):
         # 更新海运空运
         update_shipping_inventory(dszs_inventory_path, template_copy_path, template_copy_path)
         # 数据写入飞书表格
-        xyl_fs(formatted_date, template_copy_path)
+        # xyl_fs(formatted_date, template_copy_path)
     elif analyse_obj == "sanrio":
         update_total_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
+        # sanrio_fs(formatted_date, template_copy_path)
 
 
 if __name__ == '__main__':
