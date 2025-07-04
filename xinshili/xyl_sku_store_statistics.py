@@ -352,56 +352,54 @@ def xyl_fs(formatted_date, template_copy_path):
 
 
 def sanrio_fs(formatted_date, template_copy_path):
-
-
-    sanrio_sku_wjshypl_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 2, 124)
+    sanrio_sku_wjshypl_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 2, 55)
     sanrio_sku_wjshypl_arr.insert(0, formatted_date)
-    sanrio_sku_wjshypl_arr.append({"type": "formula", "text": f"=SUM(L2:L124"})
+    sanrio_sku_wjshypl_arr.append({"type": "formula", "text": f"=SUM(H2:H55"})
 
-    sanrio_sku_wjl_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 126, 234)
+    sanrio_sku_wjl_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 57, 179)
     sanrio_sku_wjl_arr.insert(0, formatted_date)
-    sanrio_sku_wjl_arr.append({"type": "formula", "text": f"=SUM(L2:L110"})
+    sanrio_sku_wjl_arr.append({"type": "formula", "text": f"=SUM(H2:H124"})
 
-    sanrio_sku_snb_arr = get_range_column_data(template_copy_path, RowName.Store_Sales, RowName.Order_Sales, 2, 45)
+    sanrio_sku_snb_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 181, 248)
     sanrio_sku_snb_arr.insert(0, formatted_date)
-    sanrio_sku_snb_arr.append({"type": "formula", "text": f"=SUM(E2:E48"})
+    sanrio_sku_snb_arr.append({"type": "formula", "text": f"=SUM(H2:H69"})
 
-    sanrio_sku_ph_arr = get_range_column_data(template_copy_path, RowName.Store_Sales, RowName.Order_Sales, 2, 45)
+    sanrio_sku_ph_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 250, 306)
     sanrio_sku_ph_arr.insert(0, formatted_date)
-    sanrio_sku_ph_arr.append({"type": "formula", "text": f"=SUM(E2:E48"})
+    sanrio_sku_ph_arr.append({"type": "formula", "text": f"=SUM(H2:H58"})
 
-    sanrio_sku_dpxl_arr = get_range_column_data(template_copy_path, RowName.Store_Sales, RowName.Order_Sales, 2, 45)
+    sanrio_sku_dpxl_arr = get_range_column_data(template_copy_path, RowName.Store_Sales, RowName.Order_Sales, 2, 12)
     sanrio_sku_dpxl_arr.insert(0, formatted_date)
-    sanrio_sku_dpxl_arr.append({"type": "formula", "text": f"=SUM(E2:E48"})
+    sanrio_sku_dpxl_arr.append({"type": "formula", "text": f"=SUM(D2:D12"})
 
-    sanrio_sku_inventory_wjshypl_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 2, 124, "C",
-                                                           "E")
-    sanrio_sku_inventory_wjl_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 126, 234,
-                                                             "C", "E")
-    sanrio_sku_inventory_snb_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 126, 234,
-                                                             "C", "E")
-    sanrio_sku_inventory_ph_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 126, 234,
-                                                             "C", "E")
+    sanrio_sku_inventory_wjshypl_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 2, 55,
+                                                                 "C", "D")
+    sanrio_sku_inventory_wjl_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 57, 179,
+                                                             "C", "D")
+    sanrio_sku_inventory_snb_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 181, 248,
+                                                             "C", "D")
+    sanrio_sku_inventory_ph_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 250, 306,
+                                                            "C", "D")
 
-    token = get_token()
-    startIndex = fs_col_to_index("G")
-    endIndex = fs_col_to_index("H")
-
-    insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
-                   ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjshypl],
-                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
-    insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
-                   ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjl],
-                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
-    insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
-                   ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_snb],
-                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
-    insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
-                   ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_ph],
-                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
-    insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
-                   ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_dpxl],
-                   fs_col_to_index("C"), fs_col_to_index("D"), FsConstants.COLUMNS, FsConstants.AFTER)
+    # token = get_token()
+    # startIndex = fs_col_to_index("G")
+    # endIndex = fs_col_to_index("H")
+    #
+    # insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
+    #                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjshypl],
+    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    # insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
+    #                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_wjl],
+    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    # insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
+    #                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_snb],
+    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    # insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
+    #                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_ph],
+    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    # insert_col_row(token, FsConstants.sanrio_sales_repertory_token,
+    #                ClientMapConstants[ClientConstants.sanrio_sales_repertory][MapFields.sanrio_sku_dpxl],
+    #                fs_col_to_index("C"), fs_col_to_index("D"), FsConstants.COLUMNS, FsConstants.AFTER)
 
     # values_batch_update(token, FsConstants.sanrio_sales_repertory_token,
     #                     post_data={
