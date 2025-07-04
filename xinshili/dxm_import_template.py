@@ -271,7 +271,7 @@ def detect_keywords(content):
     return color_flag, gender_flag
 
 
-def handler(src_path, price, repertorys, w_front_no_design_Flag=False, output_default=True):
+def handler(src_path, price, title_prefix, repertorys, w_front_no_design_Flag=False, output_default=True):
     file_name_with_extension = utils.get_filename_with_extension(src_path)
     color_flag, gender_flag = detect_keywords(file_name_with_extension)
     if color_flag == Combined.Nones or gender_flag == Combined.Nones:
@@ -295,12 +295,15 @@ def handler(src_path, price, repertorys, w_front_no_design_Flag=False, output_de
         output_dir = utils.get_file_dir(src_path)
         output = output_dir + "/create_" + file_name_with_extension
 
-    # sex_man = "2025 Men's T-shirt"
+    # 默认文案
     sex_man = "Summer Man's T-shirt sale"
-    # sex_man = "Father's Day 2025 Men T-Shirt"
-    # sex_women = "2025 Women's T-shirt"
     sex_women = "Summer Women's T-shirt sale"
-    result_sex = sex_man if gender_flag == Combined.Man else sex_women
+    result_sex = ""
+    # 判断 prefix 是否有效（非空且非 None）
+    if title_prefix and str(title_prefix).strip():
+        result_sex = title_prefix.strip()
+    else:
+        result_sex = sex_man if gender_flag == Combined.Man else sex_women
 
     result_color = "White" if color_flag == Combined.White else "Black"
 
@@ -449,7 +452,7 @@ def check_column_duplicates(file_path, output_path):
     return flag, third_col_modified
 
 
-def create_dxm_clothes_template(source_file, price=50.8, output_default=True):
+def create_dxm_clothes_template(source_file, price=50.8, title_prefix="", output_default=True):
     file_dir = utils.get_file_dir(source_file)
     filename = utils.get_filename_without_extension(source_file)
     ext = utils.get_file_ext(source_file)
@@ -462,13 +465,13 @@ def create_dxm_clothes_template(source_file, price=50.8, output_default=True):
     w_front_no_design_Flag = False
 
     if third_col_modified:
-        handler(ignore_io_permission, price, repertorys, w_front_no_design_Flag, output_default)
+        handler(ignore_io_permission, price, title_prefix, repertorys, w_front_no_design_Flag, output_default)
     else:
         if flag:
             print("⚠️ 源文件的某列存在重复内容，已终止后续处理。")
         else:
             print("🎉 源文件所有列均无重复内容")
-            handler(source_file, price, repertorys, w_front_no_design_Flag, output_default)
+            handler(source_file, price, title_prefix, repertorys, w_front_no_design_Flag, output_default)
 
 
 if __name__ == '__main__':

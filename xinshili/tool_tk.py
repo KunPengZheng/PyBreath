@@ -415,8 +415,14 @@ class DxmClothesTool(QWidget):
         # 创建单行输入框
         self.line_edit = QLineEdit()
         self.line_edit.setPlaceholderText("请输入价格")
-        self.line_edit.setFixedSize(100, 50)
+        self.line_edit.setFixedSize(150, 50)
         layout.addWidget(self.line_edit)
+
+        # 创建单行输入框
+        self.title_edit = QLineEdit()
+        self.title_edit.setPlaceholderText("请输入标题前缀文案")
+        self.title_edit.setFixedSize(150, 50)
+        layout.addWidget(self.title_edit)
 
         # # 选择输出文件按钮
         # self.output_btn = QPushButton("选择输出目录", self)
@@ -458,11 +464,16 @@ class DxmClothesTool(QWidget):
         if not self.input_folder:
             QMessageBox.critical(self, "错误", "请先选择输入文件！")
             return
+
+        if not self.title_edit.text():  # 判断 QLineEdit 是否为空
+            QMessageBox.critical(self, "错误", "请输入标题前缀文案")
+            return
+
         if not self.line_edit.text():  # 判断 QLineEdit 是否为空
             QMessageBox.critical(self, "错误", "请输入价格")
         try:
-            create_dxm_clothes_template(self.input_folder, self.line_edit.text().strip(), False)
-
+            create_dxm_clothes_template(self.input_folder, self.line_edit.text().strip(),
+                                        self.title_edit.text().strip(), False)
             output_dir = utils.get_file_dir(self.input_folder)
             file_name_with_extension = utils.get_filename_with_extension(self.input_folder)
             result_output_file = output_dir + "/create_" + file_name_with_extension
