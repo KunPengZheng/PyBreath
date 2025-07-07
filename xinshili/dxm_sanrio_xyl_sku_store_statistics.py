@@ -219,16 +219,48 @@ def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
     print(f"✅ 所有工作表已写入，库存更新已处理并保存至：{output_path}")
 
 
+# def get_range_column_data(file_path, sheet_name, column_name, start_row, end_row):
+#     """
+#     获取 Excel 指定 sheet 的某一列数据（包含列头），支持行区间选择。
+#
+#     :param file_path: Excel 文件路径
+#     :param sheet_name: 工作表名称
+#     :param column_name: 要读取的列名
+#     :param start_row: 起始行号（从 0 开始，0 表示包含列头）
+#     :param end_row: 结束行号（包含，None 表示到末尾）
+#     :return: 列表形式返回数据
+#     """
+#     try:
+#         df = pd.read_excel(file_path, sheet_name=sheet_name, dtype=object).fillna("")
+#
+#         if column_name not in df.columns:
+#             raise ValueError(f"❌ 指定列名 '{column_name}' 不存在于工作表 '{sheet_name}' 中。")
+#
+#         # 列数据（包含列头）
+#         data_with_header = [column_name] + df[column_name].tolist()
+#
+#         # 切片区间（包含列头），行号从 0 开始，包含 end_row
+#         start_idx = max(0, start_row - 1)
+#         end_idx = end_row
+#
+#         return data_with_header[start_idx:end_idx]
+#
+#     except Exception as e:
+#         print(f"⚠️ 获取失败: {e}")
+#         return []
+
+
 def get_range_column_data(file_path, sheet_name, column_name, start_row, end_row):
     """
     获取 Excel 指定 sheet 的某一列数据（包含列头），支持行区间选择。
+    返回二维数组，每个元素是一个子数组，每个子数组只有一个值。
 
     :param file_path: Excel 文件路径
     :param sheet_name: 工作表名称
     :param column_name: 要读取的列名
     :param start_row: 起始行号（从 0 开始，0 表示包含列头）
     :param end_row: 结束行号（包含，None 表示到末尾）
-    :return: 列表形式返回数据
+    :return: 列表形式返回二维数据
     """
     try:
         df = pd.read_excel(file_path, sheet_name=sheet_name, dtype=object).fillna("")
@@ -239,11 +271,12 @@ def get_range_column_data(file_path, sheet_name, column_name, start_row, end_row
         # 列数据（包含列头）
         data_with_header = [column_name] + df[column_name].tolist()
 
-        # 切片区间（包含列头），行号从 0 开始，包含 end_row
+        # 切片区间
         start_idx = max(0, start_row - 1)
         end_idx = end_row
 
-        return data_with_header[start_idx:end_idx]
+        result = data_with_header[start_idx:end_idx]
+        return [[item] for item in result]
 
     except Exception as e:
         print(f"⚠️ 获取失败: {e}")
@@ -279,17 +312,16 @@ def get_range_column_row_data(file_path, sheet_name, start_row, end_row, start_c
 
 def xyl_fs(formatted_date, template_copy_path):
     xyl_sku_zjhz_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 2, 124)
-    print("111111:", len(xyl_sku_zjhz_arr))
-    xyl_sku_zjhz_arr.insert(0, formatted_date)
-    xyl_sku_zjhz_arr.append({"type": "formula", "text": f"=SUM(L2:L124"})
+    xyl_sku_zjhz_arr.insert(0, [formatted_date])
+    xyl_sku_zjhz_arr.append([{"type": "formula", "text": f"=SUM(L2:L124"}])
 
     xyl_sku_ejyxhz_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 126, 234)
-    xyl_sku_ejyxhz_arr.insert(0, formatted_date)
-    xyl_sku_ejyxhz_arr.append({"type": "formula", "text": f"=SUM(L2:L110"})
+    xyl_sku_ejyxhz_arr.insert(0, [formatted_date])
+    xyl_sku_ejyxhz_arr.append([{"type": "formula", "text": f"=SUM(L2:L110"}])
 
     xyl_store_arr = get_range_column_data(template_copy_path, RowName.Store_Sales, RowName.Order_Sales, 2, 45)
-    xyl_store_arr.insert(0, formatted_date)
-    xyl_store_arr.append({"type": "formula", "text": f"=SUM(E2:E48"})
+    xyl_store_arr.insert(0, [formatted_date])
+    xyl_store_arr.append([{"type": "formula", "text": f"=SUM(E2:E48"}])
 
     print(len(xyl_sku_zjhz_arr), xyl_sku_zjhz_arr)
     print(len(xyl_sku_ejyxhz_arr), xyl_sku_ejyxhz_arr)
@@ -297,7 +329,6 @@ def xyl_fs(formatted_date, template_copy_path):
 
     xyl_sku_inventory_zjhz_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 2, 124, "C",
                                                            "E")
-    print("22222:", len(xyl_sku_inventory_zjhz_arr))
     xyl_sku_inventory_ejyxhz_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 126, 234,
                                                              "C", "E")
     print(len(xyl_sku_inventory_zjhz_arr), xyl_sku_inventory_zjhz_arr)
@@ -325,7 +356,7 @@ def xyl_fs(formatted_date, template_copy_path):
                                     "values": xyl_sku_zjhz_arr
                                 },
                                 {
-                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz]}!D2:F{len(xyl_sku_inventory_zjhz_arr)}",
+                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz]}!D2:F{len(xyl_sku_inventory_zjhz_arr) + 1}",
                                     "values": xyl_sku_inventory_zjhz_arr
                                 }
                             ]
@@ -339,7 +370,7 @@ def xyl_fs(formatted_date, template_copy_path):
                                     "values": xyl_sku_ejyxhz_arr
                                 },
                                 {
-                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz]}!D2:F{len(xyl_sku_inventory_ejyxhz_arr)}",
+                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz]}!D2:F{len(xyl_sku_inventory_ejyxhz_arr) + 1}",
                                     "values": xyl_sku_inventory_ejyxhz_arr
                                 }
                             ]
