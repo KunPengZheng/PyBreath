@@ -320,7 +320,7 @@ def xyl_fs(formatted_date, template_copy_path):
 
     values_batch_update(token, FsConstants.xyl_sales_repertory_token,
                         post_data={
-                            "valueRange": [
+                            "valueRanges": [
                                 {
                                     "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz]}!L1:L{len(xyl_sku_zjhz_arr)}",
                                     "values": xyl_sku_zjhz_arr
@@ -334,7 +334,7 @@ def xyl_fs(formatted_date, template_copy_path):
 
     values_batch_update(token, FsConstants.xyl_sales_repertory_token,
                         post_data={
-                            "valueRange": [
+                            "valueRanges": [
                                 {
                                     "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz]}!L1:L{len(xyl_sku_ejyxhz_arr)}",
                                     "values": xyl_sku_ejyxhz_arr
@@ -496,4 +496,4 @@ def call(analyse_obj):
 
 if __name__ == '__main__':
     call(ClientConstants.xyl)
-    call(ClientConstants.sanrio)
+    # call(ClientConstants.sanrio)
