@@ -619,8 +619,9 @@ def values_batch_update(tat, spreadsheet_token, post_data):
     header = {"Content-Type": "application/json; charset=utf-8", "Authorization": "Bearer " + str(tat)}  # 请求头
 
     # values_prepend 需要使用post请求方式，values需要使用put请求方式
-    r2 = requests.put(url, data=json.dumps(post_data), headers=header)
-    print(r2.json())  # 输出来判断写入是否成功
+    response = requests.post(url, data=json.dumps(post_data), headers=header)
+    print(response.status_code)
+    print(response.json())
 
 
 def fs_col_to_index(col: str) -> int:
