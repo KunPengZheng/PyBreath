@@ -34,7 +34,7 @@ def convert_china_to_utc0(china_time: datetime) -> datetime:
 
 
 def process_tracking_time1(file_path):
-    df = pd.read_excel(file_path)
+    df = pd.read_excel(file_path, dtype=str)
 
     # 先排除状态为 unpaid、delivered、irregular_no_tracking 的行
     df_filtered = df[~df[RowName.Courier].str.lower().isin([
@@ -171,7 +171,7 @@ def create_fs_xlsx_file(file_path):
 
 def export_yd_data(source_file, target_file):
     # 读取源文件
-    df = pd.read_excel(source_file)
+    df = pd.read_excel(source_file, dtype=str)
 
     def safe_concat_time(row):
         date_part = str(row.get(RowName.LatestEventSfDate, "")).strip()
