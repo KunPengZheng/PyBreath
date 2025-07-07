@@ -544,7 +544,7 @@ def insert_col_row(tat, spreadsheet_token, sheetId, startIndex, endIndex, majorD
             "startIndex": startIndex,
             "endIndex": endIndex
         },
-        "inheritStyle": "BEFORE"
+        "inheritStyle": inheritStyle
     }
 
     response = requests.post(url, json=payload, headers=headers)
