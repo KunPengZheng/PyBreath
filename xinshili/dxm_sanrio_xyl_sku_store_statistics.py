@@ -241,7 +241,7 @@ def get_range_column_data(file_path, sheet_name, column_name, start_row, end_row
 
         # 切片区间（包含列头），行号从 0 开始，包含 end_row
         start_idx = max(0, start_row - 1)
-        end_idx = end_row + 1 if end_row is not None else None
+        end_idx = end_row
 
         return data_with_header[start_idx:end_idx]
 
@@ -279,30 +279,29 @@ def get_range_column_row_data(file_path, sheet_name, start_row, end_row, start_c
 
 def xyl_fs(formatted_date, template_copy_path):
     xyl_sku_zjhz_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 2, 124)
+    print("111111:", len(xyl_sku_zjhz_arr))
     xyl_sku_zjhz_arr.insert(0, formatted_date)
-    # print(f"1111:{len(xyl_sku_zjhz_arr)}")
     xyl_sku_zjhz_arr.append({"type": "formula", "text": f"=SUM(L2:L124"})
 
     xyl_sku_ejyxhz_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 126, 234)
     xyl_sku_ejyxhz_arr.insert(0, formatted_date)
-    # print(f"2222:{len(xyl_sku_ejyxhz_arr)}")
     xyl_sku_ejyxhz_arr.append({"type": "formula", "text": f"=SUM(L2:L110"})
 
     xyl_store_arr = get_range_column_data(template_copy_path, RowName.Store_Sales, RowName.Order_Sales, 2, 45)
     xyl_store_arr.insert(0, formatted_date)
-    # print(f"3333:{len(xyl_store_arr)}")
     xyl_store_arr.append({"type": "formula", "text": f"=SUM(E2:E48"})
 
-    # print(xyl_sku_zjhz_arr)
-    # print(xyl_sku_ejyxhz_arr)
-    # print(xyl_store_arr)
+    print(len(xyl_sku_zjhz_arr), xyl_sku_zjhz_arr)
+    print(len(xyl_sku_ejyxhz_arr), xyl_sku_ejyxhz_arr)
+    print(len(xyl_store_arr), xyl_store_arr)
 
     xyl_sku_inventory_zjhz_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 2, 124, "C",
                                                            "E")
+    print("22222:", len(xyl_sku_inventory_zjhz_arr))
     xyl_sku_inventory_ejyxhz_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 126, 234,
                                                              "C", "E")
-    # print(xyl_sku_inventory_zjhz_arr)
-    # print(xyl_sku_inventory_ejyxhz_arr)
+    print(len(xyl_sku_inventory_zjhz_arr), xyl_sku_inventory_zjhz_arr)
+    print(len(xyl_sku_inventory_ejyxhz_arr), xyl_sku_inventory_ejyxhz_arr)
 
     token = get_token()
     startIndex = fs_col_to_index("K")
@@ -488,7 +487,7 @@ def call(analyse_obj):
         # 更新海运空运
         update_shipping_inventory(dszs_inventory_path, template_copy_path, template_copy_path)
         # 数据写入飞书表格
-        # xyl_fs(formatted_date, template_copy_path)
+        xyl_fs(formatted_date, template_copy_path)
     elif ClientConstants.sanrio:
         update_total_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
         # sanrio_fs(formatted_date, template_copy_path)
