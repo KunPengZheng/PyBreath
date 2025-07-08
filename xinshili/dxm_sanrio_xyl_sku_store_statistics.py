@@ -350,43 +350,43 @@ def xyl_fs(formatted_date, template_copy_path):
     startIndex = fs_col_to_index("K")
     endIndex = fs_col_to_index("L")
 
-    # insert_col_row(token, FsConstants.xyl_sales_repertory_token,
-    #                ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz],
-    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
-    # insert_col_row(token, FsConstants.xyl_sales_repertory_token,
-    #                ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz],
-    #                startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    insert_col_row(token, FsConstants.xyl_sales_repertory_token,
+                   ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz],
+                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
+    insert_col_row(token, FsConstants.xyl_sales_repertory_token,
+                   ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz],
+                   startIndex, endIndex, FsConstants.COLUMNS, FsConstants.AFTER)
     insert_col_row(token, FsConstants.xyl_sales_repertory_token,
                    ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_store],
                    fs_col_to_index("D"), fs_col_to_index("E"), FsConstants.COLUMNS, FsConstants.AFTER)
-    #
-    # values_batch_update(token, FsConstants.xyl_sales_repertory_token,
-    #                     post_data={
-    #                         "valueRanges": [
-    #                             {
-    #                                 "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz]}!L1:L{len(xyl_sku_zjhz_arr)}",
-    #                                 "values": xyl_sku_zjhz_arr
-    #                             },
-    #                             {
-    #                                 "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz]}!D2:F{len(xyl_sku_inventory_zjhz_arr) + 1}",
-    #                                 "values": xyl_sku_inventory_zjhz_arr
-    #                             }
-    #                         ]
-    #                     })
-    #
-    # values_batch_update(token, FsConstants.xyl_sales_repertory_token,
-    #                     post_data={
-    #                         "valueRanges": [
-    #                             {
-    #                                 "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz]}!L1:L{len(xyl_sku_ejyxhz_arr)}",
-    #                                 "values": xyl_sku_ejyxhz_arr
-    #                             },
-    #                             {
-    #                                 "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz]}!D2:F{len(xyl_sku_inventory_ejyxhz_arr) + 1}",
-    #                                 "values": xyl_sku_inventory_ejyxhz_arr
-    #                             }
-    #                         ]
-    #                     })
+
+    values_batch_update(token, FsConstants.xyl_sales_repertory_token,
+                        post_data={
+                            "valueRanges": [
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz]}!L1:L{len(xyl_sku_zjhz_arr)}",
+                                    "values": xyl_sku_zjhz_arr
+                                },
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_zjhz]}!D2:F{len(xyl_sku_inventory_zjhz_arr) + 1}",
+                                    "values": xyl_sku_inventory_zjhz_arr
+                                }
+                            ]
+                        })
+
+    values_batch_update(token, FsConstants.xyl_sales_repertory_token,
+                        post_data={
+                            "valueRanges": [
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz]}!L1:L{len(xyl_sku_ejyxhz_arr)}",
+                                    "values": xyl_sku_ejyxhz_arr
+                                },
+                                {
+                                    "range": f"{ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_sku_ejyxhz]}!D2:F{len(xyl_sku_inventory_ejyxhz_arr) + 1}",
+                                    "values": xyl_sku_inventory_ejyxhz_arr
+                                }
+                            ]
+                        })
 
     value_range(token, FsConstants.xyl_sales_repertory_token,
                 ClientMapConstants[ClientConstants.xyl_sales_repertory][MapFields.xyl_store],
