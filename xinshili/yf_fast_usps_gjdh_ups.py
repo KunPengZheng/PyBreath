@@ -36,9 +36,11 @@ def usps(file1_path, file2_path, output_dir, order_prefix, remark_prefix):
         if col not in df1.columns:
             df1[col] = ""
 
+    # 替换 "--" 为 ""，并拼接
     df2["收件人地址2"] = df1[address_cols].apply(
-        lambda row: " ".join(part.strip() for part in row if part.strip()), axis=1
-    )
+        lambda row: " ".join(part.strip().replace("--", "") for part in row if part.strip() and part.strip() != "--"),
+        axis=1
+        )
 
     # 生成备注列格式为“前缀-店铺-系统单号”
     if all(col in df1.columns for col in ["订单号"]) and "备注" in df2.columns:
@@ -137,7 +139,7 @@ if __name__ == '__main__':
     output_dir = f"/Users/zkp/Desktop/B&Y/yd/yd_temu_yf/"
     ups(source_file, f"{utils.current_dir()}/xlsx/yd/国际单号_UPS_阳单模板.xlsx",
         output_dir, remark_prefixs, "运输途中")
-    usps(source_file, f"{utils.current_dir()}/xlsx/yd/国际单号_USPS_阳单模版.xlsx",
+    usps(source_file, f"{utils.current_dir()}/xlsx/yd/fastusps_USPS_阳单模版.xlsx",
          output_dir, order_prefixs, remark_prefixs)
 
     utils.open_dir(output_dir)
