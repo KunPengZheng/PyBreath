@@ -1033,7 +1033,7 @@ def get_unpaid_platform_tracking_map(file_path):
     :return: 分组数据字典：{ 分组时间（None 或 日期）: { platform_number: {tracking_number, kj} } }
     """
     # 读取 Excel 文件
-    data = pd.read_excel(file_path, dtype=str)
+    data = pd.read_excel(file_path)
 
     required_columns = [
         RowName.Courier, RowName.Platform_Num, RowName.Tracking_No,
@@ -1214,7 +1214,7 @@ def convert_inch_to_cm(value_in_inch):
 
 def get_in(file_path, sku_to_match):
     # 读取 Excel 文件
-    data = pd.read_excel(file_path, dtype=str)
+    data = pd.read_excel(file_path)
 
     # 确保相关列存在
     required_columns = [RowName.SKU, RowName.Length, RowName.Width, RowName.Height, RowName.Unit]
@@ -1319,7 +1319,7 @@ def sku_kj_count(file_path, sku_value,
 
 def kj_count(file_path, shipping_service_column=RowName.ShippingService, recipient_column=RowName.Recipient):
     # 读取 Excel 文件
-    data = pd.read_excel(file_path, dtype=str)
+    data = pd.read_excel(file_path)
 
     # 确保必要的列存在
     if shipping_service_column not in data.columns or recipient_column not in data.columns:
