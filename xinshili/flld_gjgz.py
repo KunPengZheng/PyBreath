@@ -515,8 +515,7 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
 
 
 def call():
-    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, True)
-    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.7/打单时间1_90.xlsx")
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, True)
 
 
 if __name__ == '__main__':
