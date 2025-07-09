@@ -72,6 +72,12 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, remark_prefix
 if __name__ == '__main__':
     source_file = input("请输入源表文件的绝对路径：")
 
+    select_channel = "请选择渠道："
+    select_channel += "\n1：UPS"
+    select_channel += "\n2：USPS"
+    select_channel += "\n"
+    select_channel_input = input(select_channel)
+
     select = "请选择备注前缀："
     select += "\n1：daicai"
     select += "\n2：yd"
@@ -85,8 +91,16 @@ if __name__ == '__main__':
     else:
         print("🈚️此项功能！")
 
-    dst_path = utils.current_dir() + "/xlsx/yd/国际单号_USPS_阳单模版.xlsx"
-    output_dir = f"/Users/zkp/Desktop/B&Y/yd/yd_gjdh/"
+    dst_path = ""
+    output_dir = ""
+    if select_channel_input == "1":
+        output_dir = f"/Users/zkp/Desktop/B&Y/yd/yd_gjdh/ups"
+        dst_path = utils.current_dir() + "/xlsx/yd/国际单号_UPS_阳单模板.xlsx"
+    elif select_channel_input == "2":
+        output_dir = f"/Users/zkp/Desktop/B&Y/yd/yd_gjdh/usps"
+        dst_path = utils.current_dir() + "/xlsx/yd/国际单号_USPS_阳单模版.xlsx"
+    else:
+        print("🈚️此项功能！")
 
     state = "运输途中"
 
