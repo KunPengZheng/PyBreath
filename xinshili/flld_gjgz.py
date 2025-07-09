@@ -110,8 +110,16 @@ def get_days_difference(file_path, column_name="打单时间"):
             # 如果是字符串并且没有年份，补充当前年份
             if len(first_row_value.split('-')) == 2:  # 格式为 'MM-DD' 或 'DD-MM'
                 first_row_value = f"{current_year}-{first_row_value}"
-            # 尝试解析日期
-            outbound_time = datetime.strptime(first_row_value, "%Y-%m-%d %H:%M")
+
+            # 尝试解析日期,支持带秒或不带秒的时间格式
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+                try:
+                    outbound_time = datetime.strptime(first_row_value.strip(), fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
+                raise ValueError(f"❌ 无法识别时间格式: {first_row_value}")
         elif isinstance(first_row_value, datetime):
             # 如果是已经是 datetime 类型，直接处理
             outbound_time = first_row_value
@@ -507,7 +515,8 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
 
 
 def call():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, True)
+    # automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, True)
+    go("/Users/zkp/Desktop/B&Y/轨迹统计/flld/2025.7/打单时间1_90.xlsx")
 
 
 if __name__ == '__main__':
