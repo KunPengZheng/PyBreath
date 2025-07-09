@@ -160,7 +160,7 @@ def ups_yd_to_dxm(file1_path, file2_template_path, output_dir):
         df2["*发货类型\n0：虚拟发货、1:发货\n（必填）"] = "1"
 
     strftime = datetime.now().strftime("%Y-%m-%d")
-    output_path = os.path.join(output_dir, f"{strftime}_{len(df2)}单.xlsx")
+    output_path = os.path.join(output_dir, f"ups2dxm_{strftime}_{len(df2)}单.xlsx")
 
     # 保存结果
     df2.to_excel(output_path, index=False)
@@ -205,7 +205,7 @@ def usps_yd_to_gc(file1_path, file2_template_path, output_dir):
         df2["*工厂地址ID"] = "38ea2fc5e0c00"
 
     strftime = datetime.now().strftime("%Y-%m-%d")
-    output_path = os.path.join(output_dir, f"{strftime}_{len(df2)}单.xlsx")
+    output_path = os.path.join(output_dir, f"usps2gc_{strftime}_{len(df2)}单.xlsx")
 
     # 保存结果
     df2.to_excel(output_path, index=False)
@@ -249,7 +249,7 @@ if __name__ == '__main__':
         ups_yd_to_dxm(source_file, template_path, output_dir)
     elif select_input == "3":
         source_file = input("请输入源表文件的绝对路径：")
-        template_path = utils.current_dir() + "/xlsx/dxm/衣服面单匹配模板.xlsx"
+        template_path = utils.current_dir() + "/xlsx/yd/衣服面单匹配模板.xlsx"
         usps_yd_to_gc(source_file, template_path, output_dir)
     else:
         print("🈚️此项功能！")
