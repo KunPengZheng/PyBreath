@@ -235,37 +235,6 @@ def get_xlsx_data_len(file_path):
     return nested_list
 
 
-def extract_order_ids_as_str(file_path: str, column_name=RowName.Order_Num) -> list[str]:
-    """
-    读取 Excel 中的“订单号”列，确保其以字符串形式提取出来。
-    """
-    df = pd.read_excel(file_path, dtype={column_name: str})
-    return df[column_name].fillna("").astype(str).tolist()
-
-
-def force_write_order_ids_to_excel(file_path: str, order_ids: list[str], column_name=RowName.Order_Num):
-    """
-    强制将订单号列写成字符串格式，避免 Excel 自动转为科学计数法。
-    """
-    wb = load_workbook(file_path)
-    ws = wb.active
-
-    # 找出列索引
-    header = [cell.value for cell in ws[1]]
-    if column_name not in header:
-        raise ValueError(f"列名“{column_name}”未在 Excel 表头中找到")
-
-    col_index = header.index(column_name) + 1
-    col_letter = get_column_letter(col_index)
-
-    for i, value in enumerate(order_ids, start=2):  # 从第2行开始写入
-        cell = ws[f"{col_letter}{i}"]
-        cell.value = str(value)
-        cell.number_format = '@'  # '@' 表示文本格式
-
-    wb.save(file_path)
-
-
 def usps_track(xlsx_path, column_name, wl_name):
     results = extract_and_process_data(xlsx_path, column_name, 100, wl_name=wl_name, dxm_xyl_yd_flag=True)
     all_maps = {}
@@ -333,8 +302,6 @@ def usps_track(xlsx_path, column_name, wl_name):
 
 
 def go(xlsx_path, dxm_xyl_track_merger):
-    order_ids = extract_order_ids_as_str(xlsx_path)
-
     check_and_add_courier_column(xlsx_path)
 
     process_tracking_no(xlsx_path, RowName.Track_Num)
@@ -348,7 +315,6 @@ def go(xlsx_path, dxm_xyl_track_merger):
     usps_track(xlsx_path, RowName.YD_State, RowName.YD_Number)
 
     process_tracking_time1(xlsx_path)
-    force_write_order_ids_to_excel(xlsx_path, order_ids)
     export_yd_data(xlsx_path, dxm_xyl_track_merger)
 
 
