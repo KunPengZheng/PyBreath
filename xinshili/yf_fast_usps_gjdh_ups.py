@@ -154,7 +154,7 @@ def ups_yd_to_dxm(file1_path, file2_template_path, output_dir):
 
     # 批量填充固定值
     if "*物流方式\n（必填）" in df2.columns:
-        df2["*物流方式\n（必填）"] = "USPS"
+        df2["*物流方式\n（必填）"] = "UPS"
     if "*发货类型\n0：虚拟发货、1:发货\n（必填）" in df2.columns:
         df2["*发货类型\n0：虚拟发货、1:发货\n（必填）"] = "1"
 
