@@ -70,17 +70,7 @@ def test_proxy(proxy_string, proxy_type="socks5"):
 # ============ 5. 主程序 ============= #
 if __name__ == "__main__":
     proxy_lines = [
-        "31.59.18.165:6746:rodkjbxe:7ec907jvbgyv",
-        "192.177.103.167:6660:rodkjbxe:7ec907jvbgyv",
-        "50.114.98.133:5617:rodkjbxe:7ec907jvbgyv",
-        "38.153.133.85:9489:rodkjbxe:7ec907jvbgyv",
         "142.147.128.227:6727:rodkjbxe:7ec907jvbgyv",
-        "23.27.196.104:6473:rodkjbxe:7ec907jvbgyv",
-        "173.0.9.121:5704:rodkjbxe:7ec907jvbgyv",
-        "92.113.3.133:6142:rodkjbxe:7ec907jvbgyv",
-        "136.0.105.98:6108:rodkjbxe:7ec907jvbgyv",
-        "191.101.41.178:6250:rodkjbxe:7ec907jvbgyv",
-        "136.0.117.8:6746:rodkjbxe:7ec907jvbgyv",
     ]
 
     for line in proxy_lines:
