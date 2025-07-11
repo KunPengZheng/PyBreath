@@ -2,6 +2,8 @@ import pandas as pd
 from datetime import datetime
 import os
 import re
+import random
+import string
 
 from xinshili import utils
 from xinshili.utils import current_time
@@ -171,12 +173,12 @@ def ups_yd_to_dxm(file1_path, file2_template_path, output_dir):
 def usps_yd_to_gc(file1_path, file2_template_path, output_dir):
     def clean_order_id(order_id: str) -> str:
         """
-        去除订单编号中最后一个 `-xxx` 后缀，例如：
-        '123456-a' -> '123456'
-        'ABC-123-sds' -> 'ABC-123'
+        去除订单编号中最后一个 `_xxx` 后缀，例如：
+        '123456_abc' -> '123456'
+        'ABC_123_def' -> 'ABC_123'
         """
         order_id = order_id.strip()
-        return re.sub(r"-[^-]+$", "", order_id)
+        return re.sub(r"_[^_]+$", "", order_id)
 
     # 读取两个 Excel 文件
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
@@ -225,17 +227,8 @@ if __name__ == '__main__':
 
     if select_input == "1":
         source_file = input("请输入源表文件的绝对路径：")
-        # platform_order_number_suffix = input("请输入平台订单号后缀：")
-        #
-        order_prefixs = ""
-        # if not platform_order_number_suffix:
-        #     order_prefixs = ""
-        # else:
-        #     if platform_order_number_suffix[0].isalpha():
-        #         order_prefixs = "-" + platform_order_number_suffix
-        #     else:
-        #         raise ValueError(f"订单号后缀只能以字母为开头")
 
+        order_prefixs = '_'.join(random.choices(string.ascii_lowercase, k=3))
         remark_prefixs = 'yfyd'
         ups(source_file, f"{utils.current_dir()}/xlsx/yd/国际单号_UPS_阳单模板.xlsx",
             output_dir, remark_prefixs, "运输途中")
