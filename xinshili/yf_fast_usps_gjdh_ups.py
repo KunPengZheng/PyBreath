@@ -9,7 +9,7 @@ from xinshili import utils
 from xinshili.utils import current_time
 
 
-def usps(file1_path, file2_path, output_dir, order_prefix, remark_prefix):
+def fastU(file1_path, file2_path, output_dir, order_prefix, remark_prefix, channel_flag):
     # 读取文件，并将所有内容当作字符串读入，避免数字变格式
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
     df2 = pd.read_excel(file2_path, dtype=str).fillna("")
@@ -60,7 +60,10 @@ def usps(file1_path, file2_path, output_dir, order_prefix, remark_prefix):
     else:
         print("⚠️ df2 中缺少“订单号”列，跳过去重。")
 
-    output_path = f"{output_dir}{current_time()}_usps阳单_{len(df2)}单.xlsx"
+    if channel_flag == "USPS":
+        output_path = f"{output_dir}{current_time()}_usps阳单_{len(df2)}单.xlsx"
+    elif channel_flag == "UPS":
+        output_path = f"{output_dir}{current_time()}_ups阳单_{len(df2)}单.xlsx"
 
     # 保存文件
     df2.to_excel(output_path, index=False)
@@ -170,23 +173,24 @@ def ups_yd_to_dxm(file1_path, file2_template_path, output_dir):
     utils.open_dir(output_dir)
 
 
-def usps_yd_to_gc(file1_path, file2_template_path, output_dir):
-    def clean_order_id(order_id: str) -> str:
-        """
-        去除订单编号中最后一个 `_xxx` 后缀，例如：
-        '123456_abc' -> '123456'
-        'ABC_123_def' -> 'ABC_123'
-        """
-        order_id = order_id.strip()
-        return re.sub(r"_[^_]+$", "", order_id)
+def fastU_clean_order_id(order_id: str) -> str:
+    """
+    去除订单编号中最后两个 `_xxx` 后缀，例如：
+    '123_456_abc_def' -> '123_456'
+    'ABC_123_def' -> 'ABC'
+    """
+    order_id = order_id.strip()
+    return re.sub(r"(_[^_]+){1,2}$", "", order_id)
 
+
+def fast_usps_yd_to_gc(file1_path, file2_template_path, output_dir):
     # 读取两个 Excel 文件
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
     df2 = pd.read_excel(file2_template_path, dtype=str).fillna("")
 
     # 清理订单编号后缀
     if "订单编号" in df1.columns:
-        df1["订单编号"] = df1["订单编号"].apply(clean_order_id)
+        df1["订单编号"] = df1["订单编号"].apply(fastU_clean_order_id)
 
     # 列映射：文件1 ➜ 模板（文件2）
     mapping = {
@@ -207,7 +211,43 @@ def usps_yd_to_gc(file1_path, file2_template_path, output_dir):
         df2["*工厂地址ID"] = "38ea2fc5e0c00"
 
     strftime = datetime.now().strftime("%Y-%m-%d")
-    output_path = os.path.join(output_dir, f"usps2gc_{strftime}_{len(df2)}单.xlsx")
+    output_path = os.path.join(output_dir, f"fast_usps_2_gc_{strftime}_{len(df2)}单.xlsx")
+
+    # 保存结果
+    df2.to_excel(output_path, index=False)
+    print(f"✅ 文件已保存至: {output_path}")
+    utils.open_dir(output_dir)
+
+
+def fast_ups_yd_to_dxm(file1_path, file2_template_path, output_dir):
+    # 读取两个 Excel 文件
+    df1 = pd.read_excel(file1_path, dtype=str).fillna("")
+    df2 = pd.read_excel(file2_template_path, dtype=str).fillna("")
+
+    # 清理订单编号后缀
+    if "订单编号" in df1.columns:
+        df1["订单编号"] = df1["订单编号"].apply(fastU_clean_order_id)
+
+    # 列映射：文件1 ➜ 模板（文件2）
+    mapping = {
+        "订单编号": "*订单号\n(必填)",
+        "平台回传单号": "*跟踪号\n（必填）"
+    }
+
+    for src_col, target_col in mapping.items():
+        if src_col in df1.columns and target_col in df2.columns:
+            df2[target_col] = df1[src_col]
+        else:
+            print(f"⚠️ 缺少列: {src_col} 或 {target_col}，已跳过")
+
+    # 批量填充固定值
+    if "*物流方式\n（必填）" in df2.columns:
+        df2["*物流方式\n（必填）"] = "UPS"
+    if "*发货类型\n0：虚拟发货、1:发货\n（必填）" in df2.columns:
+        df2["*发货类型\n0：虚拟发货、1:发货\n（必填）"] = "1"
+
+    strftime = datetime.now().strftime("%Y-%m-%d")
+    output_path = os.path.join(output_dir, f"fast_ups_2_gc_{strftime}_{len(df2)}单.xlsx")
 
     # 保存结果
     df2.to_excel(output_path, index=False)
@@ -220,6 +260,7 @@ if __name__ == '__main__':
     select += "\n1：ups_usps_yd"
     select += "\n2：国际单号ups阳单 转换 店小秘模版"
     select += "\n3：Fast USPS阳单 转换 工厂模版"
+    select += "\n4：Fast UPS阳单 转换 店小秘模版"
     select += "\n"
     select_input = input(select)
 
@@ -227,14 +268,15 @@ if __name__ == '__main__':
 
     if select_input == "1":
         source_file = input("请输入源表文件的绝对路径：")
-
-        order_prefixs = '_'.join(random.choices(string.ascii_lowercase, k=3))
+        fast_usps_order_prefixs = '_usps_'.join(random.choices(string.ascii_lowercase, k=3))
+        fast_ups_order_prefixs = '_ups_'.join(random.choices(string.ascii_lowercase, k=3))
         remark_prefixs = 'yfyd'
         ups(source_file, f"{utils.current_dir()}/xlsx/yd/国际单号_UPS_阳单模板.xlsx",
             output_dir, remark_prefixs, "运输途中")
-        usps(source_file, f"{utils.current_dir()}/xlsx/yd/fastusps_USPS_阳单模版.xlsx",
-             output_dir, order_prefixs, remark_prefixs)
-
+        fastU(source_file, f"{utils.current_dir()}/xlsx/yd/fastusps_USPS_阳单模版.xlsx",
+              output_dir, fast_usps_order_prefixs, remark_prefixs, "USPS")
+        fastU(source_file, f"{utils.current_dir()}/xlsx/yd/fastusps_USPS_阳单模版.xlsx",
+              output_dir, fast_ups_order_prefixs, remark_prefixs, "UPS")
         utils.open_dir(output_dir)
     elif select_input == "2":
         source_file = input("请输入源表文件的绝对路径：")
@@ -243,6 +285,10 @@ if __name__ == '__main__':
     elif select_input == "3":
         source_file = input("请输入源表文件的绝对路径：")
         template_path = utils.current_dir() + "/xlsx/yd/衣服面单匹配模板.xlsx"
-        usps_yd_to_gc(source_file, template_path, output_dir)
+        fast_usps_yd_to_gc(source_file, template_path, output_dir)
+    elif select_input == "3":
+        source_file = input("请输入源表文件的绝对路径：")
+        template_path = utils.current_dir() + "/xlsx/dxm/import_logistics_information_template.xlsx"
+        fast_ups_yd_to_dxm(source_file, template_path, output_dir)
     else:
         print("🈚️此项功能！")
