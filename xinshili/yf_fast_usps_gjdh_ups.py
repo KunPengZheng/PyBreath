@@ -9,7 +9,7 @@ from xinshili import utils
 from xinshili.utils import current_time
 
 
-def fastU(file1_path, file2_path, output_dir, order_prefix, remark_prefix, channel_flag):
+def fastU(file1_path, file2_path, output_dir, order_prefix, channel_flag):
     # 读取文件，并将所有内容当作字符串读入，避免数字变格式
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
     df2 = pd.read_excel(file2_path, dtype=str).fillna("")
@@ -61,16 +61,16 @@ def fastU(file1_path, file2_path, output_dir, order_prefix, remark_prefix, chann
         print("⚠️ df2 中缺少“订单号”列，跳过去重。")
 
     if channel_flag == "USPS":
-        output_path = f"{output_dir}{current_time()}_usps阳单_{len(df2)}单.xlsx"
+        output_path = f"{output_dir}{current_time()}_fastU_usps阳单_{len(df2)}单.xlsx"
     elif channel_flag == "UPS":
-        output_path = f"{output_dir}{current_time()}_ups阳单_{len(df2)}单.xlsx"
+        output_path = f"{output_dir}{current_time()}_fastU_ups阳单_{len(df2)}单.xlsx"
 
     # 保存文件
     df2.to_excel(output_path, index=False)
     print(f"✅ 文件已更新并保存至：{output_path}")
 
 
-def ups(file1_path, file2_path, output_dir, remark_prefix, state):
+def ups(file1_path, file2_path, output_dir, state):
     # 读取文件，并将所有内容当作字符串读入，避免数字变格式
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
     df2 = pd.read_excel(file2_path, dtype=str).fillna("")
@@ -107,7 +107,7 @@ def ups(file1_path, file2_path, output_dir, remark_prefix, state):
 
     # 生成备注列格式为“前缀-店铺-系统单号”
     if all(col in df1.columns for col in ["订单号"]) and "备注" in df2.columns:
-        df2["备注"] = df1.apply(lambda row: f"{remark_prefix}-{row['订单号'].strip()}", axis=1)
+        df2["备注"] = df1.apply(lambda row: f"{row['订单号'].strip()}", axis=1)
     else:
         print("⚠️ 缺少“订单号”或 df2 中无“备注”列，未处理备注信息")
 
@@ -123,7 +123,7 @@ def ups(file1_path, file2_path, output_dir, remark_prefix, state):
     else:
         print("⚠️ df2 中缺少“订单号”列，跳过去重。")
 
-    output_path = f"{output_dir}{current_time()}_ups阳单_{len(df2)}单.xlsx"
+    output_path = f"{output_dir}{current_time()}_gjdh_ups阳单_{len(df2)}单.xlsx"
 
     # 保存文件
     df2.to_excel(output_path, index=False)
@@ -133,9 +133,6 @@ def ups(file1_path, file2_path, output_dir, remark_prefix, state):
 def ups_yd_to_dxm(file1_path, file2_template_path, output_dir):
     def clean_order_id(order_id: str) -> str:
         order_id = order_id.strip()
-        # 去除前缀 'yfyd-'
-        if order_id.lower().startswith("yfyd-"):
-            order_id = order_id[5:]
         return order_id
 
     # 读取两个 Excel 文件
@@ -268,15 +265,13 @@ if __name__ == '__main__':
 
     if select_input == "1":
         source_file = input("请输入源表文件的绝对路径：")
-        fast_usps_order_prefixs = '_usps_'.join(random.choices(string.ascii_lowercase, k=3))
-        fast_ups_order_prefixs = '_ups_'.join(random.choices(string.ascii_lowercase, k=3))
-        remark_prefixs = 'yfyd'
-        ups(source_file, f"{utils.current_dir()}/xlsx/yd/国际单号_UPS_阳单模板.xlsx",
-            output_dir, remark_prefixs, "运输途中")
+        fast_usps_order_prefixs = "_usps_" + ''.join(random.choices(string.ascii_lowercase, k=3))
+        fast_ups_order_prefixs = "_ups_" + ''.join(random.choices(string.ascii_lowercase, k=3))
+        ups(source_file, f"{utils.current_dir()}/xlsx/yd/国际单号_UPS_阳单模板.xlsx", output_dir, "运输途中")
         fastU(source_file, f"{utils.current_dir()}/xlsx/yd/fastusps_USPS_阳单模版.xlsx",
-              output_dir, fast_usps_order_prefixs, remark_prefixs, "USPS")
+              output_dir, fast_usps_order_prefixs, "USPS")
         fastU(source_file, f"{utils.current_dir()}/xlsx/yd/fastusps_USPS_阳单模版.xlsx",
-              output_dir, fast_ups_order_prefixs, remark_prefixs, "UPS")
+              output_dir, fast_ups_order_prefixs, "UPS")
         utils.open_dir(output_dir)
     elif select_input == "2":
         source_file = input("请输入源表文件的绝对路径：")
