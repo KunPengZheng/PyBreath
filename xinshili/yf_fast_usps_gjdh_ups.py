@@ -45,11 +45,12 @@ def usps(file1_path, file2_path, output_dir, order_prefix, remark_prefix):
         axis=1
     )
 
-    # 备注是给面单使用的 如："HS11168WE*1"
-    if all(col in df1.columns for col in ["SKU货号"]) and "备注" in df2.columns:
-        df2["备注"] = df1.apply(lambda row: f"{row['SKU货号'].strip()}*{row['应履约件数']}", axis=1)
-    else:
-        print("⚠️ 缺少“订单号”或 df2 中无“备注”列，未处理备注信息")
+    # # 备注是给面单使用的 如："HS11168WE*1"
+    # if all(col in df1.columns for col in ["SKU货号"]) and "备注" in df2.columns:
+    #     df2["备注"] = df1.apply(lambda row: f"{row['SKU货号'].strip()}*{row['应履约件数']}", axis=1)
+    # else:
+    #     print("⚠️ 缺少“订单号”或 df2 中无“备注”列，未处理备注信息")
+    df2["备注"] = "  "
 
     # 去重
     if "订单号" in df2.columns:
