@@ -120,11 +120,12 @@ class CourierStateMapValue:
     irregular_no_tracking = 'irregular_no_tracking'
     not_yet = 'not_yet'
     pre_ship = "pre_ship"
-    no_tracking = "no_tracking"
+    no_tracking = "no_tracking" # 其它无轨迹
     no_track = "no_track"
     unpaid = "unpaid"
     delivered = "delivered"
     tracking = "tracking"
+    acceptance_pending = "acceptance_pending"
     alert = "alert"
 
 
@@ -609,8 +610,8 @@ def count_pattern_and_tracking_with_sf_date(file_path, column_name, sfDateInterv
             courier_value = row[column_index]
             sfDateInterval_value = row[sfDateInterval_index]
 
-            # 判断是否符合 'tracking' 且 'SfDateEquality' 为 0 的条件
-            if courier_value == CourierStateMapValue.tracking and sfDateInterval_value == 0:
+            # 判断是否符合 'tracking' 且 'SfDateEquality' 为 0 或者 'acceptance_pending' 的条件
+            if (courier_value == CourierStateMapValue.tracking and sfDateInterval_value == 0) or (courier_value == CourierStateMapValue.acceptance_pending):
                 tracking_sf_date_equality_count += 1
 
             # 判断正则表达式匹配
@@ -663,26 +664,23 @@ def count_distribution_and_no_track(file_path, key_column, courier_column=RowNam
         return Counter(), Counter()
 
 
-def dimension_distribution(file_path, key_column, courier_column=RowName.Courier,
-                           sf_date_column=RowName.SfDateInterval):
+def dimension_distribution(file_path, key_column, courier_column=RowName.Courier):
     """
     通用函数，统计指定列的分布情况及其对应 "无轨迹" 的数量。
     :param file_path: Excel 文件路径
     :param key_column: 需要统计的列名
     :param courier_column: 快递列名
-    :param sf_date_column: SfDateEquality 列名
     :return: 各值的总数和 "无轨迹" 数量的 Counter 对象（已排序）
     """
     try:
         workbook = load_workbook(file_path, data_only=True)
         sheet = workbook.active
         headers = [cell.value for cell in sheet[1]]
-        if key_column not in headers or courier_column not in headers or sf_date_column not in headers:
-            raise ValueError(f"列名 '{key_column}' 或 '{courier_column}' 或 '{sf_date_column}' 不存在！")
+        if key_column not in headers or courier_column not in headers:
+            raise ValueError(f"列名 '{key_column}' 或 '{courier_column}' 不存在！")
 
         key_index = headers.index(key_column) + 1
         courier_index = headers.index(courier_column) + 1
-        sf_date_index = headers.index(sf_date_column) + 1
 
         key_counter = Counter()
         key_no_track_counter = Counter()
@@ -692,7 +690,6 @@ def dimension_distribution(file_path, key_column, courier_column=RowName.Courier
         for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, values_only=True):
             key_value = row[key_index - 1]
             courier_status = row[courier_index - 1]
-            sf_date_value = row[sf_date_index - 1]
 
             if key_value is not None:
                 key_counter[key_value] += 1
