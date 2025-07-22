@@ -2243,6 +2243,12 @@ def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False):
 
                                 delete_file(output_file)
 
+                                if tracking_zero_count_int == 0 and delivered_count_int == 0 and unpaid_count_int == 0 \
+                                        and not_yet_count_int == 0 and pre_ship_count_int == 0 and no_tracking_count_int == 0 \
+                                        and tracking_count_int == 0:
+                                    go(analyse_obj, xlsx_path)
+                                    continue
+
                                 if swl < 99 or change_shipment_received_count >= 10 or unpaid_count > 0 or \
                                         (exceed >= 14 and qsl < 98):
                                     go(analyse_obj, xlsx_path)
