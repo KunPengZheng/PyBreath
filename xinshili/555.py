@@ -189,23 +189,37 @@ def is_time_difference_exceed(start_time_str, end_time_str):
 
 
 def get_days_difference(file_path, column_name="Creation time/创建时间"):
-    workbook = load_workbook(file_path, data_only=True)
-    sheet = workbook.active
-    # 获取表头
-    headers = [cell.value for cell in sheet[1]]
-    if column_name not in headers:
-        raise ValueError(f"列名 '{column_name}' 不存在！")
-    # 获取列索引
-    column_index = headers.index(column_name) + 1
-    # 获取第一条数据
-    first_row_value = sheet.cell(row=2, column=column_index).value  # 假设数据从第二行开始
-    if not first_row_value:
-        raise ValueError(f"'{column_name}' 列的第一条数据为空！")
-    # 解析日期
-    outbound_time = datetime.strptime(first_row_value, "%Y-%m-%d %H:%M:%S")
-    # 格式化为 "%Y/%m/%d" 格式
-    formatted_date = outbound_time.strftime("%Y/%m/%d")
-    return formatted_date
+    try:
+        workbook = load_workbook(file_path, data_only=True)
+        sheet = workbook.active
+
+        # 获取表头
+        headers = [cell.value for cell in sheet[1]]
+        if column_name not in headers:
+            raise ValueError(f"列名 '{column_name}' 不存在！")
+        column_index = headers.index(column_name) + 1
+
+        # 从第二行开始查找有效数据
+        for row in range(2, sheet.max_row + 1):
+            cell_value = sheet.cell(row=row, column=column_index).value
+            if not cell_value:
+                continue
+
+            # 如果是 datetime 类型，直接处理
+            if isinstance(cell_value, datetime):
+                return cell_value.strftime("%Y/%m/%d")
+            else:
+                try:
+                    dt = datetime.strptime(str(cell_value), "%Y-%m-%d %H:%M:%S")
+                    return dt.strftime("%Y/%m/%d")
+                except ValueError:
+                    continue  # 格式不符跳过
+
+        raise ValueError("没有找到有效的时间格式数据！")
+
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return None
 
 
 def check_and_add_courier_column(file_path):
