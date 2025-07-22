@@ -9,6 +9,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 
 from xinshili.utils import ensure_directory_exists
+from openpyxl import load_workbook
 
 
 def update_courier(file1_path, file2_path, output_path):
@@ -253,6 +254,31 @@ def handle(lists, month_start, month_end, merge_exit=False):
     print("✅ 所有文件处理完毕。")
 
 
+def update_sales_by_sku(file1_path, file2_path, output_path=None):
+    # 读取文件1：统计 SKU 数量
+    df1 = pd.read_excel(file1_path, dtype=str)
+    df1['SKU'] = df1['SKU'].fillna('').str.strip()
+    sku_count_map = df1['SKU'].value_counts().to_dict()
+
+    # 读取文件2
+    df2 = pd.read_excel(file2_path, dtype=str)
+    df2['SKU'] = df2['SKU'].fillna('').str.strip()
+
+    # 如果“销量”列不存在则创建
+    if '销量' not in df2.columns:
+        df2['销量'] = 0
+
+    # 将 sku 数量写入销量列
+    df2['销量'] = df2['SKU'].apply(lambda x: sku_count_map.get(x, 0))
+
+    # 保存到原文件或新文件
+    save_path = output_path if output_path else file2_path
+    df2.to_excel(save_path, index=False)
+    print(f"✅ 已更新销量数据，保存路径：{save_path}")
+
+
+update_sales_by_sku("/Users/zkp/Downloads/副本ZBW库存流水1.xlsx", "/Users/zkp/Downloads/副本ZBW库存.xlsx")
+
 if __name__ == '__main__':
     handle(
         lists=[
@@ -263,3 +289,6 @@ if __name__ == '__main__':
         month_end="5",
         merge_exit=False
     )
+
+    # 计算客户库存
+    # update_sales_by_sku("/Users/zkp/Downloads/副本ZBW库存流水1.xlsx", "/Users/zkp/Downloads/副本ZBW库存.xlsx")
