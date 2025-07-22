@@ -120,7 +120,7 @@ class CourierStateMapValue:
     irregular_no_tracking = 'irregular_no_tracking'
     not_yet = 'not_yet'
     pre_ship = "pre_ship"
-    no_tracking = "no_tracking" # 其它无轨迹
+    no_tracking = "no_tracking"  # 其它无轨迹
     no_track = "no_track"
     unpaid = "unpaid"
     delivered = "delivered"
@@ -611,7 +611,8 @@ def count_pattern_and_tracking_with_sf_date(file_path, column_name, sfDateInterv
             sfDateInterval_value = row[sfDateInterval_index]
 
             # 判断是否符合 'tracking' 且 'SfDateEquality' 为 0 或者 'acceptance_pending' 的条件
-            if (courier_value == CourierStateMapValue.tracking and sfDateInterval_value == 0) or (courier_value == CourierStateMapValue.acceptance_pending):
+            if (courier_value == CourierStateMapValue.tracking and sfDateInterval_value == 0) or (
+                    courier_value == CourierStateMapValue.acceptance_pending):
                 tracking_sf_date_equality_count += 1
 
             # 判断正则表达式匹配
@@ -1001,21 +1002,31 @@ def get_days_difference(file_path, column_name=RowName.CreationTime):
     try:
         workbook = load_workbook(file_path, data_only=True)
         sheet = workbook.active
+
         # 获取表头
         headers = [cell.value for cell in sheet[1]]
         if column_name not in headers:
             raise ValueError(f"列名 '{column_name}' 不存在！")
-        # 获取列索引
         column_index = headers.index(column_name) + 1
-        # 获取第一条数据
-        first_row_value = sheet.cell(row=2, column=column_index).value  # 假设数据从第二行开始
-        if not first_row_value:
-            raise ValueError(f"'{column_name}' 列的第一条数据为空！")
-        # 解析日期
-        outbound_time = datetime.strptime(first_row_value, "%Y-%m-%d %H:%M:%S")
-        # 格式化为 "%Y/%m/%d" 格式
-        formatted_date = outbound_time.strftime("%Y/%m/%d")
-        return formatted_date
+
+        # 从第二行开始查找有效数据
+        for row in range(2, sheet.max_row + 1):
+            cell_value = sheet.cell(row=row, column=column_index).value
+            if not cell_value:
+                continue
+
+            # 如果是 datetime 类型，直接处理
+            if isinstance(cell_value, datetime):
+                return cell_value.strftime("%Y/%m/%d")
+            else:
+                try:
+                    dt = datetime.strptime(str(cell_value), "%Y-%m-%d %H:%M:%S")
+                    return dt.strftime("%Y/%m/%d")
+                except ValueError:
+                    continue  # 格式不符跳过
+
+        raise ValueError("没有找到有效的时间格式数据！")
+
     except Exception as e:
         print(f"发生错误: {e}")
         return None
@@ -1544,39 +1555,40 @@ def go(analyse_obj, xlsx_path):
         # update_courier_status(xlsx_path, {CourierStateMapKey.irregular_number_map: irregular_number_map})
         update_courier_status1(xlsx_path, irregular_number_map)
 
-    results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
-
-    all_maps = {
-        CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
-        CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
-        CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
-        CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
-        CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
-        CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
-        CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
-        CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
-        CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
-        CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
-        CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
-        CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
-    }
-
-    column_mapping = {
-        CourierStateMapKey.not_yet_map: RowName.Courier,
-        CourierStateMapKey.pre_ship_map: RowName.Courier,
-        CourierStateMapKey.unpaid_map: RowName.Courier,
-        CourierStateMapKey.delivered_map: RowName.Courier,
-        CourierStateMapKey.no_tracking_map: RowName.Courier,
-        CourierStateMapKey.tracking_map: RowName.Courier,
-        CourierStateMapKey.alert_map: RowName.Courier,
-        CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
-        CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
-        CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
-        CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
-        CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
-    }
-
-    update_courier_status(xlsx_path, all_maps, wl=RowName.Tracking_No, column_map=column_mapping)
+    # 目前接口暂时无法使用
+    # results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
+    #
+    # all_maps = {
+    #     CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
+    #     CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
+    #     CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
+    #     CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
+    #     CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
+    #     CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
+    #     CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
+    #     CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
+    #     CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
+    #     CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
+    #     CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
+    #     CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
+    # }
+    #
+    # column_mapping = {
+    #     CourierStateMapKey.not_yet_map: RowName.Courier,
+    #     CourierStateMapKey.pre_ship_map: RowName.Courier,
+    #     CourierStateMapKey.unpaid_map: RowName.Courier,
+    #     CourierStateMapKey.delivered_map: RowName.Courier,
+    #     CourierStateMapKey.no_tracking_map: RowName.Courier,
+    #     CourierStateMapKey.tracking_map: RowName.Courier,
+    #     CourierStateMapKey.alert_map: RowName.Courier,
+    #     CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
+    #     CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
+    #     CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
+    #     CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
+    #     CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
+    # }
+    #
+    # update_courier_status(xlsx_path, all_maps, wl=RowName.Tracking_No, column_map=column_mapping)
 
     # 针对zbw做的运单号过滤操作
     if analyse_obj == ClientConstants.zbw:
