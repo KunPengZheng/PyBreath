@@ -565,6 +565,13 @@ def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False):
                                 # real_track_count = total_count_int - no_track_count  # 真正的上网数
                                 # real_tracking_count = tracking_count_int - tracking_zero_count_int
 
+                                if tracking_zero_count_int == 0 and delivered_count_int == 0 and unpaid_count_int == 0 \
+                                        and not_yet_count_int == 0 and pre_ship_count_int == 0 and no_tracking_count_int == 0 \
+                                        and tracking_count_int == 0:
+                                    delete_file(output_file)
+                                    usps_arr.append(xlsx_path)
+                                    continue
+
                                 # 计算百分比
                                 swl = round2(100 - ((no_track_count_int) / total_count_int * 100))
                                 wswl = round2(100 - swl)
@@ -581,12 +588,6 @@ def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False):
                                     (change_shipment_received_count / total_count_int) * 100)
 
                                 delete_file(output_file)
-
-                                if tracking_zero_count_int == 0 and delivered_count_int == 0 and unpaid_count_int == 0 \
-                                        and not_yet_count_int == 0 and pre_ship_count_int == 0 and no_tracking_count_int == 0 \
-                                        and tracking_count_int == 0:
-                                    usps_arr.append(xlsx_path)
-                                    continue
 
                                 print(
                                     f"swl:{swl}, change_shipment_received_count:{change_shipment_received_count}, unpaid_count:{unpaid_count}, exceed:{exceed}, qsl:{qsl},")
