@@ -218,40 +218,42 @@ def delete_files(file_paths):
             print(f"❌ 删除失败: {path}，原因: {e}")
 
 
-def go(input_path):
+def go(input_path, api_flag):
     if input_path is None:
         input_path = input("请输入文件的绝对路径：")
+
     xlsx_path = extract_path_before_csv(input_path)
     str_strip(xlsx_path, "快递单号")
     check_and_add_courier_column(xlsx_path)
 
-    results = extract_and_process_data(xlsx_path, RowName.Courier, 100, "快递单号")
+    if api_flag:
+        results = extract_and_process_data(xlsx_path, RowName.Courier, 100, "快递单号")
 
-    all_maps = {
-        CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
-        CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
-        CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
-        CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
-        CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
-        CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
-        CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
-        CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
-        CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
-    }
+        all_maps = {
+            CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
+            CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
+            CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
+            CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
+            CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
+            CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
+            CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
+            CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
+            CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
+        }
 
-    column_mapping = {
-        CourierStateMapKey.not_yet_map: RowName.Courier,
-        CourierStateMapKey.pre_ship_map: RowName.Courier,
-        CourierStateMapKey.unpaid_map: RowName.Courier,
-        CourierStateMapKey.delivered_map: RowName.Courier,
-        CourierStateMapKey.no_tracking_map: RowName.Courier,
-        CourierStateMapKey.tracking_map: RowName.Courier,
-        CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
-        CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
-        CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
-    }
+        column_mapping = {
+            CourierStateMapKey.not_yet_map: RowName.Courier,
+            CourierStateMapKey.pre_ship_map: RowName.Courier,
+            CourierStateMapKey.unpaid_map: RowName.Courier,
+            CourierStateMapKey.delivered_map: RowName.Courier,
+            CourierStateMapKey.no_tracking_map: RowName.Courier,
+            CourierStateMapKey.tracking_map: RowName.Courier,
+            CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
+            CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
+            CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
+        }
 
-    update_courier_status(xlsx_path, all_maps, wl="快递单号", column_map=column_mapping)
+        update_courier_status(xlsx_path, all_maps, wl="快递单号", column_map=column_mapping)
 
     total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
     track_count = total_count - no_track_count
@@ -439,7 +441,7 @@ def detect_duplicate_prefix_suffix(dir_path):
             delete_files(files)
 
 
-def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
+def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
     today = datetime.now()
     current_year = today.year
     current_month = today.month
@@ -463,11 +465,11 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
                     day = match.group(1)
                     current_times = f"{year}-{month}-{day}"
                     exceed = is_time_difference_exceed(current_time, current_times)
-                    if exceed <= 15:
+                    if exceed <= 22:
                         print(f"正在处理文件: {xlsx_path}")
 
                         if ignore:
-                            go(xlsx_path)
+                            go(xlsx_path, api_flag)
                             continue
 
                         ck_time = get_days_difference(xlsx_path)
@@ -475,17 +477,17 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
                                                                                                     "%Y/%m/%d")).days
 
                         if interval_time == 1 and is_morning:
-                            go(xlsx_path)
+                            go(xlsx_path, api_flag)
                         else:
                             if is_morning:
                                 continue
 
                             if (analyse_obj_ignore):
-                                go(xlsx_path)
+                                go(xlsx_path, api_flag)
                                 continue
 
                             if (check_and_add_courier_column(xlsx_path)):
-                                go(xlsx_path)
+                                go(xlsx_path, api_flag)
                             else:
 
                                 output_file = os.path.splitext(xlsx_path)[0] + "_复制.xlsx"
@@ -511,11 +513,11 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False):
                                 delete_file(output_file)
 
                                 if swl < 99 or unpaid_count > 0 or (exceed >= 14 and delivered_countl < 98):
-                                    go(xlsx_path)
+                                    go(xlsx_path, api_flag)
 
 
 def call():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, True)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", True, True, False)
 
 
 if __name__ == '__main__':
