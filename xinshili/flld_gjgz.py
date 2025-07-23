@@ -465,7 +465,7 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
                     day = match.group(1)
                     current_times = f"{year}-{month}-{day}"
                     exceed = is_time_difference_exceed(current_time, current_times)
-                    if exceed <= 22:
+                    if exceed <= 15:
                         print(f"正在处理文件: {xlsx_path}")
 
                         if ignore:
@@ -506,6 +506,14 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
                                                                                    r"pre_ship")
                                 total_count6, alert_count = count_pattern_state(output_file, RowName.Courier,
                                                                                 Pattern.alert)
+
+                                if delivered_count == 0 and unpaid_count == 0 \
+                                        and not_yet_count == 0 and pre_ship_count == 0 and alert_count == 0 \
+                                        and track_count == 0:
+                                    delete_file(output_file)
+                                    go(xlsx_path, api_flag)
+                                    continue
+
                                 swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
                                 unpaid_countl = round2((int(unpaid_count) / int(total_count)) * 100)
                                 delivered_countl = round2((int(delivered_count) / int(total_count)) * 100)
@@ -517,7 +525,7 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
 
 
 def call():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", True, True, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, True, False)
 
 
 if __name__ == '__main__':
