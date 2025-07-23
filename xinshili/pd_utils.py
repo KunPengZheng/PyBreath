@@ -12,7 +12,7 @@ def remove_duplicates_by_column(input_file, output_file, column_name):
     """
     try:
         # 读取 Excel 文件
-        df = pd.read_excel(input_file)
+        df = pd.read_excel(input_file, dtype=str)
 
         # 检查列名是否存在
         if column_name not in df.columns:
@@ -87,6 +87,6 @@ def copy_new_file(input_path, output_path):
     复制生成新文件
     """
     # 读取原始 Excel 文件
-    df = pd.read_excel(input_path)
+    df = pd.read_excel(input_path, dtype=str)
     # 将数据写入新的 Excel 文件
     df.to_excel(output_path, index=False)

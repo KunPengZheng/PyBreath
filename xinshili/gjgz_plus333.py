@@ -202,7 +202,7 @@ def update_courier_status1(filepath, maps, wl=RowName.Tracking_No):
     wb = openpyxl.load_workbook(filepath)
     sheet = wb.active  # 默认使用活动工作表
 
-    data = pd.read_excel(filepath)
+    data = pd.read_excel(filepath, dtype=str)
     # 获取 'Tracking No./物流跟踪号' 列和 'Courier/快递' 列的索引
     tracking_no_col = data.columns.get_loc(wl) + 1  # openpyxl索引从1开始
     courier_col = data.columns.get_loc(RowName.Courier) + 1  # openpyxl索引从1开始
@@ -311,7 +311,7 @@ def extract_tracking_site_and_time11111(text, old_date: str = "", old_time: str 
 
 def extract_and_process_data(filepath: str, column_name: str, group_size: int, wl_name=RowName.Tracking_No,
                              request_interval: float = 30.0, ckjs_flag=False, dxm_xyl_yd_flag=False):
-    data = pd.read_excel(filepath)
+    data = pd.read_excel(filepath, dtype=str)
 
     if column_name not in data.columns:
         raise ValueError(f"列 '{column_name}' 不存在于 Excel 文件中")
