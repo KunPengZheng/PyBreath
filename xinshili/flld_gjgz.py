@@ -29,7 +29,7 @@ def extract_path_before_csv(file_path):
 
 
 def str_strip(filepath: str, column_name: str):
-    data = pd.read_excel(filepath)
+    data = pd.read_excel(filepath, dtype=str)
     data[column_name] = data[column_name].str.replace('\t', '', regex=False).str.strip()
     data.to_excel(filepath, index=False)
 
@@ -37,7 +37,7 @@ def str_strip(filepath: str, column_name: str):
 def get_alert_intercepted_data(file_path, courier_column='Courier/快递', waybill_column='单号',
                                tracking_column='快递单号', key_value='unpaid'):
     # 读取Excel文件
-    data = pd.read_excel(file_path)
+    data = pd.read_excel(file_path, dtype=str)
 
     # 确保必要的列存在
     if courier_column not in data.columns or waybill_column not in data.columns or tracking_column not in data.columns:
@@ -59,7 +59,7 @@ def get_unpaid_tracking_data(file_path,
                              date_column='UnpaidDate/unpaid记录时间',
                              key_value='unpaid'):
     # 读取 Excel 文件
-    data = pd.read_excel(file_path)
+    data = pd.read_excel(file_path, dtype=str)
 
     # 确保必要的列存在
     for col in [courier_column, waybill_column, tracking_column, date_column]:
