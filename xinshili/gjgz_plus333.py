@@ -1522,7 +1522,7 @@ def filter_tracking_numbers(input_path, output_path):
     # print(f"✅ 筛选后文件已保存到: {output_path}")
 
 
-def go(analyse_obj, xlsx_path):
+def go(analyse_obj, xlsx_path, api_flag):
     if analyse_obj is None:
         analyse_obj = input("请输跟踪对象（zbw/sanrio/xyl/mz_xsd/md_fc/mx_dg）：")
 
@@ -1555,40 +1555,40 @@ def go(analyse_obj, xlsx_path):
         # update_courier_status(xlsx_path, {CourierStateMapKey.irregular_number_map: irregular_number_map})
         update_courier_status1(xlsx_path, irregular_number_map)
 
-    # 目前接口暂时无法使用
-    # results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
-    #
-    # all_maps = {
-    #     CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
-    #     CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
-    #     CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
-    #     CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
-    #     CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
-    #     CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
-    #     CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
-    #     CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
-    #     CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
-    #     CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
-    #     CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
-    #     CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
-    # }
-    #
-    # column_mapping = {
-    #     CourierStateMapKey.not_yet_map: RowName.Courier,
-    #     CourierStateMapKey.pre_ship_map: RowName.Courier,
-    #     CourierStateMapKey.unpaid_map: RowName.Courier,
-    #     CourierStateMapKey.delivered_map: RowName.Courier,
-    #     CourierStateMapKey.no_tracking_map: RowName.Courier,
-    #     CourierStateMapKey.tracking_map: RowName.Courier,
-    #     CourierStateMapKey.alert_map: RowName.Courier,
-    #     CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
-    #     CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
-    #     CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
-    #     CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
-    #     CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
-    # }
-    #
-    # update_courier_status(xlsx_path, all_maps, wl=RowName.Tracking_No, column_map=column_mapping)
+    if api_flag:
+        results = extract_and_process_data(xlsx_path, RowName.Courier, 100)
+
+        all_maps = {
+            CourierStateMapKey.not_yet_map: results[CourierStateMapKey.not_yet_map],
+            CourierStateMapKey.pre_ship_map: results[CourierStateMapKey.pre_ship_map],
+            CourierStateMapKey.unpaid_map: results[CourierStateMapKey.unpaid_map],
+            CourierStateMapKey.delivered_map: results[CourierStateMapKey.delivered_map],
+            CourierStateMapKey.no_tracking_map: results[CourierStateMapKey.no_tracking_map],
+            CourierStateMapKey.tracking_map: results[CourierStateMapKey.tracking_map],
+            CourierStateMapKey.possession_sf_date_map: results[CourierStateMapKey.possession_sf_date_map],
+            CourierStateMapKey.latest_event_sf_date_map: results[CourierStateMapKey.latest_event_sf_date_map],
+            CourierStateMapKey.sf_date_equality_map: results[CourierStateMapKey.sf_date_equality_map],
+            CourierStateMapKey.latest_event_sf_time_map: results[CourierStateMapKey.latest_event_sf_time_map],
+            CourierStateMapKey.latest_event_sf_site_map: results[CourierStateMapKey.latest_event_sf_site_map],
+            CourierStateMapKey.alert_map: results[CourierStateMapKey.alert_map],
+        }
+
+        column_mapping = {
+            CourierStateMapKey.not_yet_map: RowName.Courier,
+            CourierStateMapKey.pre_ship_map: RowName.Courier,
+            CourierStateMapKey.unpaid_map: RowName.Courier,
+            CourierStateMapKey.delivered_map: RowName.Courier,
+            CourierStateMapKey.no_tracking_map: RowName.Courier,
+            CourierStateMapKey.tracking_map: RowName.Courier,
+            CourierStateMapKey.alert_map: RowName.Courier,
+            CourierStateMapKey.possession_sf_date_map: RowName.PossessionSfDate,
+            CourierStateMapKey.latest_event_sf_date_map: RowName.LatestEventSfDate,
+            CourierStateMapKey.sf_date_equality_map: RowName.SfDateInterval,
+            CourierStateMapKey.latest_event_sf_time_map: RowName.LatestEventSfTime,
+            CourierStateMapKey.latest_event_sf_site_map: RowName.LatestEventSfSite,
+        }
+
+        update_courier_status(xlsx_path, all_maps, wl=RowName.Tracking_No, column_map=column_mapping)
 
     # 针对zbw做的运单号过滤操作
     if analyse_obj == ClientConstants.zbw:
@@ -2123,10 +2123,10 @@ def go(analyse_obj, xlsx_path):
 
 
 def call2():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True, False)
+    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True, False)
 
 
 def is_time_difference_exceed(start_time_str, end_time_str):
@@ -2141,7 +2141,7 @@ def is_time_difference_exceed(start_time_str, end_time_str):
         return False
 
 
-def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False):
+def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False, api_flag=True):
     today = datetime.now()
     current_year = today.year
     current_month = today.month
@@ -2169,24 +2169,24 @@ def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False):
                         print(f"正在处理文件: {xlsx_path}")
 
                         if ignore:
-                            go(analyse_obj, xlsx_path)
+                            go(analyse_obj, xlsx_path, api_flag)
                             continue
 
                         ck_time = get_days_difference(xlsx_path)
                         interval_time = (gz_time - datetime.strptime(ck_time, "%Y/%m/%d")).days
 
                         if interval_time == 1 and is_morning:
-                            go(analyse_obj, xlsx_path)
+                            go(analyse_obj, xlsx_path, api_flag)
                         else:
                             if is_morning:
                                 continue
 
-                            if (analyse_obj_ignore):
-                                go(analyse_obj, xlsx_path)
+                            if analyse_obj_ignore:
+                                go(analyse_obj, xlsx_path, api_flag)
                                 continue
 
-                            if (check_and_add_courier_column(xlsx_path)):
-                                go(analyse_obj, xlsx_path)
+                            if check_and_add_courier_column(xlsx_path):
+                                go(analyse_obj, xlsx_path, api_flag)
                             else:
                                 shipment_received_interval2_list = get_shipment_received_numbers(xlsx_path, getYmd())
                                 change_shipment_received_count = len(shipment_received_interval2_list)
@@ -2242,7 +2242,7 @@ def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False):
                                         and not_yet_count_int == 0 and pre_ship_count_int == 0 and no_tracking_count_int == 0 \
                                         and tracking_count_int == 0:
                                     delete_file(output_file)
-                                    go(analyse_obj, xlsx_path)
+                                    go(analyse_obj, xlsx_path, api_flag)
                                     continue
 
                                 # 计算百分比
@@ -2264,7 +2264,7 @@ def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False):
 
                                 if swl < 99 or change_shipment_received_count >= 10 or unpaid_count > 0 or \
                                         (exceed >= 14 and qsl < 98):
-                                    go(analyse_obj, xlsx_path)
+                                    go(analyse_obj, xlsx_path, api_flag)
 
 
 if __name__ == '__main__':
