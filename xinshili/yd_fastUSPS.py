@@ -7,6 +7,7 @@ import pytz
 from xinshili import utils
 from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.utils import current_time
+from collections import defaultdict
 
 
 def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix, remark_prefix):
@@ -45,10 +46,46 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix,
     )
 
     # 生成备注列格式为“前缀-店铺-系统单号”
-    if all(col in df1.columns for col in ["店铺", "系统单号"]) and "备注" in df2.columns:
-        df2["备注"] = df1.apply(lambda row: f"{remark_prefix}-{row['店铺'].strip()}-{row['系统单号'].strip()}", axis=1)
+    # if all(col in df1.columns for col in ["店铺", "系统单号"]) and "备注" in df2.columns:
+    #     df2["备注"] = df1.apply(lambda row: f"{remark_prefix}-{row['店铺'].strip()}-{row['系统单号'].strip()}", axis=1)
+    # else:
+    #     print("⚠️ 缺少“店铺”、“系统单号”或 df2 中无“备注”列，未处理备注信息")
+    if "备注" in df2.columns and "SKU" in df1.columns and "数量" in df1.columns:
+        sku_qty_map = defaultdict(int)
+        for i in range(len(df1)):
+            sku_raw = str(df1.at[i, "SKU"]).strip()
+            qty_raw = str(df1.at[i, "数量"]).strip()
+
+            sku_lines = sku_raw.splitlines()
+            qty_lines = qty_raw.splitlines()
+
+            for idx, sku in enumerate(sku_lines):
+                sku = sku.strip()
+                if not sku:
+                    continue
+
+                qty_str = qty_lines[idx].strip() if idx < len(qty_lines) else "1"
+
+                try:
+                    qty = int(qty_str)
+                except ValueError:
+                    qty = 1  # 默认数量为 1
+
+                sku_qty_map[sku] += qty
+
+        result_dict = dict(sku_qty_map)
+        # 拼接成字符串：每个键值对使用 *，每行一个
+        formatted_str = ""
+        for i, (k, v) in enumerate(result_dict.items()):
+            pair_str = f"{k}*{v}"
+            if i == 0:
+                formatted_str += pair_str
+            else:
+                formatted_str += "\n" + pair_str
+        df2["备注"] = formatted_str
     else:
-        print("⚠️ 缺少“店铺”、“系统单号”或 df2 中无“备注”列，未处理备注信息")
+        print("⚠️ 缺少“SKU”、“数量”或 df2 中无“备注”列，未处理备注信息")
+    # df2["备注"] = "  "
 
     # 去重
     if "订单号" in df2.columns:
