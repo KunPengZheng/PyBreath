@@ -4,15 +4,11 @@ import requests
 import calendar
 from datetime import datetime
 import os
-import subprocess
 import pandas as pd
 import holidays
-import platform
-import uuid
 import math
 import platform
 import subprocess
-import sys
 
 
 def round_up_to_2_decimal(x):
