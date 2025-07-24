@@ -1,16 +1,12 @@
-from dataclasses import dataclass
-from datetime import datetime
-
 import pandas as pd
-import pytz
-
+import random
+import string
 from xinshili import utils
-from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.utils import current_time
 from collections import defaultdict
 
 
-def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix, remark_prefix):
+def transfer_lx_erp(file1_path, file2_path, output_dir, order_prefix):
     # 读取文件，并将所有内容当作字符串读入，避免数字变格式
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
     df2 = pd.read_excel(file2_path, dtype=str).fillna("")
@@ -45,11 +41,6 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix,
         lambda row: " ".join(part.strip() for part in row if part.strip()), axis=1
     )
 
-    # 生成备注列格式为“前缀-店铺-系统单号”
-    # if all(col in df1.columns for col in ["店铺", "系统单号"]) and "备注" in df2.columns:
-    #     df2["备注"] = df1.apply(lambda row: f"{remark_prefix}-{row['店铺'].strip()}-{row['系统单号'].strip()}", axis=1)
-    # else:
-    #     print("⚠️ 缺少“店铺”、“系统单号”或 df2 中无“备注”列，未处理备注信息")
     if "备注" in df2.columns and "SKU" in df1.columns and "数量" in df1.columns:
         sku_qty_map = defaultdict(int)
         for i in range(len(df1)):
@@ -102,38 +93,37 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix,
 
 if __name__ == '__main__':
     source_file = input("请输入源表文件的绝对路径：")
-    platform_order_number_suffix = input("请输入平台订单号后缀：")
 
-    select = "请选择备注前缀："
-    select += "\n1：daicai"
+    select = "请选择类型："
+    select += "\n1：dc"
     select += "\n2：yd"
     select += "\n"
     select_input = input(select)
-
     if select_input == "1":
-        remark_prefixs = 'daicai'
+        remark_prefixs = 'dc'
     elif select_input == "2":
         remark_prefixs = 'yd'
     else:
         print("🈚️此项功能！")
 
+    select = "请选择运输商："
+    select += "\n1：usps"
+    select += "\n2：usp"
+    select += "\n"
+    select_input2 = input(select)
+    if select_input == "1":
+        remark_prefixs2 = 'usps'
+    elif select_input == "2":
+        remark_prefixs2 = 'usp'
+    else:
+        print("🈚️此项功能！")
+
+    order_prefixs = f"_{remark_prefixs}_{remark_prefixs2}_" + ''.join(random.choices(string.ascii_lowercase, k=3))
+
     dst_path = utils.current_dir() + "/xlsx/yd/fastusps_USPS_阳单模版.xlsx"
     output_dir = f"/Users/zkp/Desktop/B&Y/yd/yd_fast/"
 
-    order_prefixs = ""
-    if not platform_order_number_suffix:
-        order_prefixs = ""
-    else:
-        if platform_order_number_suffix[0].isalpha():
-            order_prefixs = "-" + platform_order_number_suffix
-        else:
-            raise ValueError(f"订单号后缀只能以字母为开头")
-
-    transfer_and_merge_address(source_file, dst_path, output_dir,
-                               order_prefix=order_prefixs,
-                               remark_prefix=remark_prefixs)
+    transfer_lx_erp(source_file, dst_path, output_dir,
+                    order_prefix=order_prefixs)
 
     utils.open_dir(output_dir)
-
-    # 若需要时间转换功能，可启用下面一行：
-    # process_excel_time_column(source_file, source_file)
