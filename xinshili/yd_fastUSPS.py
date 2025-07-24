@@ -4,7 +4,7 @@ import string
 from xinshili import utils
 from xinshili.utils import current_time
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import re
 import os
@@ -49,42 +49,39 @@ def transfer_lx_erp(file1_path, file2_path, output_dir, order_prefix, channel_fl
         lambda row: " ".join(part.strip() for part in row if part.strip()), axis=1
     )
 
-    if "备注" in df2.columns and "SKU" in df1.columns and "数量" in df1.columns:
-        sku_qty_map = defaultdict(int)
-        for i in range(len(df1)):
-            sku_raw = str(df1.at[i, "SKU"]).strip()
-            qty_raw = str(df1.at[i, "数量"]).strip()
-
-            sku_lines = sku_raw.splitlines()
-            qty_lines = qty_raw.splitlines()
-
-            for idx, sku in enumerate(sku_lines):
-                sku = sku.strip()
-                if not sku:
-                    continue
-
-                qty_str = qty_lines[idx].strip() if idx < len(qty_lines) else "1"
-
-                try:
-                    qty = int(qty_str)
-                except ValueError:
-                    qty = 1  # 默认数量为 1
-
-                sku_qty_map[sku] += qty
-
-        result_dict = dict(sku_qty_map)
-        # 拼接成字符串：每个键值对使用 *，每行一个
-        formatted_str = ""
-        for i, (k, v) in enumerate(result_dict.items()):
-            pair_str = f"{k}*{v}"
-            if i == 0:
-                formatted_str += pair_str
-            else:
-                formatted_str += "\n" + pair_str
-        df2["备注"] = formatted_str
-    else:
-        print("⚠️ 缺少“SKU”、“数量”或 df2 中无“备注”列，未处理备注信息")
-    # df2["备注"] = "  "
+    # if "备注" in df2.columns and "SKU" in df1.columns and "数量" in df1.columns:
+    #     remarks = []
+    #
+    #     for i in range(len(df1)):
+    #         sku_raw = str(df1.at[i, "SKU"]).strip()
+    #         qty_raw = str(df1.at[i, "数量"]).strip()
+    #
+    #         # 拆分多行内容（兼容 \r\n, \n, \r）
+    #         sku_lines = [s.strip() for s in sku_raw.splitlines() if s.strip()]
+    #         qty_lines = [q.strip() for q in qty_raw.splitlines() if q.strip()]
+    #
+    #         # 合并单元格为空的情况，也填充空数组
+    #         if not sku_lines:
+    #             remarks.append("")
+    #             continue
+    #
+    #         sku_qty_map = defaultdict(int)
+    #
+    #         for idx, sku in enumerate(sku_lines):
+    #             try:
+    #                 qty = int(qty_lines[idx]) if idx < len(qty_lines) else 1
+    #             except Exception:
+    #                 qty = 1
+    #             sku_qty_map[sku] += qty
+    #
+    #         # 构建格式：SKU1*2\nSKU2*1
+    #         remark_text = "\n".join(f"{sku}*{qty}" for sku, qty in sku_qty_map.items())
+    #         remarks.append(remark_text)
+    #
+    #     df2["备注"] = remarks
+    # else:
+    #     print("⚠️ 缺少“contribution sku”、“数量”或 df2 中无“备注”列，未处理备注信息")
+    df2["备注"] = "  "
 
     # 去重
     if "订单号" in df2.columns:
@@ -103,7 +100,7 @@ def transfer_lx_erp(file1_path, file2_path, output_dir, order_prefix, channel_fl
     print(f"✅ 文件已更新并保存至：{output_path}")
 
 
-def transfer_temu_kjd(file1_path, file2_path, output_dir, order_prefix, channel_flag):
+def transfer_temu_kjd(file1_path, file2_path, output_dir, order_prefix, channel_flag, delayed=0):
     # 读取文件，并将所有内容当作字符串读入，避免数字变格式
 
     ext = os.path.splitext(file1_path)[1].lower()
@@ -138,7 +135,7 @@ def transfer_temu_kjd(file1_path, file2_path, output_dir, order_prefix, channel_
         else:
             print(f"⚠️ 缺少列：{source_col} 或 {target_col}，跳过该列")
 
-    def clean_and_convert_to_china_time(original_time_str: str) -> str:
+    def clean_and_convert_to_china_time(original_time_str) -> str:
         """
         清理字符串中的时区标识并将 UTC-7/8 的时间转换为北京时间
         """
@@ -151,7 +148,8 @@ def transfer_temu_kjd(file1_path, file2_path, output_dir, order_prefix, channel_
             dt_usa = dt.replace(tzinfo=ZoneInfo("America/Los_Angeles"))
             # 转换为北京时间（中国）
             dt_china = dt_usa.astimezone(ZoneInfo("Asia/Shanghai"))
-            return dt_china.strftime("%Y-%m-%d %H:%M:%S")
+            dt_china_plus = dt_china + timedelta(hours=delayed)
+            return dt_china_plus.strftime("%Y-%m-%d %H:%M:%S")
         except Exception as e:
             print(f"❌ 解析失败：{original_time_str}，原因：{e}")
             return ""
@@ -207,7 +205,7 @@ def transfer_temu_kjd(file1_path, file2_path, output_dir, order_prefix, channel_
         df2["备注"] = formatted_str
     else:
         print("⚠️ 缺少“contribution sku”、“quantity purchased”或 df2 中无“备注”列，未处理备注信息")
-    # df2["备注"] = "  "
+    df2["备注"] = "  "
 
     # 去重
     if "订单号" in df2.columns:
@@ -266,7 +264,7 @@ if __name__ == '__main__':
     if select_input == "1":
         transfer_lx_erp(source_file, dst_path, output_dir, order_prefixs, channel_flag)
     elif select_input == "2":
-        transfer_temu_kjd(source_file, dst_path, output_dir, order_prefixs, channel_flag)
+        transfer_temu_kjd(source_file, dst_path, output_dir, order_prefixs, channel_flag, 48)
     else:
         print("🈚️此项功能！")
 
