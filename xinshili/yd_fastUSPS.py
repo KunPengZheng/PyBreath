@@ -6,6 +6,8 @@ from xinshili.utils import current_time
 from collections import defaultdict
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import re
+import os
 
 
 def transfer_lx_erp(file1_path, file2_path, output_dir, order_prefix, channel_flag):
@@ -90,6 +92,7 @@ def transfer_lx_erp(file1_path, file2_path, output_dir, order_prefix, channel_fl
     else:
         print("⚠️ df2 中缺少“订单号”列，跳过去重。")
 
+    output_path = ""
     if channel_flag == "usps":
         output_path = f"{output_dir}{current_time()}_fastU_usps阳单_{len(df2)}单.xlsx"
     elif channel_flag == "ups":
@@ -102,7 +105,18 @@ def transfer_lx_erp(file1_path, file2_path, output_dir, order_prefix, channel_fl
 
 def transfer_temu_kjd(file1_path, file2_path, output_dir, order_prefix, channel_flag):
     # 读取文件，并将所有内容当作字符串读入，避免数字变格式
-    df1 = pd.read_excel(file1_path, dtype=str).fillna("")
+
+    ext = os.path.splitext(file1_path)[1].lower()
+    if ext == ".csv":
+        df1 = pd.read_csv(file1_path, dtype=str).fillna("")
+    elif ext == ".xlsx":
+        df1 = pd.read_excel(file1_path, engine="openpyxl", dtype=str).fillna("")
+    elif ext == ".xls":
+        df1 = pd.read_excel(file1_path, engine="xlrd", dtype=str).fillna("")
+    else:
+        raise ValueError(f"❌ 不支持的文件格式：{ext}")
+
+    # df1 = pd.read_excel(file1_path, dtype=str).fillna("")
     df2 = pd.read_excel(file2_path, dtype=str).fillna("")
 
     # 定义列映射关系
@@ -124,17 +138,25 @@ def transfer_temu_kjd(file1_path, file2_path, output_dir, order_prefix, channel_
         else:
             print(f"⚠️ 缺少列：{source_col} 或 {target_col}，跳过该列")
 
-    def utc7_2_utc8(original_time_str):
-        # 解析为 datetime 对象（注意格式匹配）
-        dt = datetime.strptime(original_time_str, "%b %d, %Y, %I:%M %p")
-        # 设置原时区为美国太平洋时间（UTC-7）
-        dt_pdt = dt.replace(tzinfo=ZoneInfo("America/Los_Angeles"))
-        # 转换为中国时区（北京时间，UTC+8）
-        dt_china = dt_pdt.astimezone(ZoneInfo("Asia/Shanghai"))
-        # 输出为字符串格式
-        return dt_china.strftime("%Y-%m-%d %H:%M:%S")
+    def clean_and_convert_to_china_time(original_time_str: str) -> str:
+        """
+        清理字符串中的时区标识并将 UTC-7/8 的时间转换为北京时间
+        """
+        try:
+            # 去掉例如 " PDT(UTC-7)" 或 " PST(UTC-8)" 的部分
+            cleaned_str = re.sub(r"\s*(P[SD]T)?\(UTC-[0-9]+\)", "", original_time_str).strip()
+            # 解析为 datetime 对象
+            dt = datetime.strptime(cleaned_str, "%b %d, %Y, %I:%M %p")
+            # 设置美国西部时间（自动考虑夏令时）
+            dt_usa = dt.replace(tzinfo=ZoneInfo("America/Los_Angeles"))
+            # 转换为北京时间（中国）
+            dt_china = dt_usa.astimezone(ZoneInfo("Asia/Shanghai"))
+            return dt_china.strftime("%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            print(f"❌ 解析失败：{original_time_str}，原因：{e}")
+            return ""
 
-    df2["订单创建时间"] = df1["purchase date"].astype(str).str.strip().apply(utc7_2_utc8)
+    df2["订单创建时间"] = df1["purchase date"].astype(str).str.strip().apply(clean_and_convert_to_china_time)
 
     # 保证地址列存在
     address_cols = ["ship address 1", "ship address 2", "ship address 3"]
@@ -188,11 +210,12 @@ def transfer_temu_kjd(file1_path, file2_path, output_dir, order_prefix, channel_
     # df2["备注"] = "  "
 
     # 去重
-    if "order id" in df2.columns:
-        df2 = df2.drop_duplicates(subset=["order id"], keep='first')
+    if "订单号" in df2.columns:
+        df2 = df2.drop_duplicates(subset=["订单号"], keep='first')
     else:
-        print("⚠️ df2 中缺少“order id”列，跳过去重。")
+        print("⚠️ df2 中缺少“订单号”列，跳过去重。")
 
+    output_path = ""
     if channel_flag == "usps":
         output_path = f"{output_dir}{current_time()}_fastU_usps阳单_{len(df2)}单.xlsx"
     elif channel_flag == "ups":
@@ -220,13 +243,13 @@ if __name__ == '__main__':
 
     select = "请选择运输商："
     select += "\n1：usps"
-    select += "\n2：usp"
+    select += "\n2：ups"
     select += "\n"
     select_input2 = input(select)
     if select_input == "1":
         channel_flag = 'usps'
     elif select_input == "2":
-        channel_flag = 'usp'
+        channel_flag = 'ups'
     else:
         print("🈚️此项功能！")
 
@@ -235,6 +258,16 @@ if __name__ == '__main__':
     dst_path = utils.current_dir() + "/xlsx/yd/fastusps_USPS_阳单模版.xlsx"
     output_dir = f"/Users/zkp/Desktop/B&Y/yd/yd_fast/"
 
-    transfer_lx_erp(source_file, dst_path, output_dir, order_prefixs, channel_flag)
+    select = "请选择转换模版："
+    select += "\n1：领星erp"
+    select += "\n2：temu跨境店"
+    select += "\n"
+    select_input = input(select)
+    if select_input == "1":
+        transfer_lx_erp(source_file, dst_path, output_dir, order_prefixs, channel_flag)
+    elif select_input == "2":
+        transfer_temu_kjd(source_file, dst_path, output_dir, order_prefixs, channel_flag)
+    else:
+        print("🈚️此项功能！")
 
     utils.open_dir(output_dir)
