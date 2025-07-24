@@ -16,7 +16,7 @@ from xinshili.fs_utils_plus import get_token, brief_sheet_value, detail_sheet_va
 from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.usps_utils import track
 from xinshili.utils import round2, getYmd, delete_file, is_us_weekend, get_weekday, get_american_holiday, \
-    get_chinese_holiday, natural_key
+    get_chinese_holiday, natural_key, get_computer_model
 
 """
 zbw轨迹跟踪分析
@@ -2123,10 +2123,21 @@ def go(analyse_obj, xlsx_path, api_flag):
 
 
 def call2():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/zbw/", ClientConstants.zbw, False, False, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/", ClientConstants.sanrio, False, False, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/xyl/", ClientConstants.xyl, False, True, False)
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/kaer/", ClientConstants.kaer, False, True, False)
+    if "MacBookPro" in get_computer_model():
+        zwb_path = "/Users/zkp/Desktop/B&Y/轨迹统计/zbw/"
+        sanrio_path = "/Users/zkp/Desktop/B&Y/轨迹统计/sanrio/"
+        xyl_path = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl/"
+        kaer_path = "/Users/zkp/Desktop/B&Y/轨迹统计/kaer/"
+    else:
+        zwb_path = "/Volumes/B&Y/轨迹统计/zbw/"
+        sanrio_path = "/Volumes/B&Y/轨迹统计/sanrio/"
+        xyl_path = "/Volumes/B&Y/轨迹统计/xyl/"
+        kaer_path = "/Volumes/B&Y/轨迹统计/kaer/"
+
+    automatic(zwb_path, ClientConstants.zbw, False, False, False)
+    automatic(sanrio_path, ClientConstants.sanrio, False, False, False)
+    automatic(xyl_path, ClientConstants.xyl, False, True, False)
+    automatic(kaer_path, ClientConstants.kaer, False, True, False)
 
 
 def is_time_difference_exceed(start_time_str, end_time_str):

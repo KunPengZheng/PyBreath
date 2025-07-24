@@ -12,7 +12,8 @@ from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, \
     count_pattern_state, CourierStateMapKey, Pattern, is_time_difference_exceed, \
     extract_and_process_data, update_courier_status
 from xinshili.pd_utils import copy_new_file
-from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend, natural_key
+from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend, natural_key, \
+    get_computer_model
 
 
 def extract_path_before_csv(file_path):
@@ -525,7 +526,12 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
 
 
 def call():
-    automatic("/Users/zkp/Desktop/B&Y/轨迹统计/flld/", False, True, False)
+    if "MacBookPro" in get_computer_model():
+        flld_path = "/Users/zkp/Desktop/B&Y/轨迹统计/flld/"
+    else:
+        flld_path = "/Volumes/B&Y/轨迹统计/flld/"
+
+    automatic(flld_path, False, True, False)
 
 
 if __name__ == '__main__':
