@@ -31,13 +31,17 @@ def transfer_lx_erp(file1_path, file2_path, output_dir, order_prefix):
         else:
             print(f"⚠️ 缺少列：{source_col} 或 {target_col}，跳过该列")
 
-    # 拼接地址
+    # 保证地址列存在
     address_cols = ["地址行1", "地址行2", "地址行3"]
     for col in address_cols:
         if col not in df1.columns:
             df1[col] = ""
 
-    df2["收件人地址1"] = df1[address_cols].apply(
+    # 收件人地址1：直接使用地址行1
+    df2["收件人地址1"] = df1["地址行1"].astype(str).str.strip()
+
+    # 收件人地址2：拼接地址行2和地址行3（跳过空白）
+    df2["收件人地址2"] = df1[["地址行2", "地址行3"]].apply(
         lambda row: " ".join(part.strip() for part in row if part.strip()), axis=1
     )
 
