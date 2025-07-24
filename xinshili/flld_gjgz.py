@@ -418,7 +418,7 @@ def go(input_path, api_flag):
         fs_msg(FsUserID.LW_ID, result_fs_msg)
 
 
-def detect_duplicate_prefix_suffix(dir_path):
+def detect_duplicate_prefix_suffix(root_dir, dir_path):
     prefix_suffix_map = defaultdict(list)
 
     for filename in os.listdir(dir_path):
@@ -438,7 +438,7 @@ def detect_duplicate_prefix_suffix(dir_path):
             print(f"📁 找到同组文件（前缀: {prefix}, 后缀: {suffix}）共 {len(files)} 个:")
             for f in files:
                 print(f"   - {f}")
-            merge_csv_files_to_excel(files, '/Users/zkp/Desktop/B&Y/轨迹统计/flld/')
+            merge_csv_files_to_excel(files, root_dir)
             delete_files(files)
 
 
@@ -454,7 +454,7 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
         dirnames.sort(key=natural_key)
         for dirname in dirnames:
             sun_dir_path = os.path.join(dirpath, dirname)
-            detect_duplicate_prefix_suffix(sun_dir_path)
+            detect_duplicate_prefix_suffix(root_dir, sun_dir_path)
             parts = dirname.split(".")
             year, month = parts[0], parts[1]
             files = [f for f in os.listdir(sun_dir_path) if f.lower().endswith(('.xlsx', '.xls'))]
