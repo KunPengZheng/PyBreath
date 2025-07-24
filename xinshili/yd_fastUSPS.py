@@ -49,44 +49,42 @@ def transfer_lx_erp(file1_path, file2_path, output_dir, order_prefix, channel_fl
         lambda row: " ".join(part.strip() for part in row if part.strip()), axis=1
     )
 
-    # # 构建平台单号到 SKU:数量 的嵌套字典
-    # order_sku_map = defaultdict(lambda: defaultdict(int))
-    #
-    # for i in range(len(df1)):
-    #     platform_order = str(df1.at[i, "平台单号"]).strip()
-    #     sku_raw = str(df1.at[i, "SKU"]).strip()
-    #     qty_raw = str(df1.at[i, "数量"]).strip()
-    #
-    #     sku_lines = [s.strip() for s in sku_raw.splitlines() if s.strip()]
-    #     qty_lines = [q.strip() for q in qty_raw.splitlines() if q.strip()]
-    #
-    #     for idx, sku in enumerate(sku_lines):
-    #         try:
-    #             qty = int(qty_lines[idx]) if idx < len(qty_lines) else 1
-    #         except Exception:
-    #             qty = 1
-    #         order_sku_map[platform_order][sku] += qty
-    #
-    # print(order_sku_map)
-    #
-    # # 生成备注列内容（与 df2["订单号"] 匹配）
-    # remarks = []
-    #
-    # for i in range(len(df2)):
-    #     order_id = str(df2.at[i, "订单号"]).strip()
-    #
-    #     matched_sku_dict = {}
-    #     for platform_order, sku_dict in order_sku_map.items():
-    #         if platform_order in order_id:  # 模糊匹配
-    #             matched_sku_dict = sku_dict
-    #             break  # 找到即停止
-    #
-    #     if matched_sku_dict:
-    #         remark_text = "\n".join([f"{sku}*{qty}" for sku, qty in matched_sku_dict.items()])
-    #         remarks.append(remark_text)
-    #     else:
-    #         remarks.append("  ")
-    #
+    # 构建平台单号到 SKU:数量 的嵌套字典
+    order_sku_map = defaultdict(lambda: defaultdict(int))
+
+    for i in range(len(df1)):
+        platform_order = str(df1.at[i, "平台单号"]).strip()
+        sku_raw = str(df1.at[i, "SKU"]).strip()
+        qty_raw = str(df1.at[i, "数量"]).strip()
+
+        sku_lines = [s.strip() for s in sku_raw.splitlines() if s.strip()]
+        qty_lines = [q.strip() for q in qty_raw.splitlines() if q.strip()]
+
+        for idx, sku in enumerate(sku_lines):
+            try:
+                qty = int(qty_lines[idx]) if idx < len(qty_lines) else 1
+            except Exception:
+                qty = 1
+            order_sku_map[platform_order][sku] += qty
+
+    # 生成备注列内容（与 df2["订单号"] 匹配）
+    remarks = []
+
+    for i in range(len(df2)):
+        order_id = str(df2.at[i, "订单号"]).strip()
+
+        matched_sku_dict = {}
+        for platform_order, sku_dict in order_sku_map.items():
+            if platform_order in order_id:  # 模糊匹配
+                matched_sku_dict = sku_dict
+                break  # 找到即停止
+
+        if matched_sku_dict:
+            remark_text = "\n".join([f"{sku}*{qty}" for sku, qty in matched_sku_dict.items()])
+            remarks.append(remark_text)
+        else:
+            remarks.append("  ")
+
     # df2["备注"] = remarks
     df2["备注"] = "  "
 
@@ -177,42 +175,44 @@ def transfer_temu_kjd(file1_path, file2_path, output_dir, order_prefix, channel_
         lambda row: " ".join(part.strip() for part in row if part.strip()), axis=1
     )
 
-    if "备注" in df2.columns and "contribution sku" in df1.columns and "quantity purchased" in df1.columns:
-        sku_qty_map = defaultdict(int)
-        for i in range(len(df1)):
-            sku_raw = str(df1.at[i, "contribution sku"]).strip()
-            qty_raw = str(df1.at[i, "quantity purchased"]).strip()
+    # 构建平台单号到 SKU:数量 的嵌套字典
+    order_sku_map = defaultdict(lambda: defaultdict(int))
 
-            sku_lines = sku_raw.splitlines()
-            qty_lines = qty_raw.splitlines()
+    for i in range(len(df1)):
+        platform_order = str(df1.at[i, "order id"]).strip()
+        sku_raw = str(df1.at[i, "contribution sku"]).strip()
+        qty_raw = str(df1.at[i, "quantity purchased"]).strip()
 
-            for idx, sku in enumerate(sku_lines):
-                sku = sku.strip()
-                if not sku:
-                    continue
+        sku_lines = [s.strip() for s in sku_raw.splitlines() if s.strip()]
+        qty_lines = [q.strip() for q in qty_raw.splitlines() if q.strip()]
 
-                qty_str = qty_lines[idx].strip() if idx < len(qty_lines) else "1"
+        for idx, sku in enumerate(sku_lines):
+            try:
+                qty = int(qty_lines[idx]) if idx < len(qty_lines) else 1
+            except Exception:
+                qty = 1
+            order_sku_map[platform_order][sku] += qty
 
-                try:
-                    qty = int(qty_str)
-                except ValueError:
-                    qty = 1  # 默认数量为 1
+    # 生成备注列内容（与 df2["订单号"] 匹配）
+    remarks = []
 
-                sku_qty_map[sku] += qty
+    for i in range(len(df2)):
+        order_id = str(df2.at[i, "订单号"]).strip()
 
-        result_dict = dict(sku_qty_map)
-        # 拼接成字符串：每个键值对使用 *，每行一个
-        formatted_str = ""
-        for i, (k, v) in enumerate(result_dict.items()):
-            pair_str = f"{k}*{v}"
-            if i == 0:
-                formatted_str += pair_str
-            else:
-                formatted_str += "\n" + pair_str
-        df2["备注"] = formatted_str
-    else:
-        print("⚠️ 缺少“contribution sku”、“quantity purchased”或 df2 中无“备注”列，未处理备注信息")
-    # df2["备注"] = "  "
+        matched_sku_dict = {}
+        for platform_order, sku_dict in order_sku_map.items():
+            if platform_order in order_id:  # 模糊匹配
+                matched_sku_dict = sku_dict
+                break  # 找到即停止
+
+        if matched_sku_dict:
+            remark_text = "\n".join([f"{sku}*{qty}" for sku, qty in matched_sku_dict.items()])
+            remarks.append(remark_text)
+        else:
+            remarks.append("  ")
+
+    # df2["备注"] = remarks
+    df2["备注"] = "  "
 
     # 去重
     if "订单号" in df2.columns:
