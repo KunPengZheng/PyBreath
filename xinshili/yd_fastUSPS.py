@@ -63,54 +63,6 @@ def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix,
     print(f"✅ 文件已更新并保存至：{output_path}")
 
 
-def convert_to_beijing_time(value):
-    # 定义时区
-    la_tz = pytz.timezone("America/Los_Angeles")
-    bj_tz = pytz.timezone("Asia/Shanghai")
-
-    # 解析时间
-    if isinstance(value, datetime):
-        dt = value
-    elif isinstance(value, str):
-        value = value.strip()
-        for fmt in ["%m/%d/%Y %I:%M:%S %p", "%d/%m/%Y %H:%M:%S", "%Y/%m/%d %H:%M:%S"]:
-            try:
-                dt = datetime.strptime(value, fmt)
-                break
-            except ValueError:
-                continue
-        else:
-            raise ValueError(f"无法识别的时间格式: {value}")
-    else:
-        raise TypeError(f"不支持的时间类型: {type(value)}")
-
-    # 加入洛杉矶时区信息（自动识别夏令时/冬令时）
-    dt_la = la_tz.localize(dt)
-
-    # 转换为北京时间
-    dt_bj = dt_la.astimezone(bj_tz)
-
-    return dt_bj.strftime("%Y/%m/%d %H:%M:%S")
-
-
-def process_excel_time_column(file_path, output_path):
-    df = pd.read_excel(file_path)
-
-    if "订单创建时间" not in df.columns:
-        print("❌ 未找到“订单创建时间”列")
-        return
-
-    df["订单创建时间"] = df["订单创建时间"].apply(convert_to_beijing_time)
-
-    # 强制某些列为字符串，防止写入 Excel 后变为数值
-    for col in ["订单号", "收件人邮编"]:
-        if col in df.columns:
-            df[col] = df[col].astype("string")  # 或者 .astype(str).fillna("")
-
-    df.to_excel(output_path, index=False)
-    print(f"✅ 已转换并保存至：{output_path}")
-
-
 if __name__ == '__main__':
     source_file = input("请输入源表文件的绝对路径：")
     platform_order_number_suffix = input("请输入平台订单号后缀：")
