@@ -2099,9 +2099,12 @@ def go(analyse_obj, xlsx_path, api_flag):
         fs_msg_flag = True
 
     if swl_flag:
-        swl_text = "⚠️未上网数和应发数量一致：\n"
+        swl_text = ""
         swl_text_flag = False
-        for lowest_sku in fs_lowest_sku_result_list:
+        for idx, lowest_sku in enumerate(fs_lowest_sku_result_list):
+            if idx == 0:
+                swl_text += "⚠️未上网数和应发数量一致：\n"
+
             count = lowest_sku["count"]
             no_track_counts = lowest_sku["no_track_count"]
             entity = lowest_sku["entity"]
