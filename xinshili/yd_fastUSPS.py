@@ -49,38 +49,45 @@ def transfer_lx_erp(file1_path, file2_path, output_dir, order_prefix, channel_fl
         lambda row: " ".join(part.strip() for part in row if part.strip()), axis=1
     )
 
-    # if "备注" in df2.columns and "SKU" in df1.columns and "数量" in df1.columns:
-    #     remarks = []
+    # # 构建平台单号到 SKU:数量 的嵌套字典
+    # order_sku_map = defaultdict(lambda: defaultdict(int))
     #
-    #     for i in range(len(df1)):
-    #         sku_raw = str(df1.at[i, "SKU"]).strip()
-    #         qty_raw = str(df1.at[i, "数量"]).strip()
+    # for i in range(len(df1)):
+    #     platform_order = str(df1.at[i, "平台单号"]).strip()
+    #     sku_raw = str(df1.at[i, "SKU"]).strip()
+    #     qty_raw = str(df1.at[i, "数量"]).strip()
     #
-    #         # 拆分多行内容（兼容 \r\n, \n, \r）
-    #         sku_lines = [s.strip() for s in sku_raw.splitlines() if s.strip()]
-    #         qty_lines = [q.strip() for q in qty_raw.splitlines() if q.strip()]
+    #     sku_lines = [s.strip() for s in sku_raw.splitlines() if s.strip()]
+    #     qty_lines = [q.strip() for q in qty_raw.splitlines() if q.strip()]
     #
-    #         # 合并单元格为空的情况，也填充空数组
-    #         if not sku_lines:
-    #             remarks.append("")
-    #             continue
+    #     for idx, sku in enumerate(sku_lines):
+    #         try:
+    #             qty = int(qty_lines[idx]) if idx < len(qty_lines) else 1
+    #         except Exception:
+    #             qty = 1
+    #         order_sku_map[platform_order][sku] += qty
     #
-    #         sku_qty_map = defaultdict(int)
+    # print(order_sku_map)
     #
-    #         for idx, sku in enumerate(sku_lines):
-    #             try:
-    #                 qty = int(qty_lines[idx]) if idx < len(qty_lines) else 1
-    #             except Exception:
-    #                 qty = 1
-    #             sku_qty_map[sku] += qty
+    # # 生成备注列内容（与 df2["订单号"] 匹配）
+    # remarks = []
     #
-    #         # 构建格式：SKU1*2\nSKU2*1
-    #         remark_text = "\n".join(f"{sku}*{qty}" for sku, qty in sku_qty_map.items())
+    # for i in range(len(df2)):
+    #     order_id = str(df2.at[i, "订单号"]).strip()
+    #
+    #     matched_sku_dict = {}
+    #     for platform_order, sku_dict in order_sku_map.items():
+    #         if platform_order in order_id:  # 模糊匹配
+    #             matched_sku_dict = sku_dict
+    #             break  # 找到即停止
+    #
+    #     if matched_sku_dict:
+    #         remark_text = "\n".join([f"{sku}*{qty}" for sku, qty in matched_sku_dict.items()])
     #         remarks.append(remark_text)
+    #     else:
+    #         remarks.append("  ")
     #
-    #     df2["备注"] = remarks
-    # else:
-    #     print("⚠️ 缺少“contribution sku”、“数量”或 df2 中无“备注”列，未处理备注信息")
+    # df2["备注"] = remarks
     df2["备注"] = "  "
 
     # 去重
@@ -205,7 +212,7 @@ def transfer_temu_kjd(file1_path, file2_path, output_dir, order_prefix, channel_
         df2["备注"] = formatted_str
     else:
         print("⚠️ 缺少“contribution sku”、“quantity purchased”或 df2 中无“备注”列，未处理备注信息")
-    df2["备注"] = "  "
+    # df2["备注"] = "  "
 
     # 去重
     if "订单号" in df2.columns:
