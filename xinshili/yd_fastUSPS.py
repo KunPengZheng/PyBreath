@@ -9,21 +9,6 @@ from xinshili.pd_utils import remove_duplicates_by_column
 from xinshili.utils import current_time
 
 
-@dataclass(frozen=True)
-class RowName:
-    PlatformOrder = '平台单号'
-    Order = '订单号'
-    Receiver = '收件人'
-    City = '城市'
-    ReceiverCity = '收件人城市'
-    State = '省/州'
-    ReceiverState = '收件人州/省'
-    ZipCode = '邮编'
-    ReceiverZipCode = '收件人邮编'
-    PaymentTime = '付款时间'
-    OrderPaymentTime = '订单创建时间'
-
-
 def transfer_and_merge_address(file1_path, file2_path, output_dir, order_prefix, remark_prefix):
     # 读取文件，并将所有内容当作字符串读入，避免数字变格式
     df1 = pd.read_excel(file1_path, dtype=str).fillna("")
