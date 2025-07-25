@@ -48,6 +48,7 @@ class RowName:
     Upload_Shipping_Label = "上传物流面单(Upload_Shipping_Label)"
     YD_Number = 'YD_Number/阳单号'
     YD_State = 'YD_State/阳单轨迹状态'
+    Fs_Flag = 'Fs_Flag/Fs_Flag'
 
     Courier_File1 = 'Courier/快递_file1'
     SfDateInterval_File1 = 'SfDateInterval/SF消息间隔_file1'
@@ -991,6 +992,9 @@ def check_and_add_courier_column(file_path):
         if RowName.YD_State not in data.columns:
             data[RowName.YD_State] = ""
             flag = True
+        # if RowName.Fs_Flag not in data.columns:
+        #     data[RowName.Fs_Flag] = ""
+        #     flag = True
         # 保存修改后的文件
         data.to_excel(file_path, index=False, engine='openpyxl')
         return flag
@@ -2153,6 +2157,28 @@ def is_time_difference_exceed(start_time_str, end_time_str):
     except ValueError as e:
         print(f"❌ 时间格式错误: {e}")
         return False
+
+
+def get_fs_flag_first_value(file_path):
+    # 读取 Excel 文件（默认第一张表）
+    df = pd.read_excel(file_path, dtype=str)
+    df.fillna("", inplace=True)
+
+    # 检查是否存在该列
+    if "Fs_Flag/Fs_Flag" not in df.columns:
+        print("⚠️ 未找到列 'Fs_Flag/Fs_Flag'")
+        return False
+
+    # 获取第一条有效值
+    for val in df["Fs_Flag/Fs_Flag"]:
+        val = str(val).strip().lower()
+        if val != "":
+            return val == "true"
+        else:
+            return True  # 空字符串也返回 True
+
+    print("⚠️ 列中无有效值")
+    return False
 
 
 def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False, api_flag=True):
