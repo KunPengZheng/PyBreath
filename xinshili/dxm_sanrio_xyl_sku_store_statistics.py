@@ -330,7 +330,7 @@ def xyl_fs(formatted_date, template_copy_path):
     xyl_sku_ejyxhz_arr.insert(0, [formatted_date])
     xyl_sku_ejyxhz_arr.append([{"type": "formula", "text": f"=SUM(L2:L{len(xyl_sku_ejyxhz_arr) - 1})"}])
 
-    xyl_store_arr = get_range_column_data(template_copy_path, RowName.Store_Sales, RowName.Order_Sales, 2, 48)
+    xyl_store_arr = get_range_column_data(template_copy_path, RowName.Store_Sales, RowName.Order_Sales, 2, 51)
     xyl_store_arr.insert(0, [formatted_date])
     xyl_store_arr.append([{"type": "formula", "text": f"=SUM(E2:E{len(xyl_store_arr)})"}])
 
