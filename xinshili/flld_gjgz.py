@@ -416,6 +416,7 @@ def go(input_path, api_flag):
         # print(result_fs_msg)
         fs_msg(FsUserID.WP_ID, result_fs_msg)
         fs_msg(FsUserID.LW_ID, result_fs_msg)
+        fs_msg(FsUserID.LJ_ID, result_fs_msg)
 
 
 def detect_duplicate_prefix_suffix(root_dir, dir_path):
@@ -531,7 +532,7 @@ def call():
     else:
         flld_path = "/Volumes/B&Y/轨迹统计/flld/"
 
-    automatic(flld_path, False, True, False)
+    automatic(flld_path, True, True, False)
 
 
 if __name__ == '__main__':

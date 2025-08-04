@@ -2096,11 +2096,14 @@ def go(analyse_obj, xlsx_path, api_flag):
         result_fs_msg += current_day_unpaid_text
         lj_fs_msg = result_fs_msg
         fs_msg_flag = True
-        lj_msg_flag = True
+        if analyse_obj == ClientConstants.xyl:
+            lj_msg_flag = True
 
     if change_shipment_received_count >= 10:
         result_fs_msg += f"{change_shipment_received_count}单 提货单未更新轨迹（>=2天）\n"
         fs_msg_flag = True
+        if analyse_obj == ClientConstants.xyl:
+            lj_msg_flag = True
 
     if swl_flag:
         swl_text = ""
@@ -2119,6 +2122,8 @@ def go(analyse_obj, xlsx_path, api_flag):
             result_fs_msg += f"上网率异常: {swl}%\n"
             result_fs_msg += swl_text
             fs_msg_flag = True
+            if analyse_obj == ClientConstants.xyl:
+                lj_msg_flag = True
 
     if fs_msg_flag:
         # print(result_fs_msg)
@@ -2141,10 +2146,10 @@ def call2():
         xyl_path = "/Volumes/B&Y/轨迹统计/xyl/"
         kaer_path = "/Volumes/B&Y/轨迹统计/kaer/"
 
-    automatic(zwb_path, ClientConstants.zbw, False, False, False)
-    automatic(sanrio_path, ClientConstants.sanrio, False, False, False)
-    automatic(xyl_path, ClientConstants.xyl, False, True, False)
-    automatic(kaer_path, ClientConstants.kaer, False, True, False)
+    automatic(zwb_path, ClientConstants.zbw, True, False, False)
+    automatic(sanrio_path, ClientConstants.sanrio, True, False, False)
+    automatic(xyl_path, ClientConstants.xyl, True, True, False)
+    automatic(kaer_path, ClientConstants.kaer, True, True, False)
 
 
 def is_time_difference_exceed(start_time_str, end_time_str):
