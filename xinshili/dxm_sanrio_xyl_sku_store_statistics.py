@@ -398,15 +398,15 @@ def sanrio_fs(formatted_date, template_copy_path):
     sanrio_sku_wjshypl_arr.insert(0, [formatted_date])
     sanrio_sku_wjshypl_arr.append([{"type": "formula", "text": f"=SUM(H2:H55)"}])
 
-    sanrio_sku_wjl_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 57, 179)
+    sanrio_sku_wjl_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 57, 193)
     sanrio_sku_wjl_arr.insert(0, [formatted_date])
     sanrio_sku_wjl_arr.append([{"type": "formula", "text": f"=SUM(H2:H124)"}])
 
-    sanrio_sku_snb_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 181, 248)
+    sanrio_sku_snb_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 195, 262)
     sanrio_sku_snb_arr.insert(0, [formatted_date])
     sanrio_sku_snb_arr.append([{"type": "formula", "text": f"=SUM(H2:H69)"}])
 
-    sanrio_sku_ph_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 250, 306)
+    sanrio_sku_ph_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity, 264, 320)
     sanrio_sku_ph_arr.insert(0, [formatted_date])
     sanrio_sku_ph_arr.append([{"type": "formula", "text": f"=SUM(H2:H58)"}])
 
@@ -416,11 +416,11 @@ def sanrio_fs(formatted_date, template_copy_path):
 
     sanrio_sku_inventory_wjshypl_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 2, 55,
                                                                  "C", "D")
-    sanrio_sku_inventory_wjl_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 57, 179,
+    sanrio_sku_inventory_wjl_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 57, 193,
                                                              "C", "D")
-    sanrio_sku_inventory_snb_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 181, 248,
+    sanrio_sku_inventory_snb_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 195, 262,
                                                              "C", "D")
-    sanrio_sku_inventory_ph_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 250, 306,
+    sanrio_sku_inventory_ph_arr = get_range_column_row_data(template_copy_path, RowName.Inventory_Update, 264, 320,
                                                             "C", "D")
 
     token = get_token()
