@@ -538,4 +538,4 @@ def call(analyse_obj):
 
 if __name__ == '__main__':
     call(ClientConstants.sanrio)
-    # call(ClientConstants.xyl)
+    call(ClientConstants.xyl)
