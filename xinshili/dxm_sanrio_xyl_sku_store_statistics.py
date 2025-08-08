@@ -135,7 +135,6 @@ def update_available_inventory(file1_path, file2_path, output_path):
 def update_total_inventory(file1_path, file2_path, output_path):
     # 读取文件1，填充空值
     df1 = pd.read_excel(file1_path)
-    df1.fillna('', inplace=True)
 
     # 将库存数值列转换为 float
     df1["Available Inventory/可用库存"] = pd.to_numeric(df1.get("Available Inventory/可用库存", 0),
@@ -263,7 +262,7 @@ def get_range_column_data(file_path, sheet_name, column_name, start_row, end_row
     :return: 列表形式返回二维数据
     """
     try:
-        df = pd.read_excel(file_path, sheet_name=sheet_name, dtype=object).fillna("")
+        df = pd.read_excel(file_path, sheet_name=sheet_name, dtype=object)
 
         if column_name not in df.columns:
             raise ValueError(f"❌ 指定列名 '{column_name}' 不存在于工作表 '{sheet_name}' 中。")
