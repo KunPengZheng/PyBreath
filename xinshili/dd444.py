@@ -1,6 +1,7 @@
 import subprocess
 
 import requests
+import os
 import urllib.parse
 
 from xinshili.soft_ip33 import jsons
@@ -562,20 +563,27 @@ def api(first_resource_id, first_resource_type, resource_id, resource_title):
     jsons = response.json()
     print(jsons)
 
-    download_hw_video(jsons, f"/Users/zkp/Downloads/未命名文件夹 3/{resource_title}.mp4")
+    encrypt_url = jsons.get("data", {}).get("cloud_data").get("hw").get("encrypt_url")
+    download_m3u8_to_mp4(encrypt_url, "/Users/zkp/Downloads/未命名文件夹 3/", f"{resource_title}.mp4")
 
 
-def download_hw_video(json_data, output_file):
-    encrypt_url = json_data.get("data", {}).get("cloud_data").get("hw").get("encrypt_url")
-    print(f"开始下载视频，URL: {encrypt_url}")
+def download_m3u8_to_mp4(m3u8_url, output_dir, output_filename="output.mp4"):
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, output_filename)
 
-    audio_response = requests.get(encrypt_url, stream=True)
-    with open(output_file, "wb") as f:
-        for chunk in audio_response.iter_content(chunk_size=8192):
-            if chunk:
-                f.write(chunk)
+    cmd = [
+        "ffmpeg",
+        "-protocol_whitelist", "file,http,https,tcp,tls,crypto",
+        "-i", m3u8_url,
+        "-c", "copy",
+        "-bsf:a", "aac_adtstoasc",
+        "-y",
+        output_path
+    ]
 
-    print(f"✅ 音频已保存至: {output_file}")
+    print("开始下载并转换为mp4...")
+    subprocess.run(cmd, check=True)
+    print(f"完成，文件保存在 {output_path}")
 
 
 if __name__ == "__main__":
