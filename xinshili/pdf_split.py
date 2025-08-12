@@ -103,6 +103,7 @@ if __name__ == '__main__':
     output_folder = "/Users/zkp/Desktop/B&Y/pdf/" + get_filename_without_extension(input_pdf) + "/"  # 输出目录路径
     ensure_directory_exists(output_folder)
 
-    patterns = r'\b\d{22,34}\b'
+    # patterns = r'\b\d{22,34}\b'
+    patterns = r"\bGF\d{13}\b"
     split_pdf(input_pdf, output_folder)
     extract_text_from_pdf(output_folder, patterns)
