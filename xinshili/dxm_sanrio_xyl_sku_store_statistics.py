@@ -541,19 +541,19 @@ def call(analyse_obj):
     # 更新店铺和sku的销量
     formatted_date = update_sales_data(dxm_order_path, template_copy_path)
 
-    # # 合并oms库存文件
-    # merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
-    #
-    # if analyse_obj == ClientConstants.xyl:
-    #     # 更新库存
-    #     update_available_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
-    #     # 更新海运空运
-    #     update_shipping_inventory(dszs_inventory_path, template_copy_path, template_copy_path)
-    #     # 数据写入飞书表格
-    #     xyl_fs(formatted_date, template_copy_path)
-    # elif ClientConstants.sanrio:
-    #     update_total_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
-    #     sanrio_fs(formatted_date, template_copy_path)
+    # 合并oms库存文件
+    merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
+
+    if analyse_obj == ClientConstants.xyl:
+        # 更新库存
+        update_available_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
+        # 更新海运空运
+        update_shipping_inventory(dszs_inventory_path, template_copy_path, template_copy_path)
+        # 数据写入飞书表格
+        xyl_fs(formatted_date, template_copy_path)
+    elif ClientConstants.sanrio:
+        update_total_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
+        sanrio_fs(formatted_date, template_copy_path)
 
 
 if __name__ == '__main__':
