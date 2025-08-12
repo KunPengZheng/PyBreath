@@ -31,8 +31,15 @@ def update_sales_data(file1_path, output_path):
     if RowName.Total_Of_Product in df1.columns:
         df1[RowName.Total_Of_Product] = pd.to_numeric(df1[RowName.Total_Of_Product], errors="coerce").fillna(0)
 
-    # --- 构建映射 ---
-    store_count_map = df1[RowName.Store_Account].value_counts().to_dict()
+    # 店铺订单数（订单号去重）
+    store_count_map = (
+        df1.drop_duplicates(subset=[RowName.Store_Account, RowName.Order_Num])
+        [RowName.Store_Account]
+        .value_counts()
+        .to_dict()
+    )
+    # 店铺订单数（订单号没有去重）
+    # store_count_map = df1[RowName.Store_Account].value_counts().to_dict()
     sku_sum_map = df1.groupby(RowName.SKU)[RowName.Total_Of_Product].sum().to_dict()
 
     # 规则1: "31302413112" -> 乘 2，加到 "3130241311"
@@ -534,19 +541,19 @@ def call(analyse_obj):
     # 更新店铺和sku的销量
     formatted_date = update_sales_data(dxm_order_path, template_copy_path)
 
-    # 合并oms库存文件
-    merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
-
-    if analyse_obj == ClientConstants.xyl:
-        # 更新库存
-        update_available_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
-        # 更新海运空运
-        update_shipping_inventory(dszs_inventory_path, template_copy_path, template_copy_path)
-        # 数据写入飞书表格
-        xyl_fs(formatted_date, template_copy_path)
-    elif ClientConstants.sanrio:
-        update_total_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
-        sanrio_fs(formatted_date, template_copy_path)
+    # # 合并oms库存文件
+    # merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
+    #
+    # if analyse_obj == ClientConstants.xyl:
+    #     # 更新库存
+    #     update_available_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
+    #     # 更新海运空运
+    #     update_shipping_inventory(dszs_inventory_path, template_copy_path, template_copy_path)
+    #     # 数据写入飞书表格
+    #     xyl_fs(formatted_date, template_copy_path)
+    # elif ClientConstants.sanrio:
+    #     update_total_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
+    #     sanrio_fs(formatted_date, template_copy_path)
 
 
 if __name__ == '__main__':
