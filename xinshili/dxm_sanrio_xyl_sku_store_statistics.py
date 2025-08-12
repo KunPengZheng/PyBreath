@@ -35,6 +35,20 @@ def update_sales_data(file1_path, output_path):
     store_count_map = df1[RowName.Store_Account].value_counts().to_dict()
     sku_sum_map = df1.groupby(RowName.SKU)[RowName.Total_Of_Product].sum().to_dict()
 
+    # 规则1: "31302413112" -> 乘 2，加到 "3130241311"
+    target = "3130241311"
+    target1 = "3130242931"
+
+    key1 = "31302413112"
+    if key1 in sku_sum_map:
+        sku_sum_map[target] = sku_sum_map.get(target, 0) + (sku_sum_map.get(key1, 0) * 2)
+
+    # 规则2: "3130242931+3130241311" -> 加到 "3130241311" 和 加到 "3130242931"
+    key2 = "3130242931+3130241311"
+    if key2 in sku_sum_map:
+        sku_sum_map[target] = sku_sum_map.get(target, 0) + sku_sum_map.get(key2, 0)
+        sku_sum_map[target1] = sku_sum_map.get(target1, 0) + sku_sum_map.get(key2, 0)
+
     updated_sheets = {}
 
     # --- 店铺销量表 ---
