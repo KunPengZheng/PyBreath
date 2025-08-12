@@ -44,7 +44,7 @@ def split_pdf(input_pdf_path, output_folder):
             new_pdf.save(output_pdf_path)
 
 
-def extract_text_from_pdf(folder_path):
+def extract_text_from_pdf(folder_path, patterns):
     """
     裁剪pdf
     :param folder_path: pdf的文件路径
@@ -59,7 +59,7 @@ def extract_text_from_pdf(folder_path):
                 text += page.get_text().replace(" ", "")  # 提取文本内容
                 print(f"{absolute_path}  文件扫描到的内容：")
                 print(text)
-            findall = re.findall(r'\b\d{22,34}\b', text)
+            findall = re.findall(patterns, text)
             print(f"{absolute_path} 文件正则匹配到的面单号：{findall}")
             print()
             # 判断 findall 列表不为空并且 findall[0] 存在，表示匹配到了。如果没匹配到的不会以名单号重命名
@@ -96,11 +96,13 @@ def extract_text_from_pdf_not_sku(folder_path):
                     nums.append(findall[0])
         save_waybill_numbers_to_excel(nums, folder_path)
 
-#
-# # 示例使用
-# input_pdf = input("请输入源表文件的绝对路径：")
-# output_folder = "/Users/zkp/Desktop/B&Y/pdf/" + get_filename_without_extension(input_pdf) + "/"  # 输出目录路径
-# ensure_directory_exists(output_folder)
-#
-# split_pdf(input_pdf, output_folder)
-# extract_text_from_pdf(output_folder)
+
+if __name__ == '__main__':
+    # 示例使用
+    input_pdf = input("请输入源表文件的绝对路径：")
+    output_folder = "/Users/zkp/Desktop/B&Y/pdf/" + get_filename_without_extension(input_pdf) + "/"  # 输出目录路径
+    ensure_directory_exists(output_folder)
+
+    patterns = r'\b\d{22,34}\b'
+    split_pdf(input_pdf, output_folder)
+    extract_text_from_pdf(output_folder, patterns)
