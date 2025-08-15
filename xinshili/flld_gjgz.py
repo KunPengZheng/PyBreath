@@ -1,8 +1,8 @@
 import os
 import re
+import glob
 from datetime import datetime, timedelta
 from collections import defaultdict
-
 import pandas as pd
 from openpyxl import load_workbook
 
@@ -219,13 +219,156 @@ def delete_files(file_paths):
             print(f"❌ 删除失败: {path}，原因: {e}")
 
 
-def go(input_path, api_flag):
+def get_target_files(date_str, folder_a, folder_b):
+    target_date = datetime.strptime(date_str, "%Y/%m/%d")
+    date_list = [(target_date - timedelta(days=i)).date() for i in range(0, 3)]
+    month_folder = f"{target_date.year}.{target_date.month}"
+
+    # 用来匹配的正则模板（day_str 会替换）
+    # ^ 开头匹配  创建时间 或 打单时间  ，然后日期数字，两位，然后下划线，后面任意字符，最后是 .xlsx
+    regex_template = r"^(创建时间|打单时间){day}_.*\.xlsx$"
+
+    result_files = []
+
+    for folder in [folder_a, folder_b]:
+        folder_path = os.path.join(folder, month_folder)
+        if not os.path.exists(folder_path):
+            continue
+
+        for file in os.listdir(folder_path):
+            for d in date_list:
+                day_str = f"{d.day:02d}"
+                pattern = re.compile(regex_template.format(day=day_str))
+                if pattern.match(file):
+                    result_files.append(os.path.join(folder_path, file))
+
+    return date_list, result_files
+
+
+def process_and_rename(file_path):
+    # 读取文件
+    df = pd.read_excel(file_path, dtype=str).fillna("")
+
+    # 去掉空格
+    df.columns = df.columns.str.strip()
+
+    # 检查是否有“单号”列
+    if "单号" not in df.columns:
+        print(f"❌ 文件缺少 '单号' 列：{file_path}")
+        return
+
+    # 删除 “PO-” 开头的行
+    df = df[~df["单号"].str.startswith("PO-", na=False)]
+
+    valid_count = len(df)
+
+    # 保存处理后的数据（可选，覆盖原文件或另存为）
+    df.to_excel(file_path, index=False)
+
+    # 修改文件名
+    dir_name = os.path.dirname(file_path)
+    file_name = os.path.basename(file_path)
+
+    # 匹配 “打单时间数字_数字.xlsx”
+    match = re.match(r"(打单时间\d+)_\d+(\.xlsx)", file_name)
+    if match:
+        new_name = f"{match.group(1)}_{valid_count}{match.group(2)}"
+        new_path = os.path.join(dir_name, new_name)
+        os.rename(file_path, new_path)
+        print(f"✅ 已重命名：{file_name} → {new_name}")
+        return new_path
+    else:
+        return file_path
+
+
+# 示例调用
+
+def copy_track_state(ck_time, xlsx_path):
+    new_path = process_and_rename(xlsx_path)
+    folder_xyl = "/Users/zkp/Desktop/B&Y/轨迹统计/xyl"
+    folder_flld = "/Users/zkp/Desktop/B&Y/轨迹统计/flld"  # 这里换成实际路径
+    dates, files = get_target_files(ck_time, folder_xyl, folder_flld)
+    for f in files:
+        update_from_A_to_B(f, new_path)
+    return new_path
+
+
+def update_from_A_to_B(A_path, B_path):
+    # 读取
+    A_df = pd.read_excel(A_path, dtype=str).fillna("")
+    A_df.columns = A_df.columns.str.strip()
+
+    B_df = pd.read_excel(B_path, dtype=str).fillna("")
+    B_df.columns = B_df.columns.str.strip()
+
+    # 判断匹配列
+    if "打单时间" in os.path.basename(A_path):
+        merge_key_A = "快递单号"
+        merge_key_B = "快递单号"
+    elif "创建时间" in os.path.basename(A_path):
+        merge_key_A = "Tracking No./物流跟踪号"
+        merge_key_B = "快递单号"
+    else:
+        print(f"⚠️ A 文件名不包含 '打单时间' 或 '创建时间'，跳过：{A_path}")
+        return
+
+    # 需要复制的列
+    col_map = {
+        "Courier/快递": "Courier/快递",
+        "PossessionSfDate/揽收时间": "PossessionSfDate/揽收时间",
+        "LatestEventSfDate/最新事件时间": "LatestEventSfDate/最新事件时间",
+        "LatestEventSfSite/最新事件地点": "LatestEventSfSite/最新事件地点",
+    }
+
+    # 检查必要列
+    if merge_key_A not in A_df.columns:
+        print(f"❌ 源文件缺少匹配列 '{merge_key_A}'，文件：{A_path}")
+        return
+    if merge_key_B not in B_df.columns:
+        print(f"❌ 目标文件缺少匹配列 '{merge_key_B}'，文件：{B_path}")
+        return
+    for col in col_map.keys():
+        if col not in A_df.columns:
+            print(f"❌ 源文件缺少列 '{col}'，文件：{A_path}")
+            return
+
+    # 合并
+    merged_df = B_df.merge(
+        A_df[[merge_key_A] + list(col_map.keys())],
+        how="left",
+        left_on=merge_key_B,
+        right_on=merge_key_A,
+        suffixes=("", "_src")
+    )
+
+    # 覆盖目标列
+    for src_col, tgt_col in col_map.items():
+        src_col_merged = f"{src_col}_src"
+        if src_col_merged in merged_df.columns:
+            merged_df[tgt_col] = merged_df[src_col_merged].where(
+                merged_df[src_col_merged].notna(),
+                merged_df[tgt_col]
+            )
+
+    # 删除多余列
+    merged_df = merged_df[B_df.columns]
+
+    # 保存
+    merged_df.to_excel(B_path, index=False)
+    # print(f"✅ 已更新 {B_path}  ←  来源 {A_path}")
+
+
+def go(input_path, api_flag, is_tkkj=False):
     if input_path is None:
         input_path = input("请输入文件的绝对路径：")
 
     xlsx_path = extract_path_before_csv(input_path)
     str_strip(xlsx_path, "快递单号")
     check_and_add_courier_column(xlsx_path)
+    ck_time = get_days_difference(xlsx_path)
+
+    if is_tkkj:
+        xlsx_path = copy_track_state(ck_time, xlsx_path)
 
     if api_flag:
         results = extract_and_process_data(xlsx_path, RowName.Courier, 100, "快递单号")
@@ -266,7 +409,6 @@ def go(input_path, api_flag):
 
     text = ""
     fs_text = ""
-    ck_time = get_days_difference(xlsx_path)
     gz_time = getYmd()
     interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
     is_usweekend = is_us_weekend(ck_time)
@@ -443,7 +585,7 @@ def detect_duplicate_prefix_suffix(root_dir, dir_path):
             delete_files(files)
 
 
-def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
+def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True, is_tkkj=False):
     today = datetime.now()
     current_year = today.year
     current_month = today.month
@@ -471,7 +613,7 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
                         print(f"正在处理文件: {xlsx_path}")
 
                         if ignore:
-                            go(xlsx_path, api_flag)
+                            go(xlsx_path, api_flag, is_tkkj)
                             continue
 
                         ck_time = get_days_difference(xlsx_path)
@@ -479,17 +621,17 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
                                                                                                     "%Y/%m/%d")).days
 
                         if interval_time == 1 and is_morning:
-                            go(xlsx_path, api_flag)
+                            go(xlsx_path, api_flag, is_tkkj)
                         else:
                             if is_morning:
                                 continue
 
                             if (analyse_obj_ignore):
-                                go(xlsx_path, api_flag)
+                                go(xlsx_path, api_flag, is_tkkj)
                                 continue
 
                             if (check_and_add_courier_column(xlsx_path)):
-                                go(xlsx_path, api_flag)
+                                go(xlsx_path, api_flag, is_tkkj)
                             else:
 
                                 output_file = os.path.splitext(xlsx_path)[0] + "_复制.xlsx"
@@ -513,7 +655,7 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
                                         and not_yet_count == 0 and pre_ship_count == 0 and alert_count == 0 \
                                         and track_count == 0:
                                     delete_file(output_file)
-                                    go(xlsx_path, api_flag)
+                                    go(xlsx_path, api_flag, is_tkkj)
                                     continue
 
                                 swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
@@ -523,16 +665,19 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
                                 delete_file(output_file)
 
                                 if swl < 99 or unpaid_count > 0 or (exceed >= 14 and delivered_countl < 98):
-                                    go(xlsx_path, api_flag)
+                                    go(xlsx_path, api_flag, is_tkkj)
 
 
 def call():
     if "MacBookPro" in get_computer_model():
         flld_path = "/Users/zkp/Desktop/B&Y/轨迹统计/flld/"
+        tkkj_path = "/Users/zkp/Desktop/B&Y/轨迹统计/tkkj/"
     else:
         flld_path = "/Volumes/B&Y/轨迹统计/flld/"
+        tkkj_path = "/Volumes/B&Y/轨迹统计/tkkj/"
 
-    automatic(flld_path, True, True, False)
+    # automatic(flld_path, True, True, False, False)
+    automatic(tkkj_path, True, True, False, True)
 
 
 if __name__ == '__main__':
