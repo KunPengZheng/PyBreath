@@ -504,11 +504,11 @@ class MainWindow(QWidget):
 
         layout = QVBoxLayout()
 
-        # # PDF 切分功能入口按钮
-        # self.pdf_tool_btn = QPushButton("PDF 切分工具", self)
-        # self.pdf_tool_btn.setFixedSize(450, 50)
-        # self.pdf_tool_btn.clicked.connect(self.open_pdf_tool)
-        # layout.addWidget(self.pdf_tool_btn)
+        # PDF 切分功能入口按钮
+        self.pdf_tool_btn = QPushButton("PDF 切分工具", self)
+        self.pdf_tool_btn.setFixedSize(450, 50)
+        self.pdf_tool_btn.clicked.connect(self.open_pdf_tool)
+        layout.addWidget(self.pdf_tool_btn)
         #
         # # Excel 合并功能入口按钮
         # self.excel_merge_btn = QPushButton("Excel 合并工具", self)
@@ -532,10 +532,10 @@ class MainWindow(QWidget):
         # self.add_pic_prefix_btn.clicked.connect(self.open_add_pic_prefix_tool)
         # layout.addWidget(self.add_pic_prefix_btn)
 
-        self.add_pic_prefix_btn = QPushButton("生成店小秘衣服模版🔧", self)
-        self.add_pic_prefix_btn.setFixedSize(450, 50)
-        self.add_pic_prefix_btn.clicked.connect(self.open_create_dxm_clothes_template_tool)
-        layout.addWidget(self.add_pic_prefix_btn)
+        # self.add_pic_prefix_btn = QPushButton("生成店小秘衣服模版🔧", self)
+        # self.add_pic_prefix_btn.setFixedSize(450, 50)
+        # self.add_pic_prefix_btn.clicked.connect(self.open_create_dxm_clothes_template_tool)
+        # layout.addWidget(self.add_pic_prefix_btn)
 
         self.setLayout(layout)
 
