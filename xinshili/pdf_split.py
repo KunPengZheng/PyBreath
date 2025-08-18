@@ -99,10 +99,25 @@ def extract_text_from_pdf_not_sku(folder_path):
 
 if __name__ == '__main__':
     # 示例使用
-    input_pdf = input("请输入源表文件的绝对路径：")
-    output_folder = "/Users/zkp/Desktop/B&Y/pdf/" + get_filename_without_extension(input_pdf) + "/"  # 输出目录路径
-    ensure_directory_exists(output_folder)
-
+    input_path = input("请输入源表文件或文件夹的绝对路径：")
+    output_base = "/Users/zkp/Desktop/B&Y/pdf/"
     patterns = r'(\bUUS.{16}\b|\bGF\d{13}\b|\b\d{22,34}\b)'
-    split_pdf(input_pdf, output_folder)
-    extract_text_from_pdf(output_folder, patterns)
+
+    if os.path.isfile(input_path):
+        output_folder = os.path.join(output_base, get_filename_without_extension(input_path))
+        ensure_directory_exists(output_folder)
+        split_pdf(input_path, output_folder)
+        extract_text_from_pdf(output_folder, patterns)
+
+    elif os.path.isdir(input_path):
+        # 文件夹，遍历其中所有 PDF
+        for filename in os.listdir(input_path):
+            if filename.lower().endswith(".pdf"):
+                file_path = os.path.join(input_path, filename)
+                output_folder = os.path.join(output_base, get_filename_without_extension(file_path))
+                ensure_directory_exists(output_folder)
+                split_pdf(file_path, output_folder)
+                extract_text_from_pdf(output_folder, patterns)
+
+    else:
+        print("输入路径无效，请输入正确的文件或文件夹路径。")
