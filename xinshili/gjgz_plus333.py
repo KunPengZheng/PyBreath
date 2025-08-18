@@ -1543,7 +1543,8 @@ def go(analyse_obj, xlsx_path, api_flag):
         xlsx_path = input("请输入文件的绝对路径：")
 
     # 针对zbw做的运单号过滤操作
-    if analyse_obj == ClientConstants.zbw:
+    if analyse_obj == ClientConstants.zbw or \
+            analyse_obj == ClientConstants.xyl:
         output_file = os.path.splitext(xlsx_path)[0] + "_去重0.xlsx"
         all_total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)  # 无筛选订单总数
         delete_file(output_file)
@@ -1595,7 +1596,8 @@ def go(analyse_obj, xlsx_path, api_flag):
         update_courier_status(xlsx_path, all_maps, wl=RowName.Tracking_No, column_map=column_mapping)
 
     # 针对zbw做的运单号过滤操作
-    if analyse_obj == ClientConstants.zbw:
+    if analyse_obj == ClientConstants.zbw or \
+            analyse_obj == ClientConstants.xyl:
         output_file = os.path.splitext(xlsx_path)[0] + "_去重1.xlsx"
         filter_tracking_numbers(xlsx_path, output_file)
         xlsx_path = output_file
@@ -1812,7 +1814,8 @@ def go(analyse_obj, xlsx_path, api_flag):
 
     zongshu = ""
     # 针对zbw做的运单号过滤操作
-    if analyse_obj == ClientConstants.zbw:
+    if analyse_obj == ClientConstants.zbw or \
+            analyse_obj == ClientConstants.xyl:
         zongshu = f"\n订单总数：{total_count_int}【{all_total_count}】"
     else:
         zongshu = f"\n订单总数：{total_count_int}"
@@ -2003,7 +2006,8 @@ def go(analyse_obj, xlsx_path, api_flag):
     # 删除去重文件
     delete_file(output_file)
     # 针对zbw做的运单号过滤操作
-    if analyse_obj == ClientConstants.zbw:
+    if analyse_obj == ClientConstants.zbw or \
+            analyse_obj == ClientConstants.xyl:
         delete_file(xlsx_path)
     print(text)
 
@@ -2016,7 +2020,8 @@ def go(analyse_obj, xlsx_path, api_flag):
 
         zongshu1 = ""
         # 针对zbw做的运单号过滤操作
-        if analyse_obj == ClientConstants.zbw:
+        if analyse_obj == ClientConstants.zbw or \
+                analyse_obj == ClientConstants.xyl:
             zongshu1 = f"{total_count_int}【{all_total_count}】"
         else:
             zongshu1 = f"{total_count_int}"
@@ -2033,7 +2038,8 @@ def go(analyse_obj, xlsx_path, api_flag):
 
         zongshu2 = ""
         # 针对zbw做的运单号过滤操作
-        if analyse_obj == ClientConstants.zbw:
+        if analyse_obj == ClientConstants.zbw or \
+                analyse_obj == ClientConstants.xyl:
             zongshu2 = f"上网：({total_count},{swl}%)【{all_total_count}】"
         else:
             zongshu2 = f"上网：({total_count},{swl}%)"
