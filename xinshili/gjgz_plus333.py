@@ -2175,7 +2175,7 @@ def call2():
     automatic(zwb_path, ClientConstants.zbw, True, False, False)
     automatic(sanrio_path, ClientConstants.sanrio, True, False, False)
     automatic(xyl_path, ClientConstants.xyl, True, True, False)
-    automatic(kaer_path, ClientConstants.kaer, True, True, False)
+    # automatic(kaer_path, ClientConstants.kaer, True, True, False)
 
 
 def is_time_difference_exceed(start_time_str, end_time_str):
