@@ -98,23 +98,31 @@ def extract_text_from_pdf_not_sku(folder_path):
 
 
 if __name__ == '__main__':
+    import os
+
     # 示例使用
     input_path = input("请输入源表文件或文件夹的绝对路径：")
-    output_base = "/Users/zkp/Desktop/B&Y/pdf/"
+    base_dir = "/Users/zkp/Desktop/B&Y/pdf/"
+
     patterns = r'(\bUUS.{16}\b|\bGF\d{13}\b|\b\d{22,34}\b)'
 
     if os.path.isfile(input_path):
-        output_folder = os.path.join(output_base, get_filename_without_extension(input_path))
+        # 单个文件
+        output_folder = os.path.join(base_dir, get_filename_without_extension(input_path))
         ensure_directory_exists(output_folder)
         split_pdf(input_path, output_folder)
         extract_text_from_pdf(output_folder, patterns)
 
     elif os.path.isdir(input_path):
-        # 文件夹，遍历其中所有 PDF
+        # 文件夹
+        folder_name = os.path.basename(os.path.normpath(input_path))  # 获取文件夹名
+        output_base = os.path.join(base_dir, folder_name)
+        ensure_directory_exists(output_base)
+
         for filename in os.listdir(input_path):
             if filename.lower().endswith(".pdf"):
                 file_path = os.path.join(input_path, filename)
-                output_folder = os.path.join(output_base, get_filename_without_extension(file_path))
+                output_folder = os.path.join(output_base, get_filename_without_extension(filename))
                 ensure_directory_exists(output_folder)
                 split_pdf(file_path, output_folder)
                 extract_text_from_pdf(output_folder, patterns)
