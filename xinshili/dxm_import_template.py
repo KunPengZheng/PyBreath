@@ -476,4 +476,4 @@ def create_dxm_clothes_template(source_file, price=50.8, title_prefix="", output
 
 if __name__ == '__main__':
     source_file = input("请输入源表文件的绝对路径：")
-    create_dxm_clothes_template(source_file, 51)
+    create_dxm_clothes_template(source_file, 51, "", True)
