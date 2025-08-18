@@ -10,8 +10,9 @@ from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants
     khhz_sheet_bg, fs_msg, FsUserID
 from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, \
     count_pattern_state, CourierStateMapKey, Pattern, is_time_difference_exceed, \
-    extract_and_process_data, update_courier_status
-from xinshili.pd_utils import copy_new_file
+    extract_and_process_data, update_courier_status, filter_tracking_numbers, find_irregular_tracking_numbers, \
+    update_courier_status1
+from xinshili.pd_utils import copy_new_file, remove_duplicates_by_column
 from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend, natural_key, \
     get_computer_model
 
@@ -224,8 +225,21 @@ def go(input_path, api_flag):
         input_path = input("请输入文件的绝对路径：")
 
     xlsx_path = extract_path_before_csv(input_path)
+
+    output_file = os.path.splitext(xlsx_path)[0] + "_去重0.xlsx"
+    all_total_count = remove_duplicates_by_column(xlsx_path, output_file, "快递单号")  # 无筛选订单总数
+    delete_file(output_file)
+
     str_strip(xlsx_path, "快递单号")
     check_and_add_courier_column(xlsx_path)
+
+    irregular_number_map = find_irregular_tracking_numbers(xlsx_path, "快递单号")
+    irregular_number_list = []
+    if irregular_number_map:
+        irregular_number_list = list(irregular_number_map.keys())
+        # print(f"存在无效的物流跟踪号：{irregular_number_list}")
+        # update_courier_status(xlsx_path, {CourierStateMapKey.irregular_number_map: irregular_number_map})
+        update_courier_status1(xlsx_path, irregular_number_map, "快递单号")
 
     if api_flag:
         results = extract_and_process_data(xlsx_path, RowName.Courier, 100, "快递单号")
@@ -256,6 +270,10 @@ def go(input_path, api_flag):
 
         update_courier_status(xlsx_path, all_maps, wl="快递单号", column_map=column_mapping)
 
+    output_file = os.path.splitext(xlsx_path)[0] + "_去重1.xlsx"
+    filter_tracking_numbers(xlsx_path, output_file, "快递单号")
+    xlsx_path = output_file
+
     total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
     track_count = total_count - no_track_count
     total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
@@ -281,8 +299,8 @@ def go(input_path, api_flag):
     text += f"打单日期：{ck_time}"
     text += f"\n跟踪日期：{gz_time}"
 
-    text += f"\n订单总数：{total_count}"
-    fs_text += f"\n订单总数：{total_count}"
+    text += f"\n订单总数：{total_count}【{all_total_count}】"
+    fs_text += f"\n订单总数：{total_count}【{all_total_count}】"
 
     swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
     wswl = round2(100 - swl)
@@ -291,6 +309,10 @@ def go(input_path, api_flag):
 
     text += f"\n未上网：（{no_track_count}, {wswl}%）"
     fs_text += f"\n未上网：（{no_track_count}, {wswl}%）"
+
+    irregular_no_tracking_countl = round2((len(irregular_number_list) / int(all_total_count)) * 100)
+    text += f"\nirregular_number：（{len(irregular_number_list)}, {irregular_no_tracking_countl}%）"
+    fs_text += f"\nirregular_number：（{len(irregular_number_list)}, {irregular_no_tracking_countl}%）"
 
     not_yet_countl = round2((int(not_yet_count) / int(total_count)) * 100)
     text += f"\nnot_yet：（{not_yet_count}, {not_yet_countl}%）"
@@ -339,6 +361,7 @@ def go(input_path, api_flag):
             fs_text += f"\n（单号：{key}, 快递单号：{value}）"
 
     print(text)
+    delete_file(xlsx_path)
 
     sum_up_text = ""
     swl_flag = False
