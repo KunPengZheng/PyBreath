@@ -6,11 +6,13 @@ from collections import defaultdict
 import pandas as pd
 from openpyxl import load_workbook
 
+from xinshili.dxm_xyl_yd_tack import convert_china_to_utc0
 from xinshili.fs_utils_plus import get_token, brief_sheet_value, ClientConstants, brief_sheet_bg, khhz_sheet_value, \
     khhz_sheet_bg, fs_msg, FsUserID
 from xinshili.gjgz_plus333 import RowName, check_and_add_courier_column, \
     count_pattern_state, CourierStateMapKey, Pattern, is_time_difference_exceed, \
-    extract_and_process_data, update_courier_status
+    extract_and_process_data, update_courier_status, find_irregular_tracking_numbers, update_courier_status1, \
+    CourierStateMapValue
 from xinshili.pd_utils import copy_new_file
 from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_us_weekend, natural_key, \
     get_computer_model
@@ -281,7 +283,116 @@ def process_and_rename(file_path):
         return file_path
 
 
-# 示例调用
+def interval_48(file_path):
+    df = pd.read_excel(file_path, dtype=str)
+
+    # 先排除状态为 unpaid、delivered、irregular_no_tracking 的行
+    df_filtered = df[~df[RowName.Courier].str.lower().isin([
+        # CourierStateMapValue.unpaid,
+        # CourierStateMapValue.delivered,
+        CourierStateMapValue.irregular_no_tracking])].copy()
+
+    intervals = []
+    states = []
+    track_times = []
+
+    # 当前中国时间转换为零时区时间，因为usps接口返回的时间是领时区的
+    utc0_now = convert_china_to_utc0(datetime.now())
+
+    for idx, row in df_filtered.iterrows():
+        try:
+            courier = str(row.get(RowName.Courier, "")).strip().lower()
+
+            if courier == CourierStateMapValue.delivered or courier == CourierStateMapValue.unpaid:
+                intervals.append("")
+                states.append("")
+                track_times.append(utc0_now)
+                continue
+
+            # 如果没有触发上面两个判断，则进入常规时间判断逻辑
+            ship_time_str = str(row.get("发货时间", "")).strip()
+            date_str = str(row.get(RowName.LatestEventSfDate, "")).strip()
+            time_str = str(row.get(RowName.LatestEventSfTime, "")).strip()
+
+            date_flag = date_str and date_str.lower() != "nan"
+            time_flag = time_str and time_str.lower() != "nan"
+            outbound_time_flag = ship_time_str and ship_time_str.lower() != "nan"
+
+            diff = None
+            if date_flag:
+                if time_flag:
+                    latest_date_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+                else:
+                    latest_date_time = datetime.strptime(f"{date_str}", "%Y-%m-%d")
+                diff = utc0_now - latest_date_time
+            elif outbound_time_flag:
+                creation_time = datetime.strptime(ship_time_str, "%Y-%m-%d %H:%M:%S")
+                diff = utc0_now - convert_china_to_utc0(creation_time)
+
+            if diff is not None:
+                hours = round(diff.total_seconds() / 3600, 2)
+                total_seconds = int(diff.total_seconds())
+                hours_part = total_seconds // 3600
+                minutes_part = (total_seconds % 3600) // 60
+                interval_str = f"{hours_part:02}:{minutes_part:02}"
+                intervals.append(interval_str)
+
+                # 默认无法替换判断时间为 72 小时
+                delay_hours = 72
+
+                # ✅ 判断付款时间是否为美国周五、六、日，如果是则延迟 48 小时
+                pay_time_str = str(row.get("付款时间", "")).strip()
+                if pay_time_str and pay_time_str.lower() != "nan":
+                    try:
+                        pay_time_china = datetime.strptime(pay_time_str, "%Y-%m-%d %H:%M:%S")
+                        pay_time_utc0 = convert_china_to_utc0(pay_time_china)
+                        # 转为美国东部时间（或你实际使用的 USPS 时区）
+                        pay_time_us = pay_time_utc0.replace(tzinfo=timezone.utc).astimezone(
+                            ZoneInfo("America/New_York"))
+                        if pay_time_us.weekday() in [4, 5, 6]:  # 星期五、六、日
+                            delay_hours += 48
+                    except Exception as e:
+                        print(f"⚠️ 第 {idx} 行付款时间解析失败: {e}")
+
+                # 优先判断是否unpaid
+                if courier == CourierStateMapValue.unpaid:
+                    if hours <= 192:  # <=8天
+                        states.append("邮资未付<=8天")
+                    else:
+                        states.append("邮资未付>8天")
+                    track_times.append(utc0_now)
+                    continue
+
+                if hours >= delay_hours:
+                    states.append("无法替换")
+                elif hours >= 48:
+                    states.append("阳单替换")
+                elif hours >= 24:
+                    states.append("预备阳单")
+                else:
+                    states.append("轨迹正常")
+            else:
+                intervals.append(None)
+                states.append("")
+
+            track_times.append(utc0_now)
+
+        except Exception as e:
+            print(f"⚠️ 第 {idx} 行处理失败: {e}")
+            intervals.append(None)
+            states.append("")
+            track_times.append(utc0_now)
+
+    df_filtered[RowName.TrackTimeInterval] = intervals
+    df_filtered[RowName.TrackTimeIntervalState] = states
+    df_filtered[RowName.Tacking_Time] = [
+        t.strftime("%Y-%m-%d %H:%M:%S") if isinstance(t, datetime) else "" for t in track_times
+    ]
+
+    df.update(df_filtered)
+    df.to_excel(file_path, index=False)
+    print(f"✅ 已处理并保存至：{file_path}")
+
 
 def copy_track_state(ck_time, xlsx_path):
     new_path = process_and_rename(xlsx_path)
@@ -365,6 +476,9 @@ def go(input_path, api_flag, is_tkkj=False):
     xlsx_path = extract_path_before_csv(input_path)
     str_strip(xlsx_path, "快递单号")
     check_and_add_courier_column(xlsx_path)
+    irregular_number_map = find_irregular_tracking_numbers(xlsx_path, RowName.Track_Num)
+    if irregular_number_map:
+        update_courier_status1(xlsx_path, irregular_number_map, RowName.Track_Num)
     ck_time = get_days_difference(xlsx_path)
 
     if is_tkkj:
