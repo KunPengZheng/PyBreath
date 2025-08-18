@@ -2005,6 +2005,10 @@ def go(analyse_obj, xlsx_path, api_flag):
     if qsl_flag:
         exception_text += "\n✍️签收率异常（签收率目前无法量化，只为提醒⏰）"
         bgFlag = True
+    if alert_count_int >= 10:
+        bg = "#FFF258"
+        exception_text += "\n📒alert 异常"
+        bgFlag = True
     if change_shipment_received_count >= 10:
         bg = "#B3D600"
         exception_text += "\n📒提货单未更新轨迹（>=2天） 异常"
