@@ -1549,12 +1549,9 @@ def go(analyse_obj, xlsx_path, api_flag):
     if xlsx_path is None:
         xlsx_path = input("请输入文件的绝对路径：")
 
-    # 针对zbw做的运单号过滤操作
-    if analyse_obj == ClientConstants.zbw or \
-            analyse_obj == ClientConstants.xyl:
-        output_file = os.path.splitext(xlsx_path)[0] + "_去重0.xlsx"
-        all_total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)  # 无筛选订单总数
-        delete_file(output_file)
+    output_file = os.path.splitext(xlsx_path)[0] + "_去重0.xlsx"
+    all_total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Tracking_No)  # 无筛选订单总数
+    delete_file(output_file)
 
     process_tracking_no(xlsx_path)
     check_and_add_courier_column(xlsx_path)
@@ -1662,8 +1659,12 @@ def go(analyse_obj, xlsx_path, api_flag):
     text += "\n----------------------非usps物流跟踪号----------------------"
     irregular_number_text = ""
     irregular_no_tracking_count_int = len(irregular_number_list)
-    irregular_no_trackingl = round2((irregular_no_tracking_count_int / all_total_count) * 100)
-    kj_irregular_number_swl0 = round2((kj_irregular_number_count0 / irregular_no_tracking_count_int) * 100)
+    irregular_no_trackingl = 0
+    kj_irregular_number_swl0 = 0
+    if all_total_count > 0:
+        irregular_no_trackingl = round2((irregular_no_tracking_count_int / all_total_count) * 100)
+    if irregular_no_tracking_count_int > 0:
+        kj_irregular_number_swl0 = round2((kj_irregular_number_count0 / irregular_no_tracking_count_int) * 100)
     if irregular_no_tracking_count_int > 0:
         irregular_number_text = "\n非usps物流跟踪号："
         for ele in irregular_number_list:
