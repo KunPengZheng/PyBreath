@@ -1329,7 +1329,8 @@ def sku_kj_count(file_path, sku_value,
     return len(filtered_data), len(matched_data)
 
 
-def kj_count(file_path, shipping_service_column=RowName.ShippingService, recipient_column=RowName.Recipient):
+def kj_count(file_path, irregular_flag=False, shipping_service_column=RowName.ShippingService,
+             recipient_column=RowName.Recipient):
     # 读取 Excel 文件
     data = pd.read_excel(file_path)
 
@@ -1347,28 +1348,36 @@ def kj_count(file_path, shipping_service_column=RowName.ShippingService, recipie
     # 综合筛选符合任一条件的行
     kj_counts = data[condition1 | condition2]
 
-    # 进一步筛选 'Courier/快递' 列符合 Pattern.no_track 正则的数据
-    kj_no_track_count = kj_counts[
-        kj_counts[RowName.Courier].str.match(re.compile(Pattern.no_track, re.IGNORECASE), na=False)]
-    kj_tracking_count = kj_counts[
-        kj_counts[RowName.Courier].str.match(re.compile(Pattern.tracking, re.IGNORECASE), na=False)]
-    kj_delivered_count = kj_counts[
-        kj_counts[RowName.Courier].str.match(re.compile(Pattern.delivered, re.IGNORECASE), na=False)]
-    kj_pre_ship_count = kj_counts[
-        kj_counts[RowName.Courier].str.match(re.compile(Pattern.pre_ship, re.IGNORECASE), na=False)]
-    kj_not_yet_count = kj_counts[
-        kj_counts[RowName.Courier].str.match(re.compile(Pattern.not_yet, re.IGNORECASE), na=False)]
-    kj_unpaid_count = kj_counts[
-        kj_counts[RowName.Courier].str.match(re.compile(Pattern.unpaid, re.IGNORECASE), na=False)]
-    kj_irregular_number_count = kj_counts[
-        kj_counts[RowName.Courier].str.match(re.compile(Pattern.irregular_no_tracking, re.IGNORECASE), na=False)]
-    kj_no_tracking_count = kj_counts[
-        kj_counts[RowName.Courier].str.match(re.compile(Pattern.no_tracking, re.IGNORECASE), na=False)]
+    if irregular_flag:
+        kj_irregular_number_count = (kj_counts[
+                                         kj_counts[RowName.Courier].str.match(
+                                             re.compile(Pattern.irregular_no_tracking, re.IGNORECASE), na=False)]
+                                     .drop_duplicates(subset=[RowName.Courier]))
+        # 返回符合条件的行数
+        return 0, 0, 0, 0, 0, 0, 0, len(kj_irregular_number_count), 0, 0
+    else:
+        # 进一步筛选 'Courier/快递' 列符合 Pattern.no_track 正则的数据
+        kj_no_track_count = kj_counts[
+            kj_counts[RowName.Courier].str.match(re.compile(Pattern.no_track, re.IGNORECASE), na=False)]
+        kj_tracking_count = kj_counts[
+            kj_counts[RowName.Courier].str.match(re.compile(Pattern.tracking, re.IGNORECASE), na=False)]
+        kj_delivered_count = kj_counts[
+            kj_counts[RowName.Courier].str.match(re.compile(Pattern.delivered, re.IGNORECASE), na=False)]
+        kj_pre_ship_count = kj_counts[
+            kj_counts[RowName.Courier].str.match(re.compile(Pattern.pre_ship, re.IGNORECASE), na=False)]
+        kj_not_yet_count = kj_counts[
+            kj_counts[RowName.Courier].str.match(re.compile(Pattern.not_yet, re.IGNORECASE), na=False)]
+        kj_unpaid_count = kj_counts[
+            kj_counts[RowName.Courier].str.match(re.compile(Pattern.unpaid, re.IGNORECASE), na=False)]
+        kj_no_tracking_count = kj_counts[
+            kj_counts[RowName.Courier].str.match(re.compile(Pattern.no_tracking, re.IGNORECASE), na=False)]
+        kj_alert_count = kj_counts[
+            kj_counts[RowName.Courier].str.match(re.compile(Pattern.alert, re.IGNORECASE), na=False)]
 
-    # 返回符合条件的行数
-    return len(kj_counts), len(kj_no_track_count), len(kj_tracking_count), len(kj_delivered_count), \
-        len(kj_pre_ship_count), len(kj_not_yet_count), len(kj_unpaid_count), len(kj_irregular_number_count), \
-        len(kj_no_tracking_count)
+        # 返回符合条件的行数
+        return (len(kj_counts), len(kj_no_track_count), len(kj_tracking_count), len(kj_delivered_count),
+                len(kj_pre_ship_count), len(kj_not_yet_count), len(kj_unpaid_count), 0, len(kj_no_tracking_count),
+                len(kj_alert_count))
 
 
 def generate_distribution_report(xlsx_path, kj_column, gz_time, distribution, no_track_distribution, data_map,
@@ -1508,11 +1517,9 @@ def generate_distribution_report2(distribution, no_track_distribution, sku_no_tr
     return report_text, resultList, report_text2, fs_lowest_sku_result_list
 
 
-def filter_tracking_numbers(input_path, output_path):
+def filter_tracking_numbers(input_path, output_path, col="Tracking No./物流跟踪号"):
     # 读取 Excel 文件
     df = pd.read_excel(input_path, dtype=str).fillna("")
-
-    col = "Tracking No./物流跟踪号"
 
     if col not in df.columns:
         print(f"❌ 文件中缺少列: {col}")
@@ -1595,6 +1602,9 @@ def go(analyse_obj, xlsx_path, api_flag):
 
         update_courier_status(xlsx_path, all_maps, wl=RowName.Tracking_No, column_map=column_mapping)
 
+    kj_counts0, kj_no_track_count0, kj_tracking_count0, kj_delivered_count0, kj_pre_ship_count0, kj_not_yet_count0, \
+        kj_unpaid_count0, kj_irregular_number_count0, kj_no_tracking_count0, kj_alert_count0 = kj_count(xlsx_path, True)
+
     # 针对zbw做的运单号过滤操作
     if analyse_obj == ClientConstants.zbw or \
             analyse_obj == ClientConstants.xyl:
@@ -1651,7 +1661,10 @@ def go(analyse_obj, xlsx_path, api_flag):
 
     text += "\n----------------------非usps物流跟踪号----------------------"
     irregular_number_text = ""
-    if (len(irregular_number_list) > 0):
+    irregular_no_tracking_count_int = len(irregular_number_list)
+    irregular_no_trackingl = round2((irregular_no_tracking_count_int / all_total_count) * 100)
+    kj_irregular_number_swl0 = round2((kj_irregular_number_count0 / irregular_no_tracking_count_int) * 100)
+    if irregular_no_tracking_count_int > 0:
         irregular_number_text = "\n非usps物流跟踪号："
         for ele in irregular_number_list:
             irregular_number_text += f"\n"
@@ -1728,6 +1741,7 @@ def go(analyse_obj, xlsx_path, api_flag):
     patterns = {
         CourierStateMapValue.no_track: Pattern.no_track,
         CourierStateMapValue.delivered: Pattern.delivered,
+        CourierStateMapValue.alert: Pattern.alert,
         CourierStateMapValue.unpaid: Pattern.unpaid,
         CourierStateMapValue.not_yet: Pattern.not_yet,
         CourierStateMapValue.pre_ship: Pattern.pre_ship,
@@ -1740,10 +1754,10 @@ def go(analyse_obj, xlsx_path, api_flag):
 
     no_track_count = count_dict[CourierStateMapValue.no_track]
     delivered_count = count_dict[CourierStateMapValue.delivered]
+    alert_count = count_dict[CourierStateMapValue.alert]
     unpaid_count = count_dict[CourierStateMapValue.unpaid]
     not_yet_count = count_dict[CourierStateMapValue.not_yet]
     pre_ship_count = count_dict[CourierStateMapValue.pre_ship]
-    irregular_no_tracking_count = count_dict[CourierStateMapValue.irregular_no_tracking]
     no_tracking_count = count_dict[CourierStateMapValue.no_tracking]
     tracking_count = count_dict[CourierStateMapValue.tracking]
     tracking_zero_count = count_dict["sfDateInterval"]
@@ -1755,10 +1769,10 @@ def go(analyse_obj, xlsx_path, api_flag):
 
     tracking_zero_count_int = int(tracking_zero_count)
     delivered_count_int = int(delivered_count)
+    alert_count_int = int(alert_count)
     unpaid_count_int = int(unpaid_count)
     not_yet_count_int = int(not_yet_count)
     pre_ship_count_int = int(pre_ship_count)
-    irregular_no_tracking_count_int = int(irregular_no_tracking_count)
     no_tracking_count_int = int(no_tracking_count)
     tracking_count_int = int(tracking_count)
     # real_no_track_count = no_track_count_int + tracking_zero_count_int  # 真正的未上网数
@@ -1769,17 +1783,17 @@ def go(analyse_obj, xlsx_path, api_flag):
     swl = round2(100 - ((no_track_count_int) / total_count_int * 100))
     wswl = round2(100 - swl)
     qsl = round2((delivered_count_int / total_count_int) * 100)
+    alertl = round2((alert_count_int / total_count_int) * 100)
     unpaidl = round2((unpaid_count_int / total_count_int) * 100)
     not_yetl = round2((not_yet_count_int / total_count_int) * 100)
     pre_shipl = round2((pre_ship_count_int / total_count_int) * 100)
-    irregular_no_trackingl = round2((irregular_no_tracking_count_int / total_count_int) * 100)
     no_tracking_countl = round2((no_tracking_count_int / total_count_int) * 100)
     tracking_countl = round2((tracking_count_int / total_count_int) * 100)
     tracking_zero_countl = round2((tracking_zero_count_int / total_count_int) * 100)
     change_shipment_received_countl = round2((change_shipment_received_count / total_count_int) * 100)
 
     kj_counts, kj_no_track_count, kj_tracking_count, kj_delivered_count, kj_pre_ship_count, kj_not_yet_count, \
-        kj_unpaid_count, kj_irregular_number_count, kj_no_tracking_count = kj_count(output_file)
+        kj_unpaid_count, kj_irregular_number_count, kj_no_tracking_count, kj_alert_count = kj_count(output_file, False)
 
     kj_swl = 0
     kj_wswl = 0
@@ -1794,8 +1808,8 @@ def go(analyse_obj, xlsx_path, api_flag):
     kj_pre_ship_swl = 0
     kj_not_yet_swl = 0
     kj_unpaid_swl = 0
-    kj_irregular_number_swl = 0
     kj_other_no_tracking_swl = 0
+    kj_alert_swl = 0
 
     if (tracking_count_int > 0):
         kj_tracking_swl = round2((kj_tracking_count / tracking_count_int) * 100)
@@ -1807,10 +1821,10 @@ def go(analyse_obj, xlsx_path, api_flag):
         kj_not_yet_swl = round2((kj_not_yet_count / not_yet_count_int) * 100)
     if (unpaid_count_int > 0):
         kj_unpaid_swl = round2((kj_unpaid_count / unpaid_count_int) * 100)
-    if (irregular_no_tracking_count_int > 0):
-        kj_irregular_number_swl = round2((kj_irregular_number_count / irregular_no_tracking_count_int) * 100)
     if (no_tracking_count_int > 0):
         kj_other_no_tracking_swl = round2((kj_no_tracking_count / no_tracking_count_int) * 100)
+    if (alert_count_int > 0):
+        kj_alert_swl = round2((kj_alert_count / alert_count_int) * 100)
 
     zongshu = ""
     # 针对zbw做的运单号过滤操作
@@ -1832,13 +1846,14 @@ def go(analyse_obj, xlsx_path, api_flag):
         f"\n上网状态细分："
         f"\ntracking：（{tracking_count_int}, {tracking_countl}%）,（{kj_tracking_count}, {kj_tracking_swl}%）"
         f"\ndelivered：（{delivered_count_int}, {qsl}%）,（{kj_delivered_count}, {kj_delivered_swl}%）"
+        f"\nalert：（{alert_count_int}, {alertl}%）,（{kj_alert_count}, {kj_alert_swl}%）"
         f"\n"
 
         f"\n未上网状态细分："
         f"\npre_ship：（{pre_ship_count_int}, {pre_shipl}%）,（{kj_pre_ship_count}, {kj_pre_ship_swl}%）"
         f"\nnot_yet：（{not_yet_count_int}, {not_yetl}%）,（{kj_not_yet_count}, {kj_not_yet_swl}%）"
         f"\nunpaid：（{unpaid_count_int}, {unpaidl}%）,（{kj_unpaid_count}, {kj_unpaid_swl}%）"
-        f"\nirregular_number：（{irregular_no_tracking_count_int}, {irregular_no_trackingl}%）,（{kj_irregular_number_count}, {kj_irregular_number_swl}%）"
+        f"\nirregular_number：（{irregular_no_tracking_count_int}, {irregular_no_trackingl}%）,（{kj_irregular_number_count0}, {kj_irregular_number_swl0}%）"
         f"\nother_no_tracking：（{no_tracking_count_int}, {no_tracking_countl}%）,（{kj_no_tracking_count}, {kj_other_no_tracking_swl}%）"
         f"\n"
 
