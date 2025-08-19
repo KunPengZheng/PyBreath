@@ -347,7 +347,11 @@ def auto(root_dir, yd_flag=True):
                     day = match.group(1)
                     current_times = f"{year}-{month}-{day}"
                     exceed = is_time_difference_exceed(current_time, current_times)
-                    if exceed <= 7:
+                    if yd_flag:
+                        track_day = 7
+                    else:
+                        track_day = 5
+                    if exceed <= track_day:
                         print(f"正在处理文件: {xlsx_path}")
                         go(xlsx_path, dxm_xyl_track_merger, False)
 
