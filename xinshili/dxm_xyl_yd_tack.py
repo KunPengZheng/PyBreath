@@ -301,26 +301,30 @@ def usps_track(xlsx_path, column_name, wl_name):
     update_courier_status(xlsx_path, all_maps, wl=wl_name, column_map=column_mapping)
 
 
-def go(xlsx_path, dxm_xyl_track_merger):
+def go(xlsx_path, dxm_xyl_track_merger, yd_flag=True):
     check_and_add_courier_column(xlsx_path)
 
     process_tracking_no(xlsx_path, RowName.Track_Num)
-    process_tracking_no(xlsx_path, RowName.YD_Number)
+    if yd_flag:
+        process_tracking_no(xlsx_path, RowName.YD_Number)
 
     irregular_number_map = find_irregular_tracking_numbers(xlsx_path, RowName.Track_Num)
     if irregular_number_map:
         update_courier_status1(xlsx_path, irregular_number_map, RowName.Track_Num)
 
-    usps_track(xlsx_path, RowName.Courier, RowName.Track_Num)
-    usps_track(xlsx_path, RowName.YD_State, RowName.YD_Number)
+    if yd_flag:
+        usps_track(xlsx_path, RowName.Courier, RowName.Track_Num)
+        usps_track(xlsx_path, RowName.YD_State, RowName.YD_Number)
 
     process_tracking_time1(xlsx_path)
-    export_yd_data(xlsx_path, dxm_xyl_track_merger)
+    if yd_flag:
+        export_yd_data(xlsx_path, dxm_xyl_track_merger)
 
 
-def auto(root_dir):
+def auto(root_dir, yd_flag=True):
     dxm_xyl_track_merger = "/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track/dxm_xyl_track_merger.xlsx"
-    create_fs_xlsx_file(dxm_xyl_track_merger)
+    if yd_flag:
+        create_fs_xlsx_file(dxm_xyl_track_merger)
 
     today = datetime.now()
     current_year = today.year
@@ -345,13 +349,14 @@ def auto(root_dir):
                     exceed = is_time_difference_exceed(current_time, current_times)
                     if exceed <= 7:
                         print(f"正在处理文件: {xlsx_path}")
-                        go(xlsx_path, dxm_xyl_track_merger)
+                        go(xlsx_path, dxm_xyl_track_merger, False)
 
-    result = get_xlsx_data_len(dxm_xyl_track_merger)
-    token = get_token()
-    # dimension_range(token, FsConstants.gjgz_token,  ClientMapConstants[ClientConstants.dxm_xyl_yd], 1, 12, majorDimension=FsConstants.COLUMNS)
-    value_range(token, FsConstants.gjgz_token, ClientMapConstants[ClientConstants.dxm_xyl_yd], f"A1:L{len(result)}",
-                result)
+    if yd_flag:
+        result = get_xlsx_data_len(dxm_xyl_track_merger)
+        token = get_token()
+        # dimension_range(token, FsConstants.gjgz_token,  ClientMapConstants[ClientConstants.dxm_xyl_yd], 1, 12, majorDimension=FsConstants.COLUMNS)
+        value_range(token, FsConstants.gjgz_token, ClientMapConstants[ClientConstants.dxm_xyl_yd], f"A1:L{len(result)}",
+                    result)
 
 
 def update_yd_number(source_file, folder_path):
