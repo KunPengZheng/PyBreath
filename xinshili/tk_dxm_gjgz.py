@@ -234,26 +234,32 @@ def usps_track(xlsx_path, column_name, wl_name):
 
 def get_target_files(date_str, folder_a, folder_b):
     target_date = datetime.strptime(date_str, "%Y/%m/%d")
+    # 仅 target_date 起算往后 3 天（含当天）：D, D+1, D+2
     date_list = [(target_date + timedelta(days=i)).date() for i in range(0, 3)]
-    month_folder = f"{target_date.year}.{target_date.month}"
 
-    # 用来匹配的正则模板（day_str 会替换）
-    # ^ 开头匹配  创建时间 或 打单时间  ，然后日期数字，两位，然后下划线，后面任意字符，最后是 .xlsx
-    regex_template = r"^(创建时间|打单时间){day}_.*\.xlsx$"
+    # 按月汇总：month_folder -> 该月需要匹配的“日”（两位补零）
+    month_days = {}
+    for d in date_list:
+        key = f"{d.year}.{d.month}"
+        month_days.setdefault(key, set()).add(str(d.day))
 
+    # 文件名模板：^(创建时间|打单时间)<day>_....xlsx
+    # 注意：每个“月目录”只用它自己的 days 来拼接正则，避免跨月误匹配
     result_files = []
 
-    for folder in [folder_a, folder_b]:
-        folder_path = os.path.join(folder, month_folder)
-        if not os.path.exists(folder_path):
-            continue
+    for base in (folder_a, folder_b):
+        for month_folder, days in month_days.items():
+            folder_path = os.path.join(base, month_folder)
+            if not os.path.isdir(folder_path):
+                continue
 
-        for file in os.listdir(folder_path):
-            for d in date_list:
-                day_str = f"{d.day:02d}"
-                pattern = re.compile(regex_template.format(day=day_str))
-                if pattern.match(file):
-                    result_files.append(os.path.join(folder_path, file))
+            # 例如 (?:30|01|02)
+            day_alt = "|".join(sorted(days, key=int))  # 排序按数字，不然 '10' 会排在 '2' 前
+            pattern = re.compile(rf"^(创建时间|打单时间)(?:{day_alt})_.*\.xlsx$")
+
+            for fname in os.listdir(folder_path):
+                if pattern.match(fname):
+                    result_files.append(os.path.join(folder_path, fname))
 
     return date_list, result_files
 
