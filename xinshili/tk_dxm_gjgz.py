@@ -13,7 +13,8 @@ from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, valu
 from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
     update_courier_status, is_time_difference_exceed, process_tracking_no, CourierStateMapValue, \
     find_irregular_tracking_numbers, update_courier_status1, get_days_difference
-from xinshili.utils import natural_key
+from xinshili.pd_utils import remove_duplicates_by_column
+from xinshili.utils import natural_key, delete_file
 from xinshili.yd_to_dxm import clean_order_id
 
 
@@ -153,76 +154,6 @@ def process_tracking_time1(file_path):
     print(f"✅ 已处理并保存至：{file_path}")
 
 
-def create_fs_xlsx_file(file_path):
-    # 定义表头
-    columns = [
-        RowName.Pay_Time, RowName.Ship_Time, RowName.Order_Num, RowName.Track_Num,
-        RowName.Track_State, RowName.Analyse_State,
-        # RowName.Last_Track_Time,
-        RowName.Latest_Track_Site, RowName.Latest_Track_Time, RowName.Interval_Time, RowName.Process_Time,
-        RowName.YD_Number2, RowName.YD_State2
-    ]
-
-    # 创建空的 DataFrame 并写入文件（覆盖或新建）
-    df = pd.DataFrame(columns=columns)
-    df.to_excel(file_path, index=False)
-    print(f"✅ 文件已{'创建' if not os.path.exists(file_path) else '清空并重建'}：{file_path}")
-
-
-def export_yd_data(source_file, target_file):
-    # 读取源文件
-    df = pd.read_excel(source_file, dtype=str)
-
-    def safe_concat_time(row):
-        date_part = str(row.get(RowName.LatestEventSfDate, "")).strip()
-        time_part = str(row.get(RowName.LatestEventSfTime, "")).strip()
-        if date_part.lower() not in ["", "nan"]:
-            if time_part.lower() not in ["", "nan"]:
-                return f"{date_part} {time_part}"
-            else:
-                return date_part
-        else:
-            return ""
-
-    df[RowName.Latest_Track_Time] = df.apply(safe_concat_time, axis=1)
-
-    # 构造目标列的数据（强制转换为字符串以防止科学计数法）
-    export_df = pd.DataFrame({
-        RowName.Pay_Time: df[RowName.Pay_Time],
-        RowName.Ship_Time: df[RowName.Ship_Time],
-        RowName.Order_Num: df[RowName.Order_Num].astype(str),
-        RowName.Track_Num: df[RowName.Track_Num].astype(str),
-        RowName.Track_State: df[RowName.Courier],
-        RowName.Analyse_State: df[RowName.Tacking_Time],
-        # RowName.Last_Track_Time: df[RowName.LastEventSfTime],
-        RowName.Latest_Track_Site: df[RowName.LatestEventSfSite],
-        RowName.Latest_Track_Time: df[RowName.Latest_Track_Time],
-        RowName.Interval_Time: df[RowName.TrackTimeInterval],
-        RowName.Process_Time: df[RowName.TrackTimeIntervalState],
-        RowName.YD_Number2: df[RowName.YD_Number],
-        RowName.YD_State2: df[RowName.YD_State],
-    })
-
-    # 文件已存在 → 打开并追加
-    wb = load_workbook(target_file)
-    ws = wb.active
-    start_row = ws.max_row + 1
-
-    for i, row in enumerate(dataframe_to_rows(export_df, index=False, header=False)):
-        for j, value in enumerate(row, 1):
-            cell = ws.cell(row=start_row + i, column=j, value=value)
-
-            # 设置为文本格式以防止科学计数法
-            header = ws.cell(row=1, column=j).value
-            if header in [RowName.Order_Num, RowName.Track_Num]:
-                cell.number_format = "@"
-                cell.value = str(value)  # 强制转为字符串
-
-    wb.save(target_file)
-    print(f"✅ 已追加导出 YD 数据至：{target_file}")
-    return len(export_df)
-
-
 def get_xlsx_data_len(file_path):
     # 读取 Excel 文件，保留空值为 ""，禁用自动类型转换
     df = pd.read_excel(file_path, dtype=object).fillna("")
@@ -303,7 +234,7 @@ def usps_track(xlsx_path, column_name, wl_name):
 
 def get_target_files(date_str, folder_a, folder_b):
     target_date = datetime.strptime(date_str, "%Y/%m/%d")
-    date_list = [(target_date - timedelta(days=i)).date() for i in range(0, 3)]
+    date_list = [(target_date + timedelta(days=i)).date() for i in range(0, 3)]
     month_folder = f"{target_date.year}.{target_date.month}"
 
     # 用来匹配的正则模板（day_str 会替换）
@@ -338,10 +269,10 @@ def update_from_A_to_B(A_path, B_path):
     # 判断匹配列
     if "打单时间" in os.path.basename(A_path):
         merge_key_A = "快递单号"
-        merge_key_B = "快递单号"
+        merge_key_B = "运单号"
     elif "创建时间" in os.path.basename(A_path):
         merge_key_A = "Tracking No./物流跟踪号"
-        merge_key_B = "快递单号"
+        merge_key_B = "运单号"
     else:
         print(f"⚠️ A 文件名不包含 '打单时间' 或 '创建时间'，跳过：{A_path}")
         return
@@ -401,21 +332,23 @@ def copy_track_state(ck_time, xlsx_path):
 
 
 def go(xlsx_path):
-    check_and_add_courier_column(xlsx_path)
+    output_file = os.path.splitext(xlsx_path)[0] + "_去重0.xlsx"
+    all_total_count = remove_duplicates_by_column(xlsx_path, output_file, RowName.Track_Num)  # 无筛选订单总数
+    delete_file(output_file)
 
+    check_and_add_courier_column(xlsx_path)
     process_tracking_no(xlsx_path, RowName.Track_Num)
 
     irregular_number_map = find_irregular_tracking_numbers(xlsx_path, RowName.Track_Num)
     if irregular_number_map:
         update_courier_status1(xlsx_path, irregular_number_map, RowName.Track_Num)
 
-    ck_time = get_days_difference(xlsx_path)
+    ck_time = get_days_difference(xlsx_path, "发货时间")
     copy_track_state(ck_time, xlsx_path)
 
-    usps_track(xlsx_path, RowName.Courier, RowName.Track_Num)
+    # usps_track(xlsx_path, RowName.Courier, RowName.Track_Num)
 
     process_tracking_time1(xlsx_path)
-    # export_yd_data(xlsx_path, dxm_xyl_track_merger)
 
 
 def auto(root_dir):
@@ -440,10 +373,11 @@ def auto(root_dir):
                     day = match.group(1)
                     current_times = f"{year}-{month}-{day}"
                     exceed = is_time_difference_exceed(current_time, current_times)
-                    if exceed <= 7:
-                        print(f"正在处理文件: {xlsx_path}")
-                        go(xlsx_path)
+                    go(xlsx_path)
+                    # if exceed <= 7:
+                    #     print(f"正在处理文件: {xlsx_path}")
+                    #     go(xlsx_path)
 
 
 if __name__ == '__main__':
-    auto("/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track")
+    auto("/Users/zkp/Desktop/B&Y/轨迹统计/tkkj")
