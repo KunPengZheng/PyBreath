@@ -157,6 +157,12 @@ class Pattern:
     no_tracking = r"^no_tracking$"
     tracking = r"^tracking$"
     alert = r"^alert"
+    alert_daan = r"^alert_Delivery Attempt: Action Needed"
+    alert_vacant = r"^alert_vacant"
+    alert_ad = r"^alert_Awaiting Delivery"
+    alert_stmrc = r"^alert_Sent to Mail Recovery Center"
+    alert_ccc = r"^alert_Contact Customer Care"
+    alert_natdl = r"^alert_No Access to Delivery Location"
 
 
 def find_irregular_tracking_numbers(filepath, column_name=RowName.Tracking_No):
