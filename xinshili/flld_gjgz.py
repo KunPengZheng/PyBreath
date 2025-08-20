@@ -474,6 +474,7 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
     current_time = f"{current_year}-{current_month}-{current_day}"
     is_morning = (datetime.now().hour) < 12
     gz_time = getYmd()
+    track_day = 10
     for dirpath, dirnames, filenames in os.walk(root_dir):
         dirnames.sort(key=natural_key)
         for dirname in dirnames:
@@ -490,7 +491,7 @@ def automatic(root_dir, ignore=False, analyse_obj_ignore=False, api_flag=True):
                     day = match.group(1)
                     current_times = f"{year}-{month}-{day}"
                     exceed = is_time_difference_exceed(current_time, current_times)
-                    if exceed <= 15:
+                    if exceed <= track_day:
                         print(f"正在处理文件: {xlsx_path}")
 
                         if ignore:

@@ -2221,6 +2221,10 @@ def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False, api
     is_morning = (datetime.now().hour) < 12
     gz_time = datetime.strptime(getYmd(), "%Y/%m/%d")
     # print(current_year, current_month, current_day)
+    if analyse_obj == ClientConstants.xyl:
+        track_day = 10
+    else:
+        track_day = 5
     for dirpath, dirnames, filenames in os.walk(root_dir):
         dirnames.sort(key=natural_key)
         for dirname in dirnames:
@@ -2236,7 +2240,7 @@ def automatic(root_dir, analyse_obj, ignore=False, analyse_obj_ignore=False, api
                     day = match.group(1)
                     current_times = f"{year}-{month}-{day}"
                     exceed = is_time_difference_exceed(current_time, current_times)
-                    if exceed <= 15:
+                    if exceed <= track_day:
                         print(f"正在处理文件: {xlsx_path}")
 
                         if ignore:
