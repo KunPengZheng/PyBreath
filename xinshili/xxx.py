@@ -1188,12 +1188,16 @@ def str_strip(filepath: str, column_name: str):
     data.to_excel(filepath, index=False)
 
 
-def flld_filter_track_num(input_path):
-    xlsx_path = extract_path_before_csv(input_path)
-    str_strip(xlsx_path, "快递单号")
+def flld_filter_track_num(analyse_obj, input_path):
+    if analyse_obj == ClientConstants.md_flld:
+        xlsx_path = extract_path_before_csv(input_path)
+        column_name = "快递单号"
+    else:
+        xlsx_path = input_path
+        column_name = "运单号"
+    str_strip(xlsx_path, column_name)
     check_and_add_courier_column(xlsx_path)
-
-    return split_and_join_by_35_to_map(extract_and_process_data(xlsx_path, RowName.Courier, "快递单号"))
+    return split_and_join_by_35_to_map(extract_and_process_data(xlsx_path, RowName.Courier, column_name))
 
 
 def split_and_join_by_35_to_map(original_list):
