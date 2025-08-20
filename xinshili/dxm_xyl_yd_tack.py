@@ -8,12 +8,16 @@ from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.utils import get_column_letter
 from openpyxl import Workbook
+
+from xinshili.flld_gjgz import get_unpaid_tracking_data, get_alert_intercepted_data
 from xinshili.fs_utils_plus import get_token, dimension_range, FsConstants, value_range, ClientMapConstants, \
-    ClientConstants
+    ClientConstants, brief_sheet_value, brief_sheet_bg, khhz_sheet_value, khhz_sheet_bg, fs_msg, FsUserID
 from xinshili.gjgz_plus333 import check_and_add_courier_column, extract_and_process_data, RowName, CourierStateMapKey, \
     update_courier_status, is_time_difference_exceed, process_tracking_no, CourierStateMapValue, \
-    find_irregular_tracking_numbers, update_courier_status1
-from xinshili.utils import natural_key
+    find_irregular_tracking_numbers, update_courier_status1, filter_tracking_numbers, count_pattern_state, Pattern, \
+    get_days_difference
+from xinshili.pd_utils import remove_duplicates_by_column
+from xinshili.utils import natural_key, getYmd, is_us_weekend, delete_file, round2
 from xinshili.yd_to_dxm import clean_order_id
 
 
@@ -309,7 +313,9 @@ def go(xlsx_path, dxm_xyl_track_merger, yd_flag=True):
         process_tracking_no(xlsx_path, RowName.YD_Number)
 
     irregular_number_map = find_irregular_tracking_numbers(xlsx_path, RowName.Track_Num)
+    irregular_number_list = []
     if irregular_number_map:
+        irregular_number_list = list(irregular_number_map.keys())
         update_courier_status1(xlsx_path, irregular_number_map, RowName.Track_Num)
 
     if yd_flag:
@@ -319,6 +325,9 @@ def go(xlsx_path, dxm_xyl_track_merger, yd_flag=True):
     process_tracking_time1(xlsx_path)
     if yd_flag:
         export_yd_data(xlsx_path, dxm_xyl_track_merger)
+
+    if not yd_flag:
+        analyse_state(xlsx_path, irregular_number_list)
 
 
 def auto(root_dir, yd_flag=True):
@@ -417,6 +426,215 @@ def update_yd_number(source_file, folder_path):
 
                 except Exception as e:
                     print(f"❌ 文件 {file_path} 处理失败: {e}")
+
+
+def analyse_state(xlsx_path, irregular_number_list):
+    output_file = os.path.splitext(xlsx_path)[0] + "_去重0.xlsx"
+    all_total_count = remove_duplicates_by_column(xlsx_path, output_file, "运单号")  # 无筛选订单总数
+    delete_file(output_file)
+
+    output_file = os.path.splitext(xlsx_path)[0] + "_去重1.xlsx"
+    filter_tracking_numbers(xlsx_path, output_file, "运单号")
+    xlsx_path = output_file
+
+    total_count, no_track_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.no_track)
+    track_count = total_count - no_track_count
+    total_count2, delivered_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.delivered)
+    total_count3, unpaid_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.unpaid)
+    total_count4, not_yet_count = count_pattern_state(xlsx_path, RowName.Courier, r"not_yet")
+    total_count5, pre_ship_count = count_pattern_state(xlsx_path, RowName.Courier, r"pre_ship")
+    total_count6, alert_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert)
+
+    text = ""
+    fs_text = ""
+    ck_time = get_days_difference(xlsx_path, "发货时间")
+    gz_time = getYmd()
+    interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time, "%Y/%m/%d")).days
+    is_usweekend = is_us_weekend(ck_time)
+    date_obj = datetime.strptime(ck_time, "%Y/%m/%d").date()
+    previous_day = date_obj - timedelta(days=1)
+    actual_interval = 0
+    if is_usweekend == 6:  # 6是中国周日，美国周六
+        actual_interval = interval_time - 2
+    elif is_usweekend == 0:  # 0是中国周一，美国周日
+        actual_interval = interval_time - 1
+
+    text += f"打单日期：{ck_time}"
+    text += f"\n跟踪日期：{gz_time}"
+
+    text += f"\n订单总数：{total_count}【{all_total_count}】"
+    fs_text += f"\n订单总数：{total_count}【{all_total_count}】"
+
+    swl = round2(100 - ((int(no_track_count) / int(total_count)) * 100))
+    wswl = round2(100 - swl)
+    text += f"\n上网：（{track_count}, {swl}%）"
+    fs_text += f"\n上网：（{track_count}, {swl}%）"
+
+    text += f"\n未上网：（{no_track_count}, {wswl}%）"
+    fs_text += f"\n未上网：（{no_track_count}, {wswl}%）"
+
+    irregular_no_tracking_countl = round2((len(irregular_number_list) / int(all_total_count)) * 100)
+    text += f"\nirregular_number：（{len(irregular_number_list)}, {irregular_no_tracking_countl}%）"
+    fs_text += f"\nirregular_number：（{len(irregular_number_list)}, {irregular_no_tracking_countl}%）"
+
+    not_yet_countl = round2((int(not_yet_count) / int(total_count)) * 100)
+    text += f"\nnot_yet：（{not_yet_count}, {not_yet_countl}%）"
+    fs_text += f"\nnot_yet：（{not_yet_count}, {not_yet_countl}%）"
+
+    pre_ship_countl = round2((int(pre_ship_count) / int(total_count)) * 100)
+    text += f"\npre_ship：（{pre_ship_count}, {pre_ship_countl}%）"
+    fs_text += f"\npre_ship：（{pre_ship_count}, {pre_ship_countl}%）"
+
+    delivered_countl = round2((int(delivered_count) / int(total_count)) * 100)
+    text += f"\ndelivered：（{delivered_count}, {delivered_countl}%）"
+    fs_text += f"\ndelivered：（{delivered_count}, {delivered_countl}%）"
+
+    unpaid_countl = round2((int(unpaid_count) / int(total_count)) * 100)
+    text += f"\nunpaid：（{unpaid_count}, {unpaid_countl}%）"
+    fs_text += f"\nunpaid：（{unpaid_count}, {unpaid_countl}%）"
+
+    alert_countl = round2((int(alert_count) / int(total_count)) * 100)
+    text += f"\nalert：（{alert_count}, {alert_countl}%）"
+    fs_text += f"\nalert：（{alert_count}, {alert_countl}%）"
+
+    unpaid_tracking_data = get_unpaid_tracking_data(xlsx_path, courier_column='Courier/快递',
+                                                    waybill_column='订单号',
+                                                    tracking_column='运单号',
+                                                    date_column='UnpaidDate/unpaid记录时间',
+                                                    key_value='unpaid')
+
+    current_day_unpaid_text = ""
+    current_day_unpaid_len = 0
+    now_strftime = datetime.now().strftime('%Y-%m-%d')
+    if (len(unpaid_tracking_data) > 0):
+        text += f"\n-------unpaid详情-------"
+        fs_text += f"\n-------unpaid详情-------"
+        for times, value in unpaid_tracking_data.items():
+            result = f"\n 🕒：{times}"
+            for key, val in value.items():
+                result += f"\n（单号：{key}, 快递单号：{val}）"
+                if times == now_strftime:
+                    current_day_unpaid_text += f"{val}\n"
+                    current_day_unpaid_len += 1
+            result += "\n"
+            text += result
+            fs_text += result
+
+    alert_intercepted_tracking_data = get_alert_intercepted_data(xlsx_path, waybill_column="订单号",
+                                                                 tracking_column="运单号", key_value="alert")
+
+    if (len(alert_intercepted_tracking_data) > 0):
+        text += f"\n-------alert详情-------"
+        fs_text += f"\n-------alert详情-------"
+        for key, value in alert_intercepted_tracking_data.items():
+            text += f"\n（单号：{key}, 快递单号：{value}）"
+            fs_text += f"\n（单号：{key}, 快递单号：{value}）"
+
+    track_stop_72 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
+                                               waybill_column="订单号",
+                                               tracking_column="运单号", key_value="无法替换")
+    track_stop_48 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
+                                               waybill_column="订单号",
+                                               tracking_column="运单号", key_value="阳单替换")
+    track_stop_24 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
+                                               waybill_column="订单号",
+                                               tracking_column="运单号", key_value="预备阳单")
+    track_stop_72_int = len(track_stop_72)
+    track_stop_48_int = len(track_stop_48)
+    track_stop_24_int = len(track_stop_24)
+    track_stop_72l = round2((int(track_stop_72_int) / int(total_count)) * 100)
+    track_stop_48l = round2((int(track_stop_48_int) / int(total_count)) * 100)
+    track_stop_24l = round2((int(track_stop_24_int) / int(total_count)) * 100)
+    text += (f"\n超24小时轨迹未更新：（{track_stop_24_int}, {track_stop_24l}%）"
+             f"\n超48小时轨迹未更新：（{track_stop_48_int}, {track_stop_48l}%）"
+             f"\n超72小时轨迹未更新：（{track_stop_72_int}, {track_stop_72l}%）")
+    fs_text += (f"\n超24小时轨迹未更新：（{track_stop_24_int}, {track_stop_24l}%）"
+                f"\n超48小时轨迹未更新：（{track_stop_48_int}, {track_stop_48l}%）"
+                f"\n超72小时轨迹未更新：（{track_stop_72_int}, {track_stop_72l}%）")
+
+    print(text)
+    delete_file(xlsx_path)
+
+    sum_up_text = ""
+    swl_flag = False
+    qsl_flag = False
+    bg = "#FFFFFF"
+
+    # 上网率判断
+    warning_levels = [
+        (0, 30, "🧑‍🍳", "继续观察👀", "#FFFFFF"),
+        (1, 30, "☁️注意", "未达30%！", "#F8F1D3"),
+        (2, 70, "🌧️注意", "未达70%！", "#E3C49C"),
+        (3, 97, "❄️异常", "未达97%！", "#F1C1BD"),
+    ]
+
+    actual_interval_time = interval_time - actual_interval
+    # sum_up_text += f"\n间隔第{interval_time}{actual_interval}天"
+    sum_up_text += f"\n间隔第{actual_interval_time}天"
+
+    for days, threshold, icon, message, color in warning_levels:
+        if actual_interval_time == days and swl < threshold:
+            sum_up_text += f"\n{icon}：上网率为{swl}%，{message}"
+            swl_flag = True
+            if (actual_interval_time >= 2):
+                bg = color
+            break
+    else:  # ✅ 只有 for 没有 break 时才会执行
+        if (actual_interval_time >= 4):
+            if (swl >= 99):
+                sum_up_text += f"\n☀️上网率为{swl}%，优秀🌈"
+            elif (swl >= 97 and swl < 99):
+                sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
+            else:
+                sum_up_text += f"\n⚡️异常：上网率为{swl}%，未达️97%"
+                bg = "#F1C1BD"
+                swl_flag = True
+        else:
+            sum_up_text += f"\n☀️上网率为{swl}%，达标✅"
+
+    if (len(alert_intercepted_tracking_data) > 0):
+        bg = "#FFF258"
+
+    if (len(unpaid_tracking_data) > 0):
+        bg = "#A684F0"
+
+    tat = get_token()
+    # brief_sheet_value(tat, [fs_text], ck_time, gz_time, ClientConstants.dxm_tk_kj)
+    # brief_sheet_bg(tat, ck_time, gz_time, ClientConstants.dxm_tk_kj, bg)
+
+    khhz_sheet_value(tat, [
+        f"{total_count}",
+        f"（{no_track_count}, {wswl}%）",
+        f"（{0}, {0}%）",
+        f"（{delivered_count}, {delivered_countl}%）",
+        f"（{unpaid_count}, {unpaid_countl}%）",
+        f"（{track_stop_24_int}, {track_stop_24l}%）",
+        f"（{track_stop_48_int}, {track_stop_48l}%）",
+        f"（{track_stop_72_int}, {track_stop_72l}%）",
+    ], ck_time, ClientConstants.dxm_tk_kj)
+
+    khhz_sheet_bg(tat, ck_time, ClientConstants.dxm_tk_kj, bg)
+
+    result_fs_msg = f"客户：店小秘新引力TK_KJ\n"
+    result_fs_msg += f"订单创建时间：{ck_time}\n"
+    result_fs_msg += f"跟踪时间：{gz_time}\n"
+    fs_msg_flag = False
+
+    if len(current_day_unpaid_text) > 0:
+        result_fs_msg += f"新增 {current_day_unpaid_len}单 unpaid: \n"
+        result_fs_msg += current_day_unpaid_text
+        fs_msg_flag = True
+
+    if swl_flag:
+        if no_track_count > 10:
+            result_fs_msg += f"上网率异常: {swl}%\n"
+            fs_msg_flag = True
+
+    if fs_msg_flag:
+        # print(result_fs_msg)
+        fs_msg(FsUserID.WP_ID, result_fs_msg)
+        fs_msg(FsUserID.LW_ID, result_fs_msg)
+        fs_msg(FsUserID.LJ_ID, result_fs_msg)
 
 
 if __name__ == '__main__':
