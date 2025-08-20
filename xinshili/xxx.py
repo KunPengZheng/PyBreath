@@ -216,6 +216,77 @@ def get_days_difference(file_path, column_name="Creation time/创建时间"):
         return None
 
 
+def get_days_difference_flld(file_path, column_name="打单时间"):
+    try:
+        workbook = load_workbook(file_path)
+        sheet = workbook.active
+        # 获取表头
+        headers = [cell.value for cell in sheet[1]]
+        if column_name not in headers:
+            raise ValueError(f"列名 '{column_name}' 不存在！")
+        # 获取列索引
+        column_index = headers.index(column_name) + 1
+        # 获取第一条数据
+        first_row_value = sheet.cell(row=2, column=column_index).value  # 假设数据从第二行开始
+        if not first_row_value:
+            raise ValueError(f"'{column_name}' 列的第一条数据为空！")
+
+        # 获取当前年份
+        current_year = datetime.now().year
+
+        # 检查日期类型，如果是字符串并且没有年份，补充当前年份
+        if isinstance(first_row_value, str):
+            # 如果是字符串并且没有年份，补充当前年份
+            if len(first_row_value.split('-')) == 2:  # 格式为 'MM-DD' 或 'DD-MM'
+                first_row_value = f"{current_year}-{first_row_value}"
+
+            # 尝试解析日期,支持带秒或不带秒的时间格式
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+                try:
+                    outbound_time = datetime.strptime(first_row_value.strip(), fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
+                raise ValueError(f"❌ 无法识别时间格式: {first_row_value}")
+        elif isinstance(first_row_value, datetime):
+            # 如果是已经是 datetime 类型，直接处理
+            outbound_time = first_row_value
+        else:
+            raise ValueError(f"无法解析日期: {first_row_value}")
+
+        # 格式化为 "%Y/%m/%d" 格式
+        formatted_date = outbound_time.strftime("%Y/%m/%d")
+        return formatted_date
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return None
+
+
+def get_days_difference_tkkj(file_path, column_name="发货时间"):
+    try:
+        workbook = load_workbook(file_path, data_only=True)
+        sheet = workbook.active
+        # 获取表头
+        headers = [cell.value for cell in sheet[1]]
+        if column_name not in headers:
+            raise ValueError(f"列名 '{column_name}' 不存在！")
+        # 获取列索引
+        column_index = headers.index(column_name) + 1
+        # 获取第一条数据
+        first_row_value = sheet.cell(row=2, column=column_index).value  # 假设数据从第二行开始
+        if not first_row_value:
+            raise ValueError(f"'{column_name}' 列的第一条数据为空！")
+        # 解析日期
+        outbound_time = datetime.strptime(first_row_value, "%Y-%m-%d")
+        # 格式化为 "%Y/%m/%d" 格式
+        formatted_date = outbound_time.strftime("%Y/%m/%d")
+        return formatted_date
+    except Exception as e:
+        print(f"发生错误: {e}")
+        return None
+
+
 def check_and_add_courier_column(file_path):
     try:
         # 加载 Excel 文件
@@ -1016,7 +1087,12 @@ def flld_automatic(analyse_obj, ignore, analyse_obj_ignore):
                             usps_arr.append(xlsx_path)
                             continue
 
-                        ck_time = get_days_difference(xlsx_path)
+                        if analyse_obj == "flld":
+                            ck_time = get_days_difference_flld(xlsx_path)
+                        elif analyse_obj == "dxm_xyl_yd":
+                            ck_time = get_days_difference_tkkj(xlsx_path)
+                        else:
+                            ck_time = None
                         interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time,
                                                                                                     "%Y/%m/%d")).days
 
