@@ -340,7 +340,10 @@ def auto(root_dir, yd_flag=True):
     current_month = today.month
     current_day = today.day
     current_time = f"{current_year}-{current_month}-{current_day}"
-
+    if yd_flag:
+        track_day = 7
+    else:
+        track_day = 5
     for dirpath, dirnames, filenames in os.walk(root_dir):
         dirnames.sort(key=natural_key)
         for dirname in dirnames:
@@ -356,10 +359,6 @@ def auto(root_dir, yd_flag=True):
                     day = match.group(1)
                     current_times = f"{year}-{month}-{day}"
                     exceed = is_time_difference_exceed(current_time, current_times)
-                    if yd_flag:
-                        track_day = 7
-                    else:
-                        track_day = 5
                     if exceed <= track_day:
                         print(f"正在处理文件: {xlsx_path}")
                         go(xlsx_path, dxm_xyl_track_merger, False)
