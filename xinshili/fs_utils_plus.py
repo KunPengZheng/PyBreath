@@ -46,6 +46,7 @@ class ClientConstants:
     mx_dg = "mx_dg"
     md_fc = "md_fc"
     md_flld = "md_flld"
+    dxm_tk_kj = "dxm_tk_kj"
     cksj = "cksj"
     cjsj = "cjsj"
     khhz = "khhz"
@@ -296,6 +297,9 @@ def khhz_sheet_value(tat, lists, ck_time, analyse_obj):
     elif analyse_obj == ClientConstants.md_flld:
         column_start_nums = "Z"
         column_end_nums = "AD"
+    elif analyse_obj == ClientConstants.dxm_tk_kj:
+        column_start_nums = "AF"
+        column_end_nums = "AJ"
     else:
         raise Exception("使用raise抛出一个异常")
 
