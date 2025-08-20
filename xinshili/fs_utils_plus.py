@@ -128,7 +128,8 @@ def get_map_url(analyse_obj):
             analyse_obj == ClientConstants.md_fc or \
             analyse_obj == ClientConstants.md_flld or \
             analyse_obj == ClientConstants.khhz or \
-            analyse_obj == ClientConstants.yy:
+            analyse_obj == ClientConstants.yy or \
+            analyse_obj == ClientConstants.dxm_tk_kj:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.values_spreadsheets_write_way}"
         return url
@@ -144,7 +145,8 @@ def get_bg_map_url(analyse_obj):
             analyse_obj == ClientConstants.mz_xsd or \
             analyse_obj == ClientConstants.mx_dg or \
             analyse_obj == ClientConstants.md_fc or \
-            analyse_obj == ClientConstants.md_flld:
+            analyse_obj == ClientConstants.md_flld or \
+            analyse_obj == ClientConstants.dxm_tk_kj:
         # BGrnsxMFfhfoumtUDF8cXM8jnGg：表格地址中?前面的部分，该表格的映射
         url = f"{FsConstants.spreadsheets_base_url}{FsConstants.gjgz_token}{FsConstants.styles_batch_update}"
         return url
@@ -249,6 +251,9 @@ def khhz_sheet_bg(tat, ck_time, analyse_obj, bg):
     elif analyse_obj == ClientConstants.md_flld:
         column_start_nums = "Z"
         column_end_nums = "AD"
+    elif analyse_obj == ClientConstants.dxm_tk_kj:
+        column_start_nums = "AF"
+        column_end_nums = "AM"
     else:
         raise Exception("使用raise抛出一个异常")
 
@@ -299,7 +304,7 @@ def khhz_sheet_value(tat, lists, ck_time, analyse_obj):
         column_end_nums = "AD"
     elif analyse_obj == ClientConstants.dxm_tk_kj:
         column_start_nums = "AF"
-        column_end_nums = "AJ"
+        column_end_nums = "AM"
     else:
         raise Exception("使用raise抛出一个异常")
 
