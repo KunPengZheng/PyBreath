@@ -46,7 +46,8 @@ def get_alert_intercepted_data(file_path, courier_column='Courier/快递', waybi
         raise ValueError(f"文件中缺少必要的列，请检查列名是否正确")
 
     # 筛选出 Courier/快递 列内容为 'unpaid' 的数据
-    unpaid_data = data[data[courier_column].str.strip().str.lower() == key_value]
+    # unpaid_data = data[data[courier_column].str.strip().str.lower() == key_value]
+    unpaid_data = data[data[courier_column].str.strip().str.lower().str.startswith(key_value.lower())]
 
     # 使用 map 存储结果，单号列作为 key，快递单号列作为 value
     result_map = dict(zip(unpaid_data[waybill_column], unpaid_data[tracking_column]))
@@ -281,6 +282,14 @@ def go(input_path, api_flag):
     total_count4, not_yet_count = count_pattern_state(xlsx_path, RowName.Courier, r"not_yet")
     total_count5, pre_ship_count = count_pattern_state(xlsx_path, RowName.Courier, r"pre_ship")
     total_count6, alert_count = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert)
+    total_count7, alert_count1 = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert_daan)
+    total_count8, alert_count2 = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert_vacant)
+    total_count9, alert_count3 = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert_ad)
+    total_count10, alert_count4 = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert_stmrc)
+    total_count11, alert_count5 = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert_ccc)
+    total_count12, alert_count6 = count_pattern_state(xlsx_path, RowName.Courier, Pattern.alert_natdl)
+    alert_count7 = alert_count - (
+                alert_count1 + alert_count2 + alert_count3 + alert_count4 + alert_count5 + alert_count6)
 
     text = ""
     fs_text = ""
@@ -334,13 +343,45 @@ def go(input_path, api_flag):
     text += f"\nalert：（{alert_count}, {alert_countl}%）"
     fs_text += f"\nalert：（{alert_count}, {alert_countl}%）"
 
+    if alert_count > 0:
+        text += f"\n\nalert状态细分："
+        fs_text += f"\n\nalert状态细分："
+
+        alert_countl1 = round2((int(alert_count1) / int(alert_count)) * 100)
+        text += f"\nDelivery Attempt: Action Needed：（{alert_count1}, {alert_countl1}%）"
+        fs_text += f"\nDelivery Attempt: Action Needed：（{alert_count1}, {alert_countl1}%）"
+
+        alert_countl2 = round2((int(alert_count2) / int(alert_count)) * 100)
+        text += f"\nvacant：（{alert_count2}, {alert_countl2}%）"
+        fs_text += f"\nvacant：（{alert_count2}, {alert_countl2}%）"
+
+        alert_countl3 = round2((int(alert_count3) / int(alert_count)) * 100)
+        text += f"\nAwaiting Delivery：（{alert_count3}, {alert_countl3}%）"
+        fs_text += f"\nAwaiting Delivery：（{alert_count3}, {alert_countl3}%）"
+
+        alert_countl4 = round2((int(alert_count4) / int(alert_count)) * 100)
+        text += f"\nSent to Mail Recovery Center：（{alert_count4}, {alert_countl4}%）"
+        fs_text += f"\nSent to Mail Recovery Center：（{alert_count4}, {alert_countl4}%）"
+
+        alert_countl5 = round2((int(alert_count5) / int(alert_count)) * 100)
+        text += f"\nContact Customer Care：（{alert_count5}, {alert_countl5}%）"
+        fs_text += f"\nContact Customer Care：（{alert_count5}, {alert_countl5}%）"
+
+        alert_countl6 = round2((int(alert_count6) / int(alert_count)) * 100)
+        text += f"\nNo Access to Delivery Location：（{alert_count6}, {alert_countl6}%）"
+        fs_text += f"\nNo Access to Delivery Location：（{alert_count6}, {alert_countl6}%）"
+
+        alert_countl7 = round2((int(alert_count7) / int(alert_count)) * 100)
+        text += f"\nalter其它：（{alert_count7}, {alert_countl7}%）"
+        fs_text += f"\nalter其它：（{alert_count7}, {alert_countl7}%）"
+
     unpaid_tracking_data = get_unpaid_tracking_data(xlsx_path)
     current_day_unpaid_text = ""
     current_day_unpaid_len = 0
     now_strftime = datetime.now().strftime('%Y-%m-%d')
     if (len(unpaid_tracking_data) > 0):
-        text += f"\n-------unpaid详情-------"
-        fs_text += f"\n-------unpaid详情-------"
+        text += f"\n\n-------unpaid详情-------"
+        fs_text += f"\n\n-------unpaid详情-------"
         for times, value in unpaid_tracking_data.items():
             result = f"\n 🕒：{times}"
             for key, val in value.items():
