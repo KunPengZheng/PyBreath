@@ -1329,3 +1329,55 @@ def extract_info(result_map, excel_result_map):
         objs["PossessionLastTime"] = time_str1
 
         excel_result_map[key] = objs
+
+
+def extract_first_date_time_node(arr):
+    # 匹配类似 "August 19, 2025" 或 "August 19, 2025, 5:31 am"
+    pattern = re.compile(
+        r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}(?:,\s*\d{1,2}:\d{2}\s*(?:am|pm))?",
+        re.I)
+
+    for text in arr:
+        match = pattern.search(text)
+        if match:
+            raw_date = match.group(0).strip()
+            try:
+                # 先尝试 "月 日, 年, 时:分 am/pm"
+                dt = datetime.strptime(raw_date, "%B %d, %Y, %I:%M %p")
+                return dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M")
+            except ValueError:
+                # 再尝试 "月 日, 年"
+                dt = datetime.strptime(raw_date, "%B %d, %Y")
+                return dt.strftime("%Y-%m-%d"), ""
+    return "", ""
+
+
+def get_specified_node_info(progress_sub_ele_arr):
+    possession_first_event = ""
+    possession_second_event = ""
+    possession_last_event = ""
+    newest_dates = ""
+    newest_times = ""
+
+    if progress_sub_ele_arr:
+        # 获取第一个元素
+        first_ele = progress_sub_ele_arr[0]
+        possession_first_event = first_ele
+        if first_ele == "Alert":
+            second_elem = progress_sub_ele_arr[1]
+            possession_second_event = second_elem
+
+            # 获取最后一个元素
+        last_elem = progress_sub_ele_arr[-1]
+        if last_elem == "See All Tracking History":
+            if len(progress_sub_ele_arr) >= 2:
+                raw_text = progress_sub_ele_arr[-2]
+                cleaned = re.sub(r'[\n\t]+', '', raw_text).strip()
+                possession_last_event = cleaned
+        else:
+            possession_last_event = last_elem
+
+        newest_dates, newest_times = extract_first_date_time_node(progress_sub_ele_arr)
+
+    return {"possession_first_event": possession_first_event, "possession_second_event": possession_second_event,
+            "possession_last_event": possession_last_event, "newest_dates": newest_dates, "newest_times": newest_times}
