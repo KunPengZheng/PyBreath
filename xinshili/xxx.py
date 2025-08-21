@@ -1209,3 +1209,123 @@ def split_and_join_by_35_to_map(original_list):
         joined = ''.join(str(item) + '%2C' for item in chunk)
         num35_map[joined] = len(chunk) + 1
     return num35_map
+
+
+def extract_datetime_info(text):
+    date_str = ""
+    time_str = ""
+
+    # 匹配完整的日期 + 时间（支持 "at" 或 "," 连接）
+    datetime_match = re.search(
+        r'([A-Za-z]+ \d{1,2}, \d{4})[, ]+(?:at )?(\d{1,2}:\d{2}) ?(am|pm)',
+        text, re.IGNORECASE
+    )
+
+    if datetime_match:
+        try:
+            full_str = f"{datetime_match.group(1)} {datetime_match.group(2)} {datetime_match.group(3)}"
+            dt = datetime.strptime(full_str, "%B %d, %Y %I:%M %p")
+            date_str = dt.strftime("%Y-%m-%d")
+            time_str = dt.strftime("%H:%M")
+        except Exception as e:
+            print(f"⚠️ 解析失败: {e}")
+    else:
+        # 只提取日期
+        date_match = re.search(r'([A-Za-z]+ \d{1,2}, \d{4})', text)
+        if date_match:
+            try:
+                dt = datetime.strptime(date_match.group(1), "%B %d, %Y")
+                date_str = dt.strftime("%Y-%m-%d")
+            except:
+                pass
+
+        # 只提取时间
+        time_match = re.search(r'(\d{1,2}:\d{2}) ?(am|pm)', text, re.IGNORECASE)
+        if time_match:
+            try:
+                t = datetime.strptime(time_match.group(0).lower(), "%I:%M %p")
+                time_str = t.strftime("%H:%M")
+            except:
+                pass
+
+    return date_str, time_str
+
+
+def extract_site_info(text):
+    # 提取地点
+    moving = "transit to the next facility"
+    # 尝试匹配 "in xxx." 这种结构（例如 in NORCO, CA 92860.）
+    in_match = re.search(r'\bin\s+([A-Z0-9 ,\-]+)[\.\n]?', text)
+    # 尝试匹配 “our ... on” 这种结构
+    our_on_match = re.search(r'\bour\s+(.*?)\s+on\b', text)
+
+    location = ""
+    if moving in text.lower():
+        location = moving
+    elif in_match:
+        location = in_match.group(1).strip()
+    elif our_on_match:
+        location = our_on_match.group(1).strip()
+
+    return location
+
+
+def extract_info(result_map, excel_result_map):
+    for key, value in result_map.items():
+        latest_event = value.get("LatestEvent", "")
+        possession_last_event = value.get("PossessionLastEvent", "")
+        possession_first_event = value.get("PossessionFirstEvent", "")
+        possession_second_event = value.get("PossessionSecondEvent", "")
+        objs = {}
+        if "Alert" in possession_first_event:
+            if "Unpaid postage" in possession_last_event \
+                    or "Delayed for postage assessment, held awaiting payment" in possession_second_event:
+                objs["Courier"] = "unpaid"
+            else:
+                if "Vacant" in possession_second_event:
+                    objs["Courier"] = "alert_vacant"
+                elif "Awaiting Delivery" in possession_second_event:
+                    objs["Courier"] = "alert_Awaiting Delivery"
+                elif "Sent to Mail Recovery Center" in possession_second_event:
+                    objs["Courier"] = "alert_Sent to Mail Recovery Center"
+                elif "Contact Customer Care" in possession_second_event:
+                    objs["Courier"] = "alert_Contact Customer Care"
+                elif "No Access to Delivery Location" in possession_second_event:
+                    objs["Courier"] = "alert_No Access to Delivery Location"
+                else:
+                    objs["Courier"] = "alert"
+        elif "Delivery Attempt: Action Needed" in possession_first_event:
+            objs["Courier"] = "alert_Delivery Attempt: Action Needed"
+        elif "Delivered" in possession_first_event:
+            if "Your item was delivered" in latest_event:
+                objs["Courier"] = "delivered"
+            else:
+                objs["Courier"] = "tracking"
+        elif "Pre-Shipment" in possession_first_event:
+            objs["Courier"] = "pre_ship"
+        else:
+            if "pending" in latest_event:
+                objs["Courier"] = "acceptance_pending"
+            elif "not yet" in latest_event:
+                objs["Courier"] = "not_yet"
+            else:
+                objs["Courier"] = "tracking"
+
+        date_str, time_str = extract_datetime_info(latest_event)
+        location = extract_site_info(latest_event)
+        if date_str == "" and time_str == "" and location == "":
+            date_str2, time_str2 = extract_datetime_info(possession_second_event)
+            location2 = extract_site_info(possession_second_event)
+            objs["LastEventDate"] = date_str2
+            objs["LastEventTime"] = time_str2
+            objs["LastEventSite"] = location2
+        else:
+            objs["LastEventDate"] = date_str
+            objs["LastEventTime"] = time_str
+            objs["LastEventSite"] = location
+
+        date_str1, time_str1 = extract_datetime_info(possession_last_event)
+        objs["PossessionLastDate"] = date_str1
+        objs["PossessionLastTime"] = time_str1
+
+        excel_result_map[key] = objs
