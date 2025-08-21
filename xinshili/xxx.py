@@ -868,6 +868,8 @@ def update_tracking_info(input_file, output_file, tracking_dict, analyse_obj):
     for idx, row in df.iterrows():
         if analyse_obj == "flld":
             tracking_no = str(row.get("快递单号", "")).strip()
+        elif analyse_obj == "dxm_xyl_yd":
+            tracking_no = str(row.get("运单号", "")).strip()
         else:
             tracking_no = str(row.get(RowName.Tracking_No, "")).strip()
         if tracking_no in tracking_dict:
