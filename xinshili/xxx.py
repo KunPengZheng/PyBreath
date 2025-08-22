@@ -858,7 +858,7 @@ def update_tracking_info(input_file, output_file, tracking_dict, analyse_obj):
     df = pd.read_excel(input_file, dtype=str)
 
     needed_columns = [
-        RowName.Courier, RowName.LatestEventSfDate, RowName.LastEventSfTime,
+        RowName.Courier, RowName.LatestEventSfDate, RowName.LatestEventSfTime,
         RowName.LatestEventSfSite, RowName.PossessionSfDate, RowName.SfDateInterval
     ]
     for col in needed_columns:
@@ -877,6 +877,7 @@ def update_tracking_info(input_file, output_file, tracking_dict, analyse_obj):
 
             df.at[idx, RowName.Courier] = str(data.get("Courier", "") or "")
             df.at[idx, RowName.LatestEventSfDate] = str(data.get("LastEventDate", "") or "")
+            df.at[idx, RowName.LatestEventSfTime] = str(data.get("LastEventTime", "") or "")
             df.at[idx, RowName.LatestEventSfSite] = str(data.get("LastEventSite", "") or "")
             df.at[idx, RowName.PossessionSfDate] = str(data.get("PossessionLastDate", "") or "")
 
@@ -1276,8 +1277,8 @@ def extract_info(result_map, excel_result_map):
         possession_last_event = value.get("PossessionLastEvent", "")
         possession_first_event = value.get("PossessionFirstEvent", "")
         possession_second_event = value.get("PossessionSecondEvent", "")
-        newest_dates = value.get("newest_dates", "")
-        newest_times = value.get("newest_times", "")
+        possession_newest_time_event = value.get("PossessionNewestTimeEvent", "")
+
         objs = {}
         if "Alert" in possession_first_event:
             if "Unpaid postage" in possession_last_event \
@@ -1325,6 +1326,14 @@ def extract_info(result_map, excel_result_map):
             objs["LastEventDate"] = date_str
             objs["LastEventTime"] = time_str
             objs["LastEventSite"] = location
+
+        if not (isinstance(objs["LastEventDate"], str) and objs["LastEventDate"].strip() != ""):
+            newest_dates, newest_times = extract_first_date_time_node(possession_newest_time_event)
+            objs["LastEventDate"] = newest_dates
+            objs["LastEventTime"] = newest_times
+
+        if not (isinstance(objs["LastEventSite"], str) and objs["LastEventSite"].strip() != ""):
+            objs["LastEventSite"] = extract_first_datetime_site(possession_newest_time_event)
 
         date_str1, time_str1 = extract_datetime_info(possession_last_event)
         objs["PossessionLastDate"] = date_str1
