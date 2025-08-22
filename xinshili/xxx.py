@@ -1335,6 +1335,11 @@ def extract_info(result_map, excel_result_map):
         if not (isinstance(objs["LastEventSite"], str) and objs["LastEventSite"].strip() != ""):
             objs["LastEventSite"] = extract_first_datetime_site(possession_newest_time_event)
 
+        if objs["Courier"] == "alert_Delivery Attempt: Action Needed":
+            newest_dates, newest_times = extract_first_date_time_node(possession_newest_time_event, "last")
+            objs["LastEventDate"] = newest_dates
+            objs["LastEventTime"] = newest_times
+
         date_str1, time_str1 = extract_datetime_info(possession_last_event)
         objs["PossessionLastDate"] = date_str1
         objs["PossessionLastTime"] = time_str1
@@ -1353,15 +1358,40 @@ def get_first_datetime_element(arr):
     return None
 
 
-def extract_first_date_time_node(text):
+def extract_first_date_time_node(text, mode="first"):
+    """
+    提取文本中的日期和时间
+    :param text: 输入文本
+    :param mode: "first" 表示提取第一个匹配日期; "last" 表示提取最后一个 \n\n 后的日期
+    :return: (日期, 时间) -> ("%Y-%m-%d", "%H:%M")
+    """
     # 匹配类似 "August 19, 2025" 或 "August 19, 2025, 5:31 am"
     pattern = re.compile(
         r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}(?:,\s*\d{1,2}:\d{2}\s*(?:am|pm))?",
         re.I)
 
-    match = pattern.search(text)
-    if match:
-        raw_date = match.group(0).strip()
+    raw_date = None
+
+    if mode == "first":
+        # 取第一个匹配
+        match = pattern.search(text)
+        if match:
+            raw_date = match.group(0).strip()
+
+    elif mode == "last":
+        # 取最后一个 \n\n 后的时间
+        if "\n\n" in text:
+            last_part = text.split("\n\n")[-1].strip()
+            match = pattern.search(last_part)
+            if match:
+                raw_date = match.group(0).strip()
+        else:
+            # 如果没有 \n\n，就退化为第一个匹配
+            match = pattern.search(text)
+            if match:
+                raw_date = match.group(0).strip()
+
+    if raw_date:
         try:
             # 先尝试 "月 日, 年, 时:分 am/pm"
             dt = datetime.strptime(raw_date, "%B %d, %Y, %I:%M %p")
@@ -1370,6 +1400,7 @@ def extract_first_date_time_node(text):
             # 再尝试 "月 日, 年"
             dt = datetime.strptime(raw_date, "%B %d, %Y")
             return dt.strftime("%Y-%m-%d"), ""
+
     return "", ""
 
 
@@ -1391,7 +1422,7 @@ def get_specified_node_info(progress_sub_ele_arr):
         # 获取第一个元素
         first_ele = progress_sub_ele_arr[0]
         possession_first_event = first_ele
-        if first_ele == "Alert":
+        if first_ele == "Alert" or first_ele == "Delivery Attempt: Action Needed":
             second_elem = progress_sub_ele_arr[1]
             possession_second_event = second_elem
 
