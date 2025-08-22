@@ -1,5 +1,8 @@
 import pandas as pd
 import os
+from datetime import datetime
+
+from xinshili.utils import ensure_directory_exists
 
 
 def remove_duplicates_by_column(input_file, output_file, column_name):
@@ -90,3 +93,57 @@ def copy_new_file(input_path, output_path):
     df = pd.read_excel(input_path, dtype=str)
     # 将数据写入新的 Excel 文件
     df.to_excel(output_path, index=False)
+
+
+def split_excel_by_date_and_unique_count(
+        input_file,
+        time_column="Creation time/创建时间",
+        unique_column="Platform Number/平台单号",
+        file_prefix="",
+        output_dir="output_files"
+):
+    # 读取 Excel 文件
+    df = pd.read_excel(input_file)
+
+    if time_column not in df.columns:
+        raise ValueError(f"Excel 中没有找到列: {time_column}")
+    if unique_column not in df.columns:
+        raise ValueError(f"Excel 中没有找到列: {unique_column}")
+
+    # 转换为 datetime 类型
+    df[time_column] = pd.to_datetime(df[time_column], errors="coerce")
+
+    # 去掉无效日期
+    df = df.dropna(subset=[time_column])
+
+    # 提取年月日
+    df = df.copy()
+    df["date_only"] = df[time_column].dt.strftime("%Y-%m-%d")
+
+    # 按日期分组
+    for dates, group in df.groupby("date_only"):
+        # 先把 date 转换回 datetime 对象
+        dt = datetime.strptime(dates, "%Y-%m-%d")
+        # 获取月份和日期（不带前导 0）
+        year = dt.year
+        month = dt.month
+        day = dt.day
+
+        # 只计算去重后的个数（不保存去重数据）
+        unique_count = group[unique_column].nunique()
+
+        sub_output_dir = output_dir + f"/{year}.{month}"
+
+        ensure_directory_exists(sub_output_dir)
+
+        # 文件名：日期_去重个数.xlsx
+        output_file = os.path.join(sub_output_dir, f"{file_prefix}{day}_{unique_count}.xlsx")
+
+        # 保存原始分组数据（保持行数不变）
+        group.drop(columns=["date_only"]).to_excel(output_file, index=False)
+
+        print(f"已生成: {output_file} (去重个数: {unique_count}, 原始行数: {len(group)})")
+
+
+split_excel_by_date_and_unique_count("/Users/zkp/Downloads/ParcelOutbound_20250822113727.xlsx",
+                                     output_dir="/Users/zkp/Downloads/未命名文件夹 3")
