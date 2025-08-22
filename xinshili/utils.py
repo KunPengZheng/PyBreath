@@ -112,9 +112,6 @@ def ensure_directory_exists(dir_path):
     """
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
-        print(f"文件夹已创建: {dir_path}")
-    else:
-        print(f"文件夹已存在: {dir_path}")
 
 
 def rename(old_file_path, new_file_path):
