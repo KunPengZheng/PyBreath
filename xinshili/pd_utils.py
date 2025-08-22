@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import re
 from datetime import datetime
 
 from xinshili.utils import ensure_directory_exists
@@ -95,6 +96,34 @@ def copy_new_file(input_path, output_path):
     df.to_excel(output_path, index=False)
 
 
+import os
+
+
+def find_existing_same_prefix_files(new_file_path):
+    """查找与 new_file_path 同目录且符合相同文件条件的文件"""
+    dir_path = os.path.dirname(new_file_path)
+    new_file = os.path.basename(new_file_path)
+
+    if "_" not in new_file or "." not in new_file:
+        return []
+
+    new_prefix = new_file.split("_")[0]  # 第一个 _ 之前
+    new_suffix = new_file.split(".")[-1]  # 最后 . 之后
+
+    existing_files = []
+    for f in os.listdir(dir_path):
+        # if f == new_file or "_" not in f or "." not in f:
+        #     continue
+        f_prefix = f.split("_")[0]
+        f_suffix = f.split(".")[-1]
+        # print(f"f_prefix:{f_prefix}")
+        # print(f"f_suffix:{f_suffix}")
+        # print(f"========================================")
+        if f_prefix == new_prefix and f_suffix == new_suffix:
+            existing_files.append(os.path.join(dir_path, f))
+    return existing_files
+
+
 def split_excel_by_date_and_unique_count(
         input_file,
         time_column="Creation time/创建时间",
@@ -112,38 +141,74 @@ def split_excel_by_date_and_unique_count(
 
     # 转换为 datetime 类型
     df[time_column] = pd.to_datetime(df[time_column], errors="coerce")
-
-    # 去掉无效日期
     df = df.dropna(subset=[time_column])
 
     # 提取年月日
     df = df.copy()
     df["date_only"] = df[time_column].dt.strftime("%Y-%m-%d")
 
+    # 需要赋值的列
+    merge_columns = [
+        "Courier/快递",
+        "PossessionSfDate/揽收时间",
+        "LatestEventSfDate/最新事件时间",
+        "SfDateInterval/SF消息间隔",
+        "UnpaidDate/unpaid记录时间",
+        "LatestEventSfTime/最新事件时间",
+        "LatestEventSfSite/最新事件地点",
+        "TrackTimeInterval/跟踪时间间隔",
+        "TrackTimeIntervalState/跟踪时间间隔状态",
+        "Tacking_Time/追踪时间",
+        "LastEventSfTime/上一条轨迹时间",
+        "YD_Number/阳单号",
+        "YD_State/阳单轨迹状态"
+    ]
+
     # 按日期分组
     for dates, group in df.groupby("date_only"):
-        # 先把 date 转换回 datetime 对象
         dt = datetime.strptime(dates, "%Y-%m-%d")
-        # 获取月份和日期（不带前导 0）
-        year = dt.year
-        month = dt.month
-        day = dt.day
+        year, month, day = dt.year, dt.month, dt.day
 
-        # 只计算去重后的个数（不保存去重数据）
+        # 去重计数
         unique_count = group[unique_column].nunique()
 
-        sub_output_dir = output_dir + f"/{year}.{month}"
-
+        # 输出目录
+        sub_output_dir = os.path.join(output_dir, f"{year}.{month}")
         ensure_directory_exists(sub_output_dir)
 
-        # 文件名：日期_去重个数.xlsx
-        output_file = os.path.join(sub_output_dir, f"{file_prefix}{day}_{unique_count}.xlsx")
+        # 新文件路径
+        new_file = os.path.join(sub_output_dir, f"{file_prefix}{day}_{unique_count}.xlsx")
 
-        # 保存原始分组数据（保持行数不变）
-        group.drop(columns=["date_only"]).to_excel(output_file, index=False)
+        # === 检查相同前缀+后缀文件 ===
+        existing_files = find_existing_same_prefix_files(new_file)
 
-        print(f"已生成: {output_file} (去重个数: {unique_count}, 原始行数: {len(group)})")
+        # print(existing_files)
+        if existing_files:
+            # 遍历所有旧文件（可改成只取最后一个）
+            for old_file in existing_files:
+                df_old = pd.read_excel(old_file)
+                if "Tracking No./物流跟踪号" in df_old.columns and "Tracking No./物流跟踪号" in group.columns:
+                    # 确保新文件有这些列
+                    for col in merge_columns:
+                        if col not in group.columns:
+                            group[col] = None
+
+                    # 按 Tracking No. 合并赋值
+                    df_old = df_old[["Tracking No./物流跟踪号"] + [c for c in merge_columns if c in df_old.columns]]
+                    group = group.merge(df_old, on="Tracking No./物流跟踪号", how="left", suffixes=("", "_old"))
+
+                    for col in merge_columns:
+                        if col + "_old" in group.columns:
+                            group[col] = group[col].combine_first(group[col + "_old"])
+                            group.drop(columns=[col + "_old"], inplace=True)
+
+                os.remove(old_file)
+
+        # 保存文件（保持原有逻辑）
+        group.drop(columns=["date_only"]).to_excel(new_file, index=False)
+        # print(f"已生成: {new_file} (去重个数: {unique_count}, 原始行数: {len(group)})")
 
 
 split_excel_by_date_and_unique_count("/Users/zkp/Downloads/ParcelOutbound_20250822113727.xlsx",
+                                     file_prefix="创建时间",
                                      output_dir="/Users/zkp/Downloads/未命名文件夹 3")
