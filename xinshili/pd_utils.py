@@ -188,19 +188,22 @@ def split_excel_by_date_and_unique_count(
             for old_file in existing_files:
                 df_old = pd.read_excel(old_file)
                 if "Tracking No./物流跟踪号" in df_old.columns and "Tracking No./物流跟踪号" in group.columns:
-                    # 确保新文件有这些列
+                    # 确保新文件有这些列，使用 pd.NA
                     for col in merge_columns:
                         if col not in group.columns:
-                            group[col] = None
+                            group[col] = pd.NA
 
                     # 按 Tracking No. 合并赋值
                     df_old = df_old[["Tracking No./物流跟踪号"] + [c for c in merge_columns if c in df_old.columns]]
                     group = group.merge(df_old, on="Tracking No./物流跟踪号", how="left", suffixes=("", "_old"))
 
                     for col in merge_columns:
-                        if col + "_old" in group.columns:
-                            group[col] = group[col].combine_first(group[col + "_old"])
-                            group.drop(columns=[col + "_old"], inplace=True)
+                        old_col = col + "_old"
+                        if old_col in group.columns:
+                            # 只替换新文件列为空值的部分
+                            mask = group[col].isna()  # 新列为空的位置
+                            group.loc[mask, col] = group.loc[mask, old_col]  # 用旧列值填充
+                            group.drop(columns=[old_col], inplace=True)
 
                 os.remove(old_file)
 
