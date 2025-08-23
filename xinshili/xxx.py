@@ -1192,7 +1192,7 @@ def str_strip(filepath: str, column_name: str):
 
 
 def flld_filter_track_num(analyse_obj, input_path):
-    if analyse_obj == ClientConstants.md_flld:
+    if analyse_obj == "flld":
         xlsx_path = extract_path_before_csv(input_path)
         column_name = "快递单号"
     else:
@@ -1442,3 +1442,117 @@ def get_specified_node_info(progress_sub_ele_arr):
             "possession_second_event": possession_second_event,
             "possession_last_event": possession_last_event,
             "possession_newest_time_event": possession_newest_time_event}
+
+
+def find_existing_same_prefix_files(new_file_path):
+    """查找与 new_file_path 同目录且符合相同文件条件的文件"""
+    dir_path = os.path.dirname(new_file_path)
+    new_file = os.path.basename(new_file_path)
+
+    if "_" not in new_file or "." not in new_file:
+        return []
+
+    new_prefix = new_file.split("_")[0]  # 第一个 _ 之前
+    new_suffix = new_file.split(".")[-1]  # 最后 . 之后
+
+    existing_files = []
+    for f in os.listdir(dir_path):
+        # if f == new_file or "_" not in f or "." not in f:
+        #     continue
+        f_prefix = f.split("_")[0]
+        f_suffix = f.split(".")[-1]
+        # print(f"f_prefix:{f_prefix}")
+        # print(f"f_suffix:{f_suffix}")
+        # print(f"========================================")
+        if f_prefix == new_prefix and f_suffix == new_suffix:
+            existing_files.append(os.path.join(dir_path, f))
+    return existing_files
+
+
+def split_excel_by_date_and_unique_count(
+        input_file,
+        time_column="Creation time/创建时间",
+        unique_column="Platform Number/平台单号",
+        track_column="Tracking No./物流跟踪号",
+        file_prefix="",
+        output_dir="output_files"
+):
+    # 读取 Excel 文件
+    df = pd.read_excel(input_file)
+
+    if time_column not in df.columns:
+        raise ValueError(f"Excel 中没有找到列: {time_column}")
+    if unique_column not in df.columns:
+        raise ValueError(f"Excel 中没有找到列: {unique_column}")
+
+    # 转换为 datetime 类型
+    df[time_column] = pd.to_datetime(df[time_column], errors="coerce")
+    df = df.dropna(subset=[time_column])
+
+    # 提取年月日
+    df = df.copy()
+    df["date_only"] = df[time_column].dt.strftime("%Y-%m-%d")
+
+    # 需要赋值的列
+    merge_columns = [
+        "Courier/快递",
+        "PossessionSfDate/揽收时间",
+        "LatestEventSfDate/最新事件时间",
+        "SfDateInterval/SF消息间隔",
+        "UnpaidDate/unpaid记录时间",
+        "LatestEventSfTime/最新事件时间",
+        "LatestEventSfSite/最新事件地点",
+        "TrackTimeInterval/跟踪时间间隔",
+        "TrackTimeIntervalState/跟踪时间间隔状态",
+        "Tacking_Time/追踪时间",
+        "LastEventSfTime/上一条轨迹时间",
+        "YD_Number/阳单号",
+        "YD_State/阳单轨迹状态"
+    ]
+
+    # 按日期分组
+    for dates, group in df.groupby("date_only"):
+        dt = datetime.strptime(dates, "%Y-%m-%d")
+        year, month, day = dt.year, dt.month, dt.day
+
+        # 去重计数
+        unique_count = group[unique_column].nunique()
+
+        # 输出目录
+        sub_output_dir = os.path.join(output_dir, f"{year}.{month}")
+        if not os.path.exists(sub_output_dir):
+            os.makedirs(sub_output_dir)
+
+        # 新文件路径
+        new_file = os.path.join(sub_output_dir, f"{file_prefix}{day}_{unique_count}.xlsx")
+
+        # === 检查相同前缀+后缀文件 ===
+        existing_files = find_existing_same_prefix_files(new_file)
+
+        if existing_files:
+            # 遍历所有旧文件（可改成只取最后一个）
+            for old_file in existing_files:
+                df_old = pd.read_excel(old_file)
+                if track_column in df_old.columns and track_column in group.columns:
+                    # 确保新文件有这些列，使用 pd.NA
+                    for col in merge_columns:
+                        if col not in group.columns:
+                            group[col] = pd.NA
+
+                    # 按 Tracking No. 合并赋值
+                    df_old = df_old[[track_column] + [c for c in merge_columns if c in df_old.columns]]
+                    group = group.merge(df_old, on=track_column, how="left", suffixes=("", "_old"))
+
+                    for col in merge_columns:
+                        old_col = col + "_old"
+                        if old_col in group.columns:
+                            # 只替换新文件列为空值的部分
+                            mask = group[col].isna()  # 新列为空的位置
+                            group.loc[mask, col] = group.loc[mask, old_col]  # 用旧列值填充
+                            group.drop(columns=[old_col], inplace=True)
+
+                os.remove(old_file)
+
+        # 保存文件（保持原有逻辑）
+        group.drop(columns=["date_only"]).to_excel(new_file, index=False)
+        # print(f"已生成: {new_file} (去重个数: {unique_count}, 原始行数: {len(group)})")
