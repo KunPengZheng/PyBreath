@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 import re
+import glob
 from openpyxl import load_workbook
 import openpyxl
 from openpyxl import load_workbook
@@ -1443,7 +1444,6 @@ def get_specified_node_info(progress_sub_ele_arr):
             "possession_last_event": possession_last_event,
             "possession_newest_time_event": possession_newest_time_event}
 
-
 def find_existing_same_prefix_files(new_file_path):
     """查找与 new_file_path 同目录且符合相同文件条件的文件"""
     dir_path = os.path.dirname(new_file_path)
@@ -1457,13 +1457,8 @@ def find_existing_same_prefix_files(new_file_path):
 
     existing_files = []
     for f in os.listdir(dir_path):
-        # if f == new_file or "_" not in f or "." not in f:
-        #     continue
         f_prefix = f.split("_")[0]
         f_suffix = f.split(".")[-1]
-        # print(f"f_prefix:{f_prefix}")
-        # print(f"f_suffix:{f_suffix}")
-        # print(f"========================================")
         if f_prefix == new_prefix and f_suffix == new_suffix:
             existing_files.append(os.path.join(dir_path, f))
     return existing_files
@@ -1471,11 +1466,11 @@ def find_existing_same_prefix_files(new_file_path):
 
 def split_excel_by_date_and_unique_count(
         input_file,
-        time_column="Creation time/创建时间",
-        unique_column="Platform Number/平台单号",
-        track_column="Tracking No./物流跟踪号",
-        file_prefix="",
-        output_dir="output_files"
+        time_column,
+        unique_column,
+        track_column,
+        file_prefix,
+        output_dir
 ):
     # 读取 Excel 文件
     df = pd.read_excel(input_file)
@@ -1556,3 +1551,49 @@ def split_excel_by_date_and_unique_count(
         # 保存文件（保持原有逻辑）
         group.drop(columns=["date_only"]).to_excel(new_file, index=False)
         # print(f"已生成: {new_file} (去重个数: {unique_count}, 原始行数: {len(group)})")
+
+def merge_csvs_to_excel(folder_path, output_file):
+    """
+    将指定文件夹中的所有 CSV 文件合并为一个 Excel 文件
+    只保留第一个文件的表头，合并完成后删除原 CSV 文件
+    """
+    # 找到文件夹中所有 CSV 文件
+    csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
+    if not csv_files:
+        print("❌ 没有找到 CSV 文件")
+        return
+
+    combined_df = pd.DataFrame()
+
+    for i, file in enumerate(csv_files):
+        try:
+            df = pd.read_csv(file, dtype=str).fillna("")
+            if df.empty:
+                print(f"⚠️ 文件为空，跳过: {file}")
+                continue
+
+            if i == 0:
+                combined_df = df
+            else:
+                if df.columns.equals(combined_df.columns):
+                    combined_df = pd.concat([combined_df, df], ignore_index=True)
+                else:
+                    print(f"⚠️ 列不匹配，跳过文件: {file}")
+        except Exception as e:
+            print(f"❌ 读取失败 {file}，原因: {e}")
+
+    if combined_df.empty:
+        print("❌ 没有有效数据")
+        return
+
+    # 保存为 Excel
+    combined_df.to_excel(output_file, index=False)
+    print(f"✅ 合并完成，保存到: {output_file}")
+
+    # 删除原始 CSV 文件
+    for file in csv_files:
+        try:
+            os.remove(file)
+            print(f"🗑️ 已删除: {file}")
+        except Exception as e:
+            print(f"⚠️ 删除失败 {file}，原因: {e}")
