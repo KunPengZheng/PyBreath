@@ -1444,6 +1444,7 @@ def get_specified_node_info(progress_sub_ele_arr):
             "possession_last_event": possession_last_event,
             "possession_newest_time_event": possession_newest_time_event}
 
+
 def find_existing_same_prefix_files(new_file_path):
     """查找与 new_file_path 同目录且符合相同文件条件的文件"""
     dir_path = os.path.dirname(new_file_path)
@@ -1523,6 +1524,7 @@ def split_excel_by_date_and_unique_count(
 
         # === 检查相同前缀+后缀文件 ===
         existing_files = find_existing_same_prefix_files(new_file)
+        print(existing_files)
 
         if existing_files:
             # 遍历所有旧文件（可改成只取最后一个）
@@ -1551,6 +1553,9 @@ def split_excel_by_date_and_unique_count(
         # 保存文件（保持原有逻辑）
         group.drop(columns=["date_only"]).to_excel(new_file, index=False)
         # print(f"已生成: {new_file} (去重个数: {unique_count}, 原始行数: {len(group)})")
+
+    os.remove(input_file)
+
 
 def merge_csvs_to_excel(folder_path, output_file):
     """
