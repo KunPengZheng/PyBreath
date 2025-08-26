@@ -1326,10 +1326,13 @@ def extract_info(result_map, excel_result_map):
         elif "Delivery Attempt: Action Needed" in possession_first_event:
             objs["Courier"] = "alert_Delivery Attempt: Action Needed"
         elif "Delivered" in possession_first_event:
-            if "Your item was delivered" in latest_event:
+            if "Delivered, Individual Picked Up at Post Office" in possession_first_event:
                 objs["Courier"] = "delivered"
             else:
-                objs["Courier"] = "tracking"
+                if "Your item was delivered" in latest_event:
+                    objs["Courier"] = "delivered"
+                else:
+                    objs["Courier"] = "tracking"
         elif "Pre-Shipment" in possession_first_event:
             objs["Courier"] = "pre_ship"
         else:
