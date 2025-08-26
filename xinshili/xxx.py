@@ -1033,20 +1033,49 @@ def count_pattern_state(file_path, column_name, patternStr):
         return 0, 0
 
 
+def tkkj_auto():
+    if "MacBookPro" in get_computer_model():
+        root_dir = "/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track/"
+    else:
+        root_dir = "/Volumes/B&Y/轨迹统计/dxm_xyl_track/"
+    usps_arr = []
+    today = datetime.now()
+    current_year = today.year
+    current_month = today.month
+    current_day = today.day
+    current_time = f"{current_year}-{current_month}-{current_day}"
+    track_day = 5
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        dirnames.sort(key=natural_key)
+        for dirname in dirnames:
+            sun_dir_path = os.path.join(dirpath, dirname)
+            parts = dirname.split(".")
+            year, month = parts[0], parts[1]
+            files = [f for f in os.listdir(sun_dir_path) if f.lower().endswith(('.xlsx', '.xls'))]
+            files.sort(key=natural_key)
+            for file in files:
+                xlsx_path = os.path.join(sun_dir_path, file)
+                match = re.search(r"发货时间(\d+)_", file)
+                if match:
+                    day = match.group(1)
+                    current_times = f"{year}-{month}-{day}"
+                    exceed = is_time_difference_exceed(current_time, current_times)
+                    if exceed <= track_day:
+                        print(f"正在处理文件: {xlsx_path}")
+                        usps_arr.append(xlsx_path)
+    return usps_arr
+
+
 def flld_automatic(analyse_obj, ignore, analyse_obj_ignore):
     root_dir = ""
     if "MacBookPro" in get_computer_model():
         if analyse_obj == "flld":
             root_dir = "/Users/zkp/Desktop/B&Y/轨迹统计/flld/"
-        elif analyse_obj == "dxm_xyl_yd":
-            root_dir = "/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track/"
         else:
             root_dir = ""
     else:
         if analyse_obj == "flld":
             root_dir = "/Volumes/B&Y/轨迹统计/flld/"
-        elif analyse_obj == "dxm_xyl_yd":
-            root_dir = "/Volumes/B&Y/轨迹统计/dxm_xyl_track/"
         else:
             root_dir = ""
 
@@ -1075,8 +1104,6 @@ def flld_automatic(analyse_obj, ignore, analyse_obj_ignore):
                 match = None
                 if analyse_obj == "flld":
                     match = re.search(r"打单时间(\d+)_", file)
-                elif analyse_obj == "dxm_xyl_yd":
-                    match = re.search(r"发货时间(\d+)_", file)
                 else:
                     match = None
                 if match:
@@ -1093,8 +1120,6 @@ def flld_automatic(analyse_obj, ignore, analyse_obj_ignore):
 
                         if analyse_obj == "flld":
                             ck_time = get_days_difference_flld(xlsx_path)
-                        elif analyse_obj == "dxm_xyl_yd":
-                            ck_time = get_days_difference_tkkj(xlsx_path)
                         else:
                             ck_time = None
                         interval_time = (datetime.strptime(gz_time, "%Y/%m/%d") - datetime.strptime(ck_time,
@@ -1524,7 +1549,6 @@ def split_excel_by_date_and_unique_count(
 
         # === 检查相同前缀+后缀文件 ===
         existing_files = find_existing_same_prefix_files(new_file)
-        print(existing_files)
 
         if existing_files:
             # 遍历所有旧文件（可改成只取最后一个）
