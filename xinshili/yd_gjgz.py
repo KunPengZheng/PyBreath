@@ -1226,6 +1226,13 @@ def flld_filter_track_num(analyse_obj, input_path):
         column_name = "运单号"
     str_strip(xlsx_path, column_name)
     check_and_add_courier_column(xlsx_path)
+
+    irregular_number_map = find_irregular_tracking_numbers(xlsx_path, column_name)
+    irregular_number_list = []
+    if irregular_number_map:
+        irregular_number_list = list(irregular_number_map.keys())
+        update_courier_status1(xlsx_path, irregular_number_map, column_name)
+
     return split_and_join_by_35_to_map(extract_and_process_data(xlsx_path, RowName.Courier, column_name))
 
 
@@ -1323,13 +1330,13 @@ def extract_info(result_map, excel_result_map):
                     objs["Courier"] = "alert_No Access to Delivery Location"
                 else:
                     objs["Courier"] = "alert"
-        elif "Delivery Attempt: Action Needed" in possession_first_event:
+        elif "Delivery Attempt" in possession_first_event:
             objs["Courier"] = "alert_Delivery Attempt: Action Needed"
         elif "Delivered" in possession_first_event:
             if "Delivered, Individual Picked Up at Post Office" in possession_first_event:
                 objs["Courier"] = "delivered"
             else:
-                if "Your item was delivered" in latest_event:
+                if "Your item was delivered" in latest_event or "Your item has been delivered" in latest_event:
                     objs["Courier"] = "delivered"
                 else:
                     objs["Courier"] = "tracking"
