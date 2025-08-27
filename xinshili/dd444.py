@@ -573,6 +573,10 @@ def download_m3u8_to_mp4(m3u8_url, output_dir, output_filename="output.mp4"):
 
     cmd = [
         "ffmpeg",
+        "-reconnect", "1",
+        "-reconnect_at_eof", "1",
+        "-reconnect_streamed", "1",
+        "-reconnect_delay_max", "5",
         "-protocol_whitelist", "file,http,https,tcp,tls,crypto",
         "-i", m3u8_url,
         "-c", "copy",
