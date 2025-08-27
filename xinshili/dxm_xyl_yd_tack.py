@@ -345,7 +345,7 @@ def auto(root_dir, yd_flag=True):
     if yd_flag:
         track_day = 7
     else:
-        track_day = 5
+        track_day = 7
     for dirpath, dirnames, filenames in os.walk(root_dir):
         dirnames.sort(key=natural_key)
         for dirname in dirnames:
