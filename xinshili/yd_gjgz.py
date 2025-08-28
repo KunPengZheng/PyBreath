@@ -1516,8 +1516,33 @@ def split_excel_by_date_and_unique_count(
     if unique_column not in df.columns:
         raise ValueError(f"Excel 中没有找到列: {unique_column}")
 
-    # 转换为 datetime 类型
-    df[time_column] = pd.to_datetime(df[time_column], errors="coerce")
+    # ✅ 针对 flld 文件夹：自定义时间解析逻辑
+    if output_dir == "/Users/zkp/Desktop/B&Y/轨迹统计/flld/":
+        current_year = datetime.now().year
+
+        def parse_custom_time(x):
+            if isinstance(x, str):
+                # 如果没有年份，补上
+                if len(x.split("-")[0]) == 2:  # 说明是 MM-DD 开头
+                    x = f"{current_year}-{x}"
+                # 依次尝试解析
+                for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+                    try:
+                        return datetime.strptime(x.strip(), fmt)
+                    except ValueError:
+                        continue
+                raise ValueError(f"❌ 无法解析时间格式: {x}")
+            elif isinstance(x, datetime):
+                return x
+            else:
+                return pd.NaT
+
+        df[time_column] = df[time_column].apply(parse_custom_time)
+    else:
+        # 默认逻辑
+        df[time_column] = pd.to_datetime(df[time_column], errors="coerce")
+
+    # 删除无法解析的时间
     df = df.dropna(subset=[time_column])
 
     # 提取年月日
@@ -1588,7 +1613,10 @@ def split_excel_by_date_and_unique_count(
         group.drop(columns=["date_only"]).to_excel(new_file, index=False)
         # print(f"已生成: {new_file} (去重个数: {unique_count}, 原始行数: {len(group)})")
 
-    os.remove(input_file)
+    # ✅ 删除输入文件（如需保留可以注释掉）
+    if os.path.exists(input_file):
+        os.remove(input_file)
+    #     print(f"✅ 已删除原始文件: {input_file}")
 
 
 def merge_csvs_to_excel(folder_path, output_file):
