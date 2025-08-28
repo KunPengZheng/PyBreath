@@ -6,7 +6,7 @@ import re
 
 from openpyxl.workbook import Workbook
 
-from xinshili.utils import get_filename_without_extension, ensure_directory_exists
+from xinshili.utils import get_filename_without_extension, ensure_directory_exists, open_dir
 
 
 def save_waybill_numbers_to_excel(waybill_numbers, output_folder):
@@ -129,3 +129,5 @@ if __name__ == '__main__':
 
     else:
         print("输入路径无效，请输入正确的文件或文件夹路径。")
+
+    open_dir(base_dir)
