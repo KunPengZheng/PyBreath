@@ -1509,7 +1509,7 @@ def split_excel_by_date_and_unique_count(
         output_dir
 ):
     # 读取 Excel 文件
-    df = pd.read_excel(input_file)
+    df = pd.read_excel(input_file, dtype=str)
 
     if time_column not in df.columns:
         raise ValueError(f"Excel 中没有找到列: {time_column}")
@@ -1522,16 +1522,14 @@ def split_excel_by_date_and_unique_count(
 
         def parse_custom_time(x):
             if isinstance(x, str):
-                # 如果没有年份，补上
-                if len(x.split("-")[0]) == 2:  # 说明是 MM-DD 开头
+                if len(x.split("-")[0]) == 2:  # 没有年份，补上
                     x = f"{current_year}-{x}"
-                # 依次尝试解析
                 for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
                     try:
                         return datetime.strptime(x.strip(), fmt)
                     except ValueError:
                         continue
-                raise ValueError(f"❌ 无法解析时间格式: {x}")
+                return pd.NaT
             elif isinstance(x, datetime):
                 return x
             else:
@@ -1539,14 +1537,12 @@ def split_excel_by_date_and_unique_count(
 
         df[time_column] = df[time_column].apply(parse_custom_time)
     else:
-        # 默认逻辑
         df[time_column] = pd.to_datetime(df[time_column], errors="coerce")
 
     # 删除无法解析的时间
     df = df.dropna(subset=[time_column])
 
     # 提取年月日
-    df = df.copy()
     df["date_only"] = df[time_column].dt.strftime("%Y-%m-%d")
 
     # 需要赋值的列
@@ -1582,41 +1578,31 @@ def split_excel_by_date_and_unique_count(
         # 新文件路径
         new_file = os.path.join(sub_output_dir, f"{file_prefix}{day}_{unique_count}.xlsx")
 
-        # === 检查相同前缀+后缀文件 ===
+        # === 查找相同前缀的旧文件 ===
         existing_files = find_existing_same_prefix_files(new_file)
 
         if existing_files:
-            # 遍历所有旧文件（可改成只取最后一个）
             for old_file in existing_files:
                 df_old = pd.read_excel(old_file)
+
                 if track_column in df_old.columns and track_column in group.columns:
-                    # 确保新文件有这些列，使用 pd.NA
+                    # 用 map 填充空值，避免 merge 导致重复行
                     for col in merge_columns:
                         if col not in group.columns:
                             group[col] = pd.NA
+                        if col in df_old.columns:
+                            mapping = df_old.set_index(track_column)[col].to_dict()
+                            mask = group[col].isna()
+                            group.loc[mask, col] = group.loc[mask, track_column].map(mapping)
 
-                    # 按 Tracking No. 合并赋值
-                    df_old = df_old[[track_column] + [c for c in merge_columns if c in df_old.columns]]
-                    group = group.merge(df_old, on=track_column, how="left", suffixes=("", "_old"))
+                os.remove(old_file)  # 删除旧文件
 
-                    for col in merge_columns:
-                        old_col = col + "_old"
-                        if old_col in group.columns:
-                            # 只替换新文件列为空值的部分
-                            mask = group[col].isna()  # 新列为空的位置
-                            group.loc[mask, col] = group.loc[mask, old_col]  # 用旧列值填充
-                            group.drop(columns=[old_col], inplace=True)
-
-                os.remove(old_file)
-
-        # 保存文件（保持原有逻辑）
+        # 保存文件
         group.drop(columns=["date_only"]).to_excel(new_file, index=False)
-        # print(f"已生成: {new_file} (去重个数: {unique_count}, 原始行数: {len(group)})")
 
-    # ✅ 删除输入文件（如需保留可以注释掉）
+    # ✅ 删除输入文件
     if os.path.exists(input_file):
         os.remove(input_file)
-    #     print(f"✅ 已删除原始文件: {input_file}")
 
 
 def merge_csvs_to_excel(folder_path, output_file):
