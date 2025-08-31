@@ -1044,7 +1044,7 @@ def tkkj_auto():
     current_month = today.month
     current_day = today.day
     current_time = f"{current_year}-{current_month}-{current_day}"
-    track_day = 7
+    track_day = 10
     for dirpath, dirnames, filenames in os.walk(root_dir):
         dirnames.sort(key=natural_key)
         for dirname in dirnames:

@@ -343,9 +343,9 @@ def auto(root_dir, yd_flag=True):
     current_day = today.day
     current_time = f"{current_year}-{current_month}-{current_day}"
     if yd_flag:
-        track_day = 7
+        track_day = 10
     else:
-        track_day = 7
+        track_day = 10
     for dirpath, dirnames, filenames in os.walk(root_dir):
         dirnames.sort(key=natural_key)
         for dirname in dirnames:
