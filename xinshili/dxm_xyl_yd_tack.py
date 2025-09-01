@@ -134,6 +134,8 @@ def process_tracking_time1(file_path):
                     states.append("阳单替换")
                 elif hours >= 24:
                     states.append("预备阳单")
+                # elif hours >= 120:
+                #     states.append("超5天无轨迹更新")
                 else:
                     states.append("轨迹正常")
             else:
@@ -540,18 +542,34 @@ def analyse_state(xlsx_path, irregular_number_list):
     track_stop_24 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
                                                waybill_column="订单号",
                                                tracking_column="运单号", key_value="预备阳单")
+    # track_stop_120 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
+    #                                             waybill_column="订单号",
+    #                                             tracking_column="运单号", key_value="超5天无轨迹补发")
     track_stop_72_int = len(track_stop_72)
     track_stop_48_int = len(track_stop_48)
     track_stop_24_int = len(track_stop_24)
+    # track_stop_120_int = len(track_stop_120)
+    # track_stop_120l = round2((int(track_stop_120_int) / int(total_count)) * 100)
     track_stop_72l = round2((int(track_stop_72_int) / int(total_count)) * 100)
     track_stop_48l = round2((int(track_stop_48_int) / int(total_count)) * 100)
     track_stop_24l = round2((int(track_stop_24_int) / int(total_count)) * 100)
     text += (f"\n超24小时轨迹未更新：（{track_stop_24_int}, {track_stop_24l}%）"
              f"\n超48小时轨迹未更新：（{track_stop_48_int}, {track_stop_48l}%）"
              f"\n超72小时轨迹未更新：（{track_stop_72_int}, {track_stop_72l}%）")
+             # f"\n超120小时轨迹未更新：（{track_stop_120_int}, {track_stop_120l}%）")
     fs_text += (f"\n超24小时轨迹未更新：（{track_stop_24_int}, {track_stop_24l}%）"
                 f"\n超48小时轨迹未更新：（{track_stop_48_int}, {track_stop_48l}%）"
                 f"\n超72小时轨迹未更新：（{track_stop_72_int}, {track_stop_72l}%）")
+                # f"\n超120小时轨迹未更新：（{track_stop_120_int}, {track_stop_120l}%）")
+
+    # track_stop_120_text = ""
+    # if (track_stop_120_int > 0):
+    #     text += f"\n-------超5天无轨迹补发-------"
+    #     fs_text += f"\n-------超5天无轨迹补发-------"
+    #     for key, value in track_stop_120.items():
+    #         text += f"\n（单号：{key}, 快递单号：{value}）"
+    #         fs_text += f"\n（单号：{key}, 快递单号：{value}）"
+    #         track_stop_120_text += f"\n（单号：{key}, 快递单号：{value}）"
 
     print(text)
     delete_file(xlsx_path)
@@ -596,6 +614,9 @@ def analyse_state(xlsx_path, irregular_number_list):
     if (len(alert_intercepted_tracking_data) > 0):
         bg = "#FFF258"
 
+    # if (track_stop_120_int > 0):
+    #     bg = "#F54A45"
+
     if (len(unpaid_tracking_data) > 0):
         bg = "#A684F0"
 
@@ -612,6 +633,7 @@ def analyse_state(xlsx_path, irregular_number_list):
         f"（{track_stop_24_int}, {track_stop_24l}%）",
         f"（{track_stop_48_int}, {track_stop_48l}%）",
         f"（{track_stop_72_int}, {track_stop_72l}%）",
+        # f"（{track_stop_120_int}, {track_stop_120l}%）",
     ], ck_time, ClientConstants.dxm_tk_kj)
 
     khhz_sheet_bg(tat, ck_time, ClientConstants.dxm_tk_kj, bg)
@@ -625,6 +647,11 @@ def analyse_state(xlsx_path, irregular_number_list):
         result_fs_msg += f"新增 {current_day_unpaid_len}单 unpaid: \n"
         result_fs_msg += current_day_unpaid_text
         fs_msg_flag = True
+
+    # if track_stop_120_int > 0:
+    #     result_fs_msg += f"超5天无轨迹需补发 {track_stop_120_int}单 : \n"
+    #     result_fs_msg += track_stop_120_text
+    #     fs_msg_flag = True
 
     if swl_flag:
         if no_track_count > 10:
