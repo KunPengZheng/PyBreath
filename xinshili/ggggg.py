@@ -1,442 +1,221 @@
-# coding=gbk
-
-import csv
-import ctypes
-import re
-from datetime import datetime
+import pandas as pd
+from openpyxl import load_workbook
 import os
 
-from base import api
-from base.api import TdxHqApi
 
+def remove_st_rows_excel(input_file, output_file=None):
+    # 读取 Excel
+    df = pd.read_excel(input_file, dtype=object)
 
-def is_chinese_stock_code(code: str) -> bool:
-    """
-     判断一个代码是否为中国 A 股（包括沪市、深市、科创板、创业板、北交所），
-     排除 ETF、指数、基金、债券、B股 等。
+    # 删除 "名称" 列中包含 "ST" 或 "st" 的行
+    df = df[~df["名称"].str.contains("ST|st", na=False)]
 
-     :param code: 股票代码字符串（6位）
-     :return: 如果是 A 股代码，返回 True；否则返回 False。
-     """
-    if not isinstance(code, str) or len(code) != 6 or not code.isdigit():
-        return False
+    # 输出文件路径
+    if output_file is None:
+        output_file = input_file.replace(".xlsx", "_clean.xlsx")
 
-    valid_prefixes = (
-        "600", "601", "603", "605",  # 沪市主板
-        "688", "689",  # 科创板
-        "000", "001", "002", "003",  # 深市主板
-        "300", "301", "302",  # 创业板
-        "430", "830", "831", "832", "833", "834", "835", "837", "838", "839", "870", "871", "872", "873", "920",  # 北交所
-    )
+    # 保存为 Excel
+    df.to_excel(output_file, index=False)
 
-    return code.startswith(valid_prefixes)
+    print(f"? 已处理完成，结果保存到: {output_file}")
 
 
-def get_code_name(decoded_result):
-    parsed_stocks_data = []
-
-    lines = decoded_result.strip().split('\n')
-    if not lines:
-        print("没有获取到数据行。")
-        return parsed_stocks_data
-
-    # 处理表头行（去除空格、全角等）
-    header_line = lines[0]
-    headers = [h.strip().replace(' ', '').replace('　', '') for h in header_line.split('\t')]
-
-    try:
-        code_index = headers.index('代码')
-        name_index = headers.index('名称')
-    except ValueError as e:
-        print(f"错误：找不到 '代码' 或 '名称' 列。{e}")
-        return parsed_stocks_data
-
-    for line in lines[1:]:
-        # 跳过重复的表头行（有些批次会返回表头）
-        if line.strip() == header_line or ('代码' in line and '名称' in line):
-            continue
-
-        columns = line.split('\t')
-        if code_index < len(columns) and name_index < len(columns):
-            parsed_stocks_data.append({
-                '代码': columns[code_index].strip(),
-                '名称': columns[name_index].strip()
-            })
-        else:
-            print(f"?? 跳过列数不足的行：{line}")
-
-    return parsed_stocks_data
-
-
-def get_gd_number(data_string):
-    # 按行分割字符串
-    lines = data_string.strip().split('\n')
-
-    # 提取数据的字典
-    shareholder_research_info = {}
-
-    # 遍历每一行，从第二行开始（跳过标题行）
-    for line in lines[1:]:
-        # 使用 split() 不带参数来按任意空白字符分割，并自动处理多个空格
-        parts = line.split()
-
-        # 确保行有足够的列
-        if len(parts) >= 4:  # 至少有“类别”、“文件”、“开始”、“长度”四列
-            category = parts[0]  # 第一列是“内容打印类别”
-
-            if category == "股东研究":
-                # 类别匹配，获取对应列的值
-                file_name = parts[1]
-                start_pos = int(parts[2])  # 转换为整数
-                length = int(parts[3])  # 转换为整数
-
-                shareholder_research_info = {
-                    "文件": file_name,
-                    "开始": start_pos,
-                    "长度": length
-                }
-                break  # 找到后就可以停止遍历了
-
-    # # 打印结果
-    # if shareholder_research_info:
-    #     print("已找到 '股东研究' 的对应信息：")
-    #     print(f"文件: {shareholder_research_info['文件']}")
-    #     print(f"开始: {shareholder_research_info['开始']}")
-    #     print(f"长度: {shareholder_research_info['长度']}")
-    # else:
-    #     print("未找到 '股东研究' 的对应信息。")
-    return shareholder_research_info
-
-
-# --- 1. 隔离“股东人数变化”数据块 ---
-def extract_shareholder_change_block(full_text):
-    start_marker = "【5.股东人数变化】"
-    # all_blocks = re.findall(rf"({re.escape(start_marker)}[\s\S]*?)(?=\n【\d+\.|\Z)", full_text, re.DOTALL)
-    all_blocks = re.findall(f"({re.escape(start_marker)}[\\s\\S]*?)(?=\\n【\\d+\\.|\Z)", full_text, re.DOTALL)
-    if all_blocks:
-        return all_blocks[-1]
-    return None
-
-
-# --- 2. 解析“股东人数变化”的数据块 ---
-def parse_shareholder_data(block_string):
-    parsed_records = []
-    if not block_string:
-        return parsed_records
-
-    lines = block_string.strip().split('\n')
-
-    header_line_index = -1
-    for i, line in enumerate(lines):
-        if "│截止日期" in line and "股东人数(户)" in line:
-            header_line_index = i
-            break
-
-    if header_line_index == -1:
-        # print("错误：在股东人数变化块中未找到表头行。") # Removed print for cleaner function output
-        return parsed_records
-
-    header_line = lines[header_line_index]
-    headers_raw = [h.strip() for h in header_line.split('│')]
-    headers = [h for h in headers_raw if h]
-
-    try:
-        date_idx = headers.index('截止日期')
-        shareholders_idx = headers.index('股东人数(户)')
-    except ValueError as e:
-        # print(f"错误：表头中缺少必需的列名 ('截止日期' 或 '股东人数(户)'）。{e}") # Removed print for cleaner function output
-        return parsed_records
-
-    for i in range(header_line_index + 2, len(lines)):
-        line = lines[i]
-
-        if '─' * 5 in line or not line.strip():
-            break
-
-        match = re.match(r'│\s*(\d{4}-\d{2}-\d{2})\s*│\s*([\s\d]+)\s*│', line)
-        if match:
-            try:
-                date_str = match.group(1)
-                shareholders_str = match.group(2).replace(' ', '')
-
-                record_date = datetime.strptime(date_str, '%Y-%m-%d')
-                shareholders_count = int(shareholders_str)
-
-                parsed_records.append({
-                    '截止日期': record_date,
-                    '股东人数(户)': shareholders_count
-                })
-            except (ValueError, IndexError) as e:
-                # print(f"警告：解析股东人数行失败或数据格式不正确: '{line}'. 错误: {e}") # Removed print for cleaner function output
-                continue
-        else:
-            continue
-    return parsed_records
-
-
-# --- 3. 获取特定年月的最新一天股东人数 ---
-def get_latest_shareholders_by_month(parsed_records, target_years_months):
-    results = {}
-    for year, month in target_years_months:
-        latest_date_in_month = None
-        latest_shareholders_count = None
-
-        for record in parsed_records:
-            record_date = record['截止日期']
-            if record_date.year == year and record_date.month == month:
-                if latest_date_in_month is None or record_date > latest_date_in_month:
-                    latest_date_in_month = record_date
-                    latest_shareholders_count = record['股东人数(户)']
-
-        if latest_date_in_month:
-            results[f"{year}-{month:02d}"] = {
-                "日期": latest_date_in_month.strftime('%Y-%m-%d'),
-                "股东人数": latest_shareholders_count
-            }
-        else:
-            results[f"{year}-{month:02d}"] = {
-                "日期": "未找到",
-                "股东人数": "未找到"
-            }
-    return results
-
-
-def get_most_recent_data(parsed_records):
-    if not parsed_records:
-        return None
-
-    sorted_records = sorted(parsed_records, key=lambda x: x['截止日期'], reverse=True)
-
-    # The first element after sorting will be the most recent
-    return sorted_records[0]
-
-
-def parse(full_content):
-    shareholder_block = extract_shareholder_change_block(full_content)
-    result_data = []
-
-    if shareholder_block:
-        # 1. 解析数据块
-        parsed_shareholder_data = parse_shareholder_data(shareholder_block)
-
-        # 2. 获取特定年月的最新一天股东人数
-        target_months = [
-            (2024, 3),
-            (2024, 6),
-            (2024, 9),
-            (2024, 12),
-            (2025, 3),
-        ]
-        final_results = get_latest_shareholders_by_month(parsed_shareholder_data, target_months)
-
-        for key, info in final_results.items():
-            result_data.append({
-                "指定日期": info['日期'],
-                "股东人数": info['股东人数']
-            })
-
-        # 3. 获取 2025 年 3 月之后的所有数据（不止取最新）
-        cutoff = (2025, 3)
-        for record in parsed_shareholder_data:
-            dt = record['截止日期']
-            if (dt.year > cutoff[0]) or (dt.year == cutoff[0] and dt.month > cutoff[1]):
-                result_data.append({
-                    "日期": dt.strftime('%Y-%m-%d'),
-                    "股东人数": record['股东人数(户)']
-                })
-
-    else:
-        print("未能在提供的文本中找到 '股东人数变化' 的数据块。")
-
-    return result_data
-
-
-def read_code_name(file_path):
-    data = []
-
-    try:
-        # 'r' 模式表示读取，encoding='utf-8-sig' 处理带BOM的UTF-8文件
-        with open(file_path, 'r', newline='', encoding='gb18030') as csvfile:
-            # 使用 DictReader 可以直接将每行读取为字典，字典的键是列头
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                if '代码' in row and '名称' in row:
-                    data.append({
-                        '代码': row['代码'],
-                        '名称': row['名称']
-                    })
-    except Exception as e:
-        print(f"错误: {e}")
-
-    return data
-
-
-def write_code_name(gp_cvs):
-    success, Count = api.get_security_count()
-    if success != 1:
-        raise ValueError("get_security_count != 1")
-    total_securities = Count.value
-
-    batch_size = 1000  # 每次获取的批次大小
-    all_securities_data_code_name = []
-
-    # 开始循环分批获取数据
-    for start_index in range(0, total_securities, batch_size):
-        # 计算当前批次需要获取的数量，确保不会超出总数
-        requested_batch_count = min(batch_size, total_securities - start_index)
-        current_count_param = ctypes.c_ushort(requested_batch_count)
-        success, result_decode = api.get_security_list(start_index, current_count_param)
-
-        if success == 1:
-            get_code_name_arr = get_code_name(result_decode)
-            all_securities_data_code_name.extend(get_code_name_arr)
-
-    fieldnames = ['代码', '名称']  # 你可以包含其他列，即使它们暂时没有数据
-    # 写入CSV文件
-    try:
-        # 'w' 模式表示写入，如果文件不存在则创建，如果存在则清空
-        # newline='' 参数非常重要，可以防止在Windows上出现额外的空行
-        with open(gp_cvs, 'w', newline='', encoding='gbk') as csvfile:
-            # 创建一个DictWriter对象，它能根据字典的键将数据写入对应的列
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            # 写入列头
-            writer.writeheader()
-            # 写入数据行
-            for row_data in all_securities_data_code_name:
-                # 你可以选择性地只写入'代码'和'名称'，其他列保持为空或不写入
-                # 如果DictWriter的fieldnames包含了所有row_data的键，可以直接写入
-                writer.writerow(row_data)
-        print(f"数据已成功写入到 '{gp_cvs}'")
-
-    except IOError as e:
-        print(f"写入文件时发生错误: {e}")
-
-
-def write_gdrs(gp_cvs, gdrs_csv):
-    stock_data_csv = read_code_name(gp_cvs)
-
-    # ? 固定列（顺序固定）
+def merge_excels_with_dynamic_columns(file1, file2, output_file):
+    # 固定列（顺序必须固定）
     fixed_columns = [
         "代码", "名称",
         "2024-03(股东人数)", "2024-06(股东人数)",
         "2024-09(股东人数)", "2024-12(股东人数)",
-        "2025-03(股东人数)"
+        "2025-03(股东人数)", "2025-06(股东人数)"
     ]
 
-    # 第一步：预扫描所有数据，收集不固定列
-    all_dynamic_dates = set()
-    pre_results = []
+    # 读取两个 Excel
+    df1 = pd.read_excel(file1, dtype=object)
+    df2 = pd.read_excel(file2, dtype=object)
 
-    for stock_info in stock_data_csv:
-        code_ = stock_info['代码']
-        info_ = stock_info['名称']
+    # 收集所有列名（固定列 + 动态列）
+    all_columns = list(dict.fromkeys(fixed_columns + list(df1.columns) + list(df2.columns)))
 
-        if not is_chinese_stock_code(code_):
-            continue
+    # 确保所有 DataFrame 都有这些列，缺失填 0
+    for df in [df1, df2]:
+        for col in all_columns:
+            if col not in df.columns:
+                df[col] = 0
 
-        success, result_decode = api.get_company_info_category(code_)
-        shareholder_research_info = get_gd_number(result_decode)
-        if not shareholder_research_info:
-            continue
+    # 统一列顺序（固定列在前，动态列按字母/时间顺序排列）
+    dynamic_columns = [c for c in all_columns if c not in fixed_columns]
+    dynamic_columns = sorted(dynamic_columns)  # 按时间排序（如果列名规范化了）
+    final_columns = fixed_columns + dynamic_columns
 
-        file_info = shareholder_research_info['文件']
-        start_info = int(shareholder_research_info['开始'])
-        length_info = int(shareholder_research_info['长度'])
-        success, result_decode = api.get_company_info_content(code_, file_info, start_info, length_info)
-        result_data = parse(result_decode)
+    # 合并
+    merged_df = pd.concat([df1[final_columns], df2[final_columns]], ignore_index=True)
 
-        pre_results.append((code_, info_, result_data))
-
-        # 收集不固定日期列
-        for item in result_data:
-            if "日期" in item:  # 非固定月份
-                col_name = f"{item['日期']}(股东人数)"
-                all_dynamic_dates.add(col_name)
-
-    # 第二步：统一生成最终列顺序
-    dynamic_columns = sorted(all_dynamic_dates)  # 按时间排序
-    columns = fixed_columns + dynamic_columns
-
-    # 写表头（文件不存在才写）
-    if not os.path.exists(gdrs_csv):
-        with open(gdrs_csv, "w", newline="", encoding="gbk") as f:
-            writer = csv.DictWriter(f, fieldnames=columns)
-            writer.writeheader()
-
-    write_data = []
-    total_written = 0
-
-    # 第三步：写入数据
-    for code_, info_, result_data in pre_results:
-        # ? 初始化 row_data
-        row_data = {}
-        row_data["代码"] = code_
-        row_data["名称"] = info_
-        # 固定列默认值填充 0
-        for col in fixed_columns[2:]:
-            row_data[col] = 0
-        # 动态列默认值填充空字符串
-        for col in dynamic_columns:
-            row_data[col] = ""
-
-        # 填充真实数据
-        for item in result_data:
-            val = item["股东人数"]
-
-            # 固定列
-            if "指定日期" in item:
-                special_date = item["指定日期"]
-                if special_date.startswith("2025-03"):
-                    row_data["2025-03(股东人数)"] = val
-                elif special_date.startswith("2024-12"):
-                    row_data["2024-12(股东人数)"] = val
-                elif special_date.startswith("2024-09"):
-                    row_data["2024-09(股东人数)"] = val
-                elif special_date.startswith("2024-06"):
-                    row_data["2024-06(股东人数)"] = val
-                elif special_date.startswith("2024-03"):
-                    row_data["2024-03(股东人数)"] = val
-
-            # 动态列
-            elif "日期" in item:
-                col_name = f"{item['日期']}(股东人数)"
-                if col_name in row_data:
-                    row_data[col_name] = val
-
-        write_data.append(row_data)
-
-        # 每 100 条写一次
-        if len(write_data) >= 100:
-            with open(gdrs_csv, "a", newline="", encoding="gbk") as f:
-                writer = csv.DictWriter(f, fieldnames=columns)
-                writer.writerows(write_data)
-            total_written += len(write_data)
-            write_data.clear()
-
-    # 写入最后不足 100 条的数据
-    if write_data:
-        with open(gdrs_csv, "a", newline="", encoding="gbk") as f:
-            writer = csv.DictWriter(f, fieldnames=columns)
-            writer.writerows(write_data)
-        total_written += len(write_data)
-
-    print(f"? 已完成，总共写入 {total_written} 条数据")
+    # 保存结果
+    merged_df.to_excel(output_file, index=False)
+    print(f"? 合并完成，保存到: {output_file}")
 
 
-if __name__ == '__main__':
-    api.mark_code = 0
+def remove_zero_cells_and_shift_left(input_file, output_file):
+    """
+    规则：
+    - 固定列（不会被修改/删除）:
+        "代码", "名称",
+        "2024-03(股东人数)", "2024-06(股东人数)",
+        "2024-09(股东人数)", "2024-12(股东人数)",
+        "2025-03(股东人数)"
+    - 对于其它（动态）列：如果单元格值为 0（数字 0 或字符串 "0"），
+      则删除该单元格，使右侧单元格左移一格（仅本行操作）。
+    - 最终把所有动态列的表头清空（保留固定列表头）。
+    """
 
-    if api.mark_code == 0:
-        gp_cvs = "C:\\Users\\Administrator\\Documents\\sz3.csv"
-        gdrs_csv = "C:\\Users\\Administrator\\Documents\\sz3_gdrs.csv"
-    elif api.mark_code == 1:
-        gp_cvs = "C:\\Users\\Administrator\\Documents\\sh3.csv"
-        gdrs_csv = "C:\\Users\\Administrator\\Documents\\sh3_gdrs.csv"
-    else:
-        raise ValueError("mark异常")
+    # 固定列（不要改）
+    fixed_columns = [
+        "代码", "名称",
+        "2024-03(股东人数)", "2024-06(股东人数)",
+        "2024-09(股东人数)", "2024-12(股东人数)",
+        "2025-03(股东人数)", "2025-06(股东人数)"
+    ]
 
-    if api.ConnectionID != -1:
-        write_code_name(gp_cvs)
-        write_gdrs(gp_cvs, gdrs_csv)
+    # 读取表头以确定列顺序（只读取表头也可以，但这里读全部以防万一）
+    df = pd.read_excel(input_file)
+    all_columns = list(df.columns)
 
-    TdxHqApi.TdxHq_Disconnect(api.ConnectionID)
+    # 动态列 = 全部列中不属于固定列的
+    dynamic_columns = [c for c in all_columns if c not in fixed_columns]
+    if not dynamic_columns:
+        print("?? 没有检测到动态列，未做任何修改。")
+        # 直接拷贝保存原文件或退出
+        if output_file != input_file:
+            df.to_excel(output_file, index=False)
+            print(f"已将原文件复制为 {output_file}")
+        return
+
+    # 打开 Excel 工作簿
+    wb = load_workbook(input_file)
+    ws = wb.active
+
+    # 列名 -> 列号 映射（openpyxl 列号从1开始）
+    col_index_map = {c: i + 1 for i, c in enumerate(all_columns)}
+    dynamic_start = min(col_index_map[c] for c in dynamic_columns)
+    dynamic_end = max(col_index_map[c] for c in dynamic_columns)
+
+    max_row = ws.max_row
+
+    # 遍历每一行，从第2行开始（第1行为表头）
+    for row in range(2, max_row + 1):
+        col = dynamic_start
+        # 对当前行，在动态列范围内循环
+        while col <= dynamic_end:
+            cell = ws.cell(row=row, column=col)
+            val = cell.value
+
+            # 判断是否等于 0 （支持 int/float 或字符串 '0'，忽略 None/空字符串）
+            is_zero = False
+            if val is None:
+                is_zero = False
+            elif isinstance(val, (int, float)):
+                is_zero = (val == 0)
+            elif isinstance(val, str):
+                is_zero = (val.strip() == "0")
+            else:
+                is_zero = False
+
+            if is_zero:
+                # 将该单元格右边所有动态列值左移一格
+                for c in range(col, dynamic_end):
+                    ws.cell(row=row, column=c).value = ws.cell(row=row, column=c + 1).value
+                # 最右侧动态列位置置空
+                ws.cell(row=row, column=dynamic_end).value = None
+                # 注意：不要增加 col，这样会再次检查当前位置（因为已经左移了一个新值到当前位置）
+                # 动态_end 不变（我们不删除列，只是左移数据）
+            else:
+                col += 1
+
+    # 最后清空动态列的表头（保持固定列标题不变）
+    for c in range(dynamic_start, dynamic_end + 1):
+        ws.cell(row=1, column=c).value = ""
+
+    # 保存
+    # 如果输出目录不存在则创建
+    out_dir = os.path.dirname(os.path.abspath(output_file))
+    if out_dir and not os.path.exists(out_dir):
+        os.makedirs(out_dir, exist_ok=True)
+
+    wb.save(output_file)
+    print(f"? 已处理并保存到: {output_file}")
+
+
+def calculate_diff_ratio(input_file, output_file):
+    wb = load_workbook(input_file)
+    ws = wb.active
+
+    max_row = ws.max_row
+    max_col = ws.max_column
+
+    # 列位置
+    y_col_index = 17  # Q
+    z_col_index = 18  # R
+    aa_col_index = 19  # S
+
+    # 表头
+    ws.cell(row=1, column=y_col_index).value = "2025-06 vs 2025-03 比率"
+    ws.cell(row=1, column=z_col_index).value = "倒数第一 vs 2025-03 比率"
+    ws.cell(row=1, column=aa_col_index).value = "倒数第一 vs 倒数第二 比率"
+
+    # 找到“2025-06(股东人数)”和“2025-03(股东人数)”列索引
+    col_map = {ws.cell(row=1, column=c).value: c for c in range(1, max_col + 1)}
+    col_2025_06 = col_map.get("2025-06(股东人数)")
+    col_2025_03 = col_map.get("2025-03(股东人数)")
+
+    for row in range(2, max_row + 1):
+        values = []
+        for col in range(3, max_col + 1):  # 第3列以后是数值列
+            val = ws.cell(row=row, column=col).value
+            if isinstance(val, (int, float)):  # 只考虑数值
+                values.append(val)
+
+        # Y 列计算
+        if col_2025_06 and col_2025_03:
+            a_val = ws.cell(row=row, column=col_2025_06).value
+            b_val = ws.cell(row=row, column=col_2025_03).value
+            if isinstance(a_val, (int, float)) and isinstance(b_val, (int, float)) and b_val != 0:
+                ws.cell(row=row, column=y_col_index).value = (a_val - b_val) / b_val
+            else:
+                ws.cell(row=row, column=y_col_index).value = 0
+
+        # Z 列计算
+        if col_2025_03:
+            b_val = ws.cell(row=row, column=col_2025_03).value
+            if isinstance(b_val, (int, float)) and len(values) > 0 and b_val != 0:
+                last_val = values[-1]
+                ws.cell(row=row, column=z_col_index).value = (last_val - b_val) / b_val
+            else:
+                ws.cell(row=row, column=z_col_index).value = 0
+
+        # AA 列计算
+        if len(values) >= 2:
+            last_val = values[-1]
+            second_last_val = values[-2]
+            if second_last_val != 0:
+                ws.cell(row=row, column=aa_col_index).value = (last_val - second_last_val) / second_last_val
+            else:
+                ws.cell(row=row, column=aa_col_index).value = 0
+        else:
+            ws.cell(row=row, column=aa_col_index).value = 0
+
+    wb.save(output_file)
+    print(f"? 已完成，结果已保存到 {output_file}")
+
+
+if __name__ == "__main__":
+    sh_gdrs = "/Users/zkp/Documents/d d/副本sh3_gdrs(1).xlsx"
+    sz_gdrs = "/Users/zkp/Documents/d d/副本sz3_gdrs(1).xlsx"
+    remove_st_rows_excel(sh_gdrs)
+    remove_st_rows_excel(sz_gdrs)
+
+    sh_gdrs = "/Users/zkp/Documents/d d/副本sh3_gdrs(1)_clean.xlsx"
+    sz_gdrs = "/Users/zkp/Documents/d d/副本sz3_gdrs(1)_clean.xlsx"
+    merged = "/Users/zkp/Documents/d d/merged.xlsx"
+    merge_excels_with_dynamic_columns(sz_gdrs, sh_gdrs, merged)
+    remove_zero_cells_and_shift_left(merged, merged)
+    calculate_diff_ratio(merged, merged)
