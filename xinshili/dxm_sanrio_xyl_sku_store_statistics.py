@@ -8,6 +8,7 @@ from xinshili import utils
 from xinshili.fs_utils_plus import insert_col_row, FsConstants, get_token, ClientMapConstants, ClientConstants, \
     MapFields, fs_col_to_index, value_range, values_batch_update
 from xinshili.gjgz_plus333 import RowName
+from openpyxl import load_workbook
 
 
 def update_sales_data(file1_path, output_path):
@@ -201,23 +202,67 @@ def update_total_inventory(file1_path, file2_path, output_path):
     print(f"✅ 已更新“库存更新”并保存至：{output_path}")
 
 
-def update_shipping_inventory(csv_file_path, xlsx_file_path, output_path):
-    # 读取 CSV 文件（文件1）
-    df1 = pd.read_csv(csv_file_path).fillna("")
+def collect_sku_values(file, sheet_name, sku_name="SKU", count_name="个数"):
+    wb = load_workbook(file, data_only=True)
+    ws = wb[sheet_name]
 
-    # 转换为数值，便于求和
-    df1[RowName.Sea_transportation] = pd.to_numeric(df1.get(RowName.Sea_transportation, 0), errors="coerce").fillna(0)
-    df1[RowName.Air_transportation] = pd.to_numeric(df1.get(RowName.Air_transportation, 0), errors="coerce").fillna(0)
+    result_map = {}
 
-    # 构建 SKU → 海/空 运在途数量 Map
-    sea_map = defaultdict(float)
-    air_map = defaultdict(float)
+    # === 第一步：找到列号（通过第2行表头匹配） ===
+    header_row = next(ws.iter_rows(min_row=2, max_row=2, values_only=True))
+    header_index = {name: idx + 1 for idx, name in enumerate(header_row) if name}
 
-    for _, row in df1.iterrows():
-        sku = row.get(RowName.SKU, "").strip()
-        if sku:
-            sea_map[sku] += row[RowName.Sea_transportation]
-            air_map[sku] += row[RowName.Air_transportation]
+    if sku_name not in header_index or count_name not in header_index:
+        raise ValueError(f"表头中没有找到指定列: {sku_name}, {count_name}")
+
+    sku_col = header_index[sku_name]
+    count_col = header_index[count_name]
+
+    # === 第二步：遍历数据行（第3行开始） ===
+    for row in ws.iter_rows(min_row=3):
+        # 用第一列判断整行背景色
+        cell = row[0]
+        fill = cell.fill
+        bg_color = None
+        if fill and fill.fgColor and fill.fgColor.type == "rgb":
+            bg_color = fill.fgColor.rgb
+
+        # 跳过指定颜色的行
+        if bg_color in ("FF34C724", "FFFBBFBC"):
+            continue
+
+        sku = str(row[sku_col - 1].value)
+        count = row[count_col - 1].value
+
+        if sku and isinstance(count, (int, float)):
+            result_map[sku] = result_map.get(sku, 0) + count
+
+    return result_map
+
+
+def update_shipping_inventory(src_file_path, xlsx_file_path, output_path):
+    if src_file_path.endswith("dszs_inventory.csv"):
+        # 读取 CSV 文件（文件1）
+        df1 = pd.read_csv(src_file_path).fillna("")
+
+        # 转换为数值，便于求和
+        df1[RowName.Sea_transportation] = pd.to_numeric(df1.get(RowName.Sea_transportation, 0), errors="coerce").fillna(
+            0)
+        df1[RowName.Air_transportation] = pd.to_numeric(df1.get(RowName.Air_transportation, 0), errors="coerce").fillna(
+            0)
+
+        # 构建 SKU → 海/空 运在途数量 Map
+        sea_map = defaultdict(float)
+        air_map = defaultdict(float)
+
+        for _, row in df1.iterrows():
+            sku = row.get(RowName.SKU, "").strip()
+            if sku:
+                sea_map[sku] += row[RowName.Sea_transportation]
+                air_map[sku] += row[RowName.Air_transportation]
+    else:
+        air_map = collect_sku_values(src_file_path, "空运头程计划US", sku_name="SKU", count_name="个数")
+        sea_map = collect_sku_values(src_file_path, "海运头程计划US", sku_name="SKU", count_name="个数")
 
     # 读取 Excel 所有工作表
     xls = pd.read_excel(xlsx_file_path, sheet_name=None)
@@ -533,6 +578,7 @@ def call(analyse_obj):
     oms_store_dir = f"{analyse_dir_path}/oms_store"
     oms_store_merger_path = f"{oms_store_dir}/oms_store_merger.xlsx"
     dszs_inventory_path = f"{analyse_dir_path}/dszs_inventory.csv"
+    jhb_inventory_path = f"{analyse_dir_path}/头程计划跟踪表&产品信息.xlsx"
 
     # 创建输出文件路径（复制一份文件2）
     template_copy_path = os.path.join(template_path, template_copy_path)
@@ -548,7 +594,8 @@ def call(analyse_obj):
         # 更新库存
         update_available_inventory(oms_store_merger_path, template_copy_path, template_copy_path)
         # 更新海运空运
-        update_shipping_inventory(dszs_inventory_path, template_copy_path, template_copy_path)
+        # update_shipping_inventory(dszs_inventory_path, template_copy_path, template_copy_path)
+        update_shipping_inventory(jhb_inventory_path, template_copy_path, template_copy_path)
         # 数据写入飞书表格
         xyl_fs(formatted_date, template_copy_path)
     elif ClientConstants.sanrio:
