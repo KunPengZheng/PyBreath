@@ -219,23 +219,13 @@ def parse(full_content):
         # 1. 解析数据块
         parsed_shareholder_data = parse_shareholder_data(shareholder_block)
 
-        # --- 最新股东人数 ---
-        # most_recent_record = get_most_recent_data(parsed_shareholder_data)
-        # if most_recent_record:
-        #     result_data.append({
-        #         "最新日期": most_recent_record['截止日期'].strftime('%Y-%m-%d'),
-        #         "股东人数": most_recent_record['股东人数(户)']
-        #     })
-        # else:
-        #     result_data.append({"日期": "未找到", "股东人数": "未找到"})
-
         # 2. 获取特定年月的最新一天股东人数
         target_months = [
-            (2025, 3),
-            (2024, 12),
-            (2024, 9),
+            (2024, 3),
             (2024, 6),
-            (2024, 3)
+            (2024, 9),
+            (2024, 12),
+            (2025, 3),
         ]
         final_results = get_latest_shareholders_by_month(parsed_shareholder_data, target_months)
 
@@ -325,82 +315,123 @@ def write_code_name(gp_cvs):
 def write_gdrs(gp_cvs, gdrs_csv):
     stock_data_csv = read_code_name(gp_cvs)
 
-    columns = ["代码", "名称", "最新日期(股东人数)", "2025-03(股东人数)", "2024-12(股东人数)", "2024-09(股东人数)",
-               "2024-06(股东人数)", "2024-03(股东人数)"]
+    # ? 固定列（顺序固定）
+    fixed_columns = [
+        "代码", "名称",
+        "2024-03(股东人数)", "2024-06(股东人数)",
+        "2024-09(股东人数)", "2024-12(股东人数)",
+        "2025-03(股东人数)"
+    ]
 
-    write_data = []
-    total_written = 0
+    # 第一步：预扫描所有数据，收集不固定列
+    all_dynamic_dates = set()
+    pre_results = []
 
-    # 写入表头（如果文件不存在）
+    for stock_info in stock_data_csv:
+        code_ = stock_info['代码']
+        info_ = stock_info['名称']
+
+        if not is_chinese_stock_code(code_):
+            continue
+
+        success, result_decode = api.get_company_info_category(code_)
+        shareholder_research_info = get_gd_number(result_decode)
+        if not shareholder_research_info:
+            continue
+
+        file_info = shareholder_research_info['文件']
+        start_info = int(shareholder_research_info['开始'])
+        length_info = int(shareholder_research_info['长度'])
+        success, result_decode = api.get_company_info_content(code_, file_info, start_info, length_info)
+        result_data = parse(result_decode)
+
+        pre_results.append((code_, info_, result_data))
+
+        # 收集不固定日期列
+        for item in result_data:
+            if "日期" in item:  # 非固定月份
+                col_name = f"{item['日期']}(股东人数)"
+                all_dynamic_dates.add(col_name)
+
+    # 第二步：统一生成最终列顺序
+    dynamic_columns = sorted(all_dynamic_dates)  # 按时间排序
+    columns = fixed_columns + dynamic_columns
+
+    # 写表头（文件不存在才写）
     if not os.path.exists(gdrs_csv):
         with open(gdrs_csv, "w", newline="", encoding="gbk") as f:
             writer = csv.DictWriter(f, fieldnames=columns)
             writer.writeheader()
 
-    for index, stock_info in enumerate(stock_data_csv):
-        code_ = stock_info['代码']
-        info_ = stock_info['名称']
+    write_data = []
+    total_written = 0
 
-        if is_chinese_stock_code(code_):
-            success, result_decode = api.get_company_info_category(code_)
-            shareholder_research_info = get_gd_number(result_decode)
-            if shareholder_research_info:
-                file_info = shareholder_research_info['文件']
-                start_info = int(shareholder_research_info['开始'])
-                length_info = int(shareholder_research_info['长度'])
-                success, result_decode = api.get_company_info_content(code_, file_info, start_info, length_info)
-                result_data = parse(result_decode)
+    # 第三步：写入数据
+    for code_, info_, result_data in pre_results:
+        # ? 初始化 row_data
+        row_data = {}
+        row_data["代码"] = code_
+        row_data["名称"] = info_
+        # 固定列默认值填充 0
+        for col in fixed_columns[2:]:
+            row_data[col] = 0
+        # 动态列默认值填充空字符串
+        for col in dynamic_columns:
+            row_data[col] = ""
 
-                row_data = {col: "" for col in columns}
-                row_data["代码"] = code_
-                row_data["名称"] = info_
+        # 填充真实数据
+        for item in result_data:
+            val = item["股东人数"]
 
-                for item in result_data:
-                    item_ = item["股东人数"]
-                    if '最新日期' in item:
-                        row_data["最新日期(股东人数)"] = item_
-                    elif '指定日期' in item:
-                        special_date = item["指定日期"]
-                        if special_date.startswith("2025-03"):
-                            row_data["2025-03(股东人数)"] = item_
-                        elif special_date.startswith("2024-12"):
-                            row_data["2024-12(股东人数)"] = item_
-                        elif special_date.startswith("2024-09"):
-                            row_data["2024-09(股东人数)"] = item_
-                        elif special_date.startswith("2024-06"):
-                            row_data["2024-06(股东人数)"] = item_
-                        elif special_date.startswith("2024-03"):
-                            row_data["2024-03(股东人数)"] = item_
+            # 固定列
+            if "指定日期" in item:
+                special_date = item["指定日期"]
+                if special_date.startswith("2025-03"):
+                    row_data["2025-03(股东人数)"] = val
+                elif special_date.startswith("2024-12"):
+                    row_data["2024-12(股东人数)"] = val
+                elif special_date.startswith("2024-09"):
+                    row_data["2024-09(股东人数)"] = val
+                elif special_date.startswith("2024-06"):
+                    row_data["2024-06(股东人数)"] = val
+                elif special_date.startswith("2024-03"):
+                    row_data["2024-03(股东人数)"] = val
 
-                write_data.append(row_data)
+            # 动态列
+            elif "日期" in item:
+                col_name = f"{item['日期']}(股东人数)"
+                if col_name in row_data:
+                    row_data[col_name] = val
 
-        # 每100条写一次
+        write_data.append(row_data)
+
+        # 每 100 条写一次
         if len(write_data) >= 100:
             with open(gdrs_csv, "a", newline="", encoding="gbk") as f:
                 writer = csv.DictWriter(f, fieldnames=columns)
                 writer.writerows(write_data)
             total_written += len(write_data)
-            # print(f"已写入 {total_written} 条数据")
             write_data.clear()
 
-    # 写入最后不足100条的数据
+    # 写入最后不足 100 条的数据
     if write_data:
         with open(gdrs_csv, "a", newline="", encoding="gbk") as f:
             writer = csv.DictWriter(f, fieldnames=columns)
             writer.writerows(write_data)
         total_written += len(write_data)
-        print(f"已完成，总共写入 {total_written} 条数据")
+
+    print(f"? 已完成，总共写入 {total_written} 条数据")
 
 
 if __name__ == '__main__':
-    api.mark_code = 1
+    api.mark_code = 0
 
     if api.mark_code == 0:
-        gp_cvs = "C:\\Users\\Administrator\\Documents\\sz2.csv"
-        gdrs_csv = "C:\\Users\\Administrator\\Documents\\sz2_gdrs.csv"
+        gp_cvs = "C:\\Users\\Administrator\\Documents\\sz3.csv"
+        gdrs_csv = "C:\\Users\\Administrator\\Documents\\sz3_gdrs.csv"
     elif api.mark_code == 1:
-        gp_cvs = "C:\\Users\\Administrator\\Documents\\sh2.csv"
-        gdrs_csv = "C:\\Users\\Administrator\\Documents\\sh2_gdrs.csv"
+        gp_cvs = "C:\\Users\\Administrator\\Documents\\sh3.csv"
+        gdrs_csv = "C:\\Users\\Administrator\\Documents\\sh3_gdrs.csv"
     else:
         raise ValueError("mark异常")
 
