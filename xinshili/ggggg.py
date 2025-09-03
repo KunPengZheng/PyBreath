@@ -215,14 +215,14 @@ def calculate_diff_ratio(input_file, output_file):
 
 
 if __name__ == "__main__":
-    sh_gdrs = "/Users/zkp/Documents/d d/副本sh3_gdrs(1).xlsx"
-    sz_gdrs = "/Users/zkp/Documents/d d/副本sz3_gdrs(1).xlsx"
+    sh_gdrs = "/Users/zkp/Documents/gdrs/副本sh3_gdrs(1).xlsx"
+    sz_gdrs = "/Users/zkp/Documents/gdrs/副本sz3_gdrs(1).xlsx"
     remove_st_rows_excel(sh_gdrs)
     remove_st_rows_excel(sz_gdrs)
 
-    sh_gdrs = "/Users/zkp/Documents/d d/副本sh3_gdrs(1)_clean.xlsx"
-    sz_gdrs = "/Users/zkp/Documents/d d/副本sz3_gdrs(1)_clean.xlsx"
-    merged = "/Users/zkp/Documents/d d/merged.xlsx"
+    sh_gdrs = "/Users/zkp/Documents/gdrs/副本sh3_gdrs(1)_clean.xlsx"
+    sz_gdrs = "/Users/zkp/Documents/gdrs/副本sz3_gdrs(1)_clean.xlsx"
+    merged = "/Users/zkp/Documents/gdrs/merged.xlsx"
     merge_excels_with_dynamic_columns(sz_gdrs, sh_gdrs, merged)
     remove_zero_cells_and_shift_left(merged, merged)
     calculate_diff_ratio(merged, merged)
