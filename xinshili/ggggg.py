@@ -1,115 +1,116 @@
 import pandas as pd
 from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 import os
 
 
 def remove_st_rows_excel(input_file, output_file=None):
-    # ¶ÁÈ¡ Excel
+    # è¯»å– Excel
     df = pd.read_excel(input_file, dtype=object)
 
-    # É¾³ı "Ãû³Æ" ÁĞÖĞ°üº¬ "ST" »ò "st" µÄĞĞ
-    df = df[~df["Ãû³Æ"].str.contains("ST|st", na=False)]
+    # åˆ é™¤ "åç§°" åˆ—ä¸­åŒ…å« "ST" æˆ– "st" çš„è¡Œ
+    df = df[~df["åç§°"].str.contains("ST|st", na=False)]
 
-    # Êä³öÎÄ¼şÂ·¾¶
+    # è¾“å‡ºæ–‡ä»¶è·¯å¾„
     if output_file is None:
         output_file = input_file.replace(".xlsx", "_clean.xlsx")
 
-    # ±£´æÎª Excel
+    # ä¿å­˜ä¸º Excel
     df.to_excel(output_file, index=False)
 
-    print(f"? ÒÑ´¦ÀíÍê³É£¬½á¹û±£´æµ½: {output_file}")
+    print(f"âœ… å·²å¤„ç†å®Œæˆï¼Œç»“æœä¿å­˜åˆ°: {output_file}")
 
 
 def merge_excels_with_dynamic_columns(file1, file2, output_file):
-    # ¹Ì¶¨ÁĞ£¨Ë³Ğò±ØĞë¹Ì¶¨£©
+    # å›ºå®šåˆ—ï¼ˆé¡ºåºå¿…é¡»å›ºå®šï¼‰
     fixed_columns = [
-        "´úÂë", "Ãû³Æ",
-        "2024-03(¹É¶«ÈËÊı)", "2024-06(¹É¶«ÈËÊı)",
-        "2024-09(¹É¶«ÈËÊı)", "2024-12(¹É¶«ÈËÊı)",
-        "2025-03(¹É¶«ÈËÊı)", "2025-06(¹É¶«ÈËÊı)"
+        "ä»£ç ", "åç§°",
+        "2024-03(è‚¡ä¸œäººæ•°)", "2024-06(è‚¡ä¸œäººæ•°)",
+        "2024-09(è‚¡ä¸œäººæ•°)", "2024-12(è‚¡ä¸œäººæ•°)",
+        "2025-03(è‚¡ä¸œäººæ•°)", "2025-06(è‚¡ä¸œäººæ•°)"
     ]
 
-    # ¶ÁÈ¡Á½¸ö Excel
+    # è¯»å–ä¸¤ä¸ª Excel
     df1 = pd.read_excel(file1, dtype=object)
     df2 = pd.read_excel(file2, dtype=object)
 
-    # ÊÕ¼¯ËùÓĞÁĞÃû£¨¹Ì¶¨ÁĞ + ¶¯Ì¬ÁĞ£©
+    # æ”¶é›†æ‰€æœ‰åˆ—åï¼ˆå›ºå®šåˆ— + åŠ¨æ€åˆ—ï¼‰
     all_columns = list(dict.fromkeys(fixed_columns + list(df1.columns) + list(df2.columns)))
 
-    # È·±£ËùÓĞ DataFrame ¶¼ÓĞÕâĞ©ÁĞ£¬È±Ê§Ìî 0
+    # ç¡®ä¿æ‰€æœ‰ DataFrame éƒ½æœ‰è¿™äº›åˆ—ï¼Œç¼ºå¤±å¡« 0
     for df in [df1, df2]:
         for col in all_columns:
             if col not in df.columns:
                 df[col] = 0
 
-    # Í³Ò»ÁĞË³Ğò£¨¹Ì¶¨ÁĞÔÚÇ°£¬¶¯Ì¬ÁĞ°´×ÖÄ¸/Ê±¼äË³ĞòÅÅÁĞ£©
+    # ç»Ÿä¸€åˆ—é¡ºåºï¼ˆå›ºå®šåˆ—åœ¨å‰ï¼ŒåŠ¨æ€åˆ—æŒ‰å­—æ¯/æ—¶é—´é¡ºåºæ’åˆ—ï¼‰
     dynamic_columns = [c for c in all_columns if c not in fixed_columns]
-    dynamic_columns = sorted(dynamic_columns)  # °´Ê±¼äÅÅĞò£¨Èç¹ûÁĞÃû¹æ·¶»¯ÁË£©
+    dynamic_columns = sorted(dynamic_columns)  # æŒ‰æ—¶é—´æ’åºï¼ˆå¦‚æœåˆ—åè§„èŒƒåŒ–äº†ï¼‰
     final_columns = fixed_columns + dynamic_columns
 
-    # ºÏ²¢
+    # åˆå¹¶
     merged_df = pd.concat([df1[final_columns], df2[final_columns]], ignore_index=True)
 
-    # ±£´æ½á¹û
+    # ä¿å­˜ç»“æœ
     merged_df.to_excel(output_file, index=False)
-    print(f"? ºÏ²¢Íê³É£¬±£´æµ½: {output_file}")
+    print(f"âœ… åˆå¹¶å®Œæˆï¼Œä¿å­˜åˆ°: {output_file}")
 
 
 def remove_zero_cells_and_shift_left(input_file, output_file):
     """
-    ¹æÔò£º
-    - ¹Ì¶¨ÁĞ£¨²»»á±»ĞŞ¸Ä/É¾³ı£©:
-        "´úÂë", "Ãû³Æ",
-        "2024-03(¹É¶«ÈËÊı)", "2024-06(¹É¶«ÈËÊı)",
-        "2024-09(¹É¶«ÈËÊı)", "2024-12(¹É¶«ÈËÊı)",
-        "2025-03(¹É¶«ÈËÊı)"
-    - ¶ÔÓÚÆäËü£¨¶¯Ì¬£©ÁĞ£ºÈç¹ûµ¥Ôª¸ñÖµÎª 0£¨Êı×Ö 0 »ò×Ö·û´® "0"£©£¬
-      ÔòÉ¾³ı¸Ãµ¥Ôª¸ñ£¬Ê¹ÓÒ²àµ¥Ôª¸ñ×óÒÆÒ»¸ñ£¨½ö±¾ĞĞ²Ù×÷£©¡£
-    - ×îÖÕ°ÑËùÓĞ¶¯Ì¬ÁĞµÄ±íÍ·Çå¿Õ£¨±£Áô¹Ì¶¨ÁĞ±íÍ·£©¡£
+    è§„åˆ™ï¼š
+    - å›ºå®šåˆ—ï¼ˆä¸ä¼šè¢«ä¿®æ”¹/åˆ é™¤ï¼‰:
+        "ä»£ç ", "åç§°",
+        "2024-03(è‚¡ä¸œäººæ•°)", "2024-06(è‚¡ä¸œäººæ•°)",
+        "2024-09(è‚¡ä¸œäººæ•°)", "2024-12(è‚¡ä¸œäººæ•°)",
+        "2025-03(è‚¡ä¸œäººæ•°)"
+    - å¯¹äºå…¶å®ƒï¼ˆåŠ¨æ€ï¼‰åˆ—ï¼šå¦‚æœå•å…ƒæ ¼å€¼ä¸º 0ï¼ˆæ•°å­— 0 æˆ–å­—ç¬¦ä¸² "0"ï¼‰ï¼Œ
+      åˆ™åˆ é™¤è¯¥å•å…ƒæ ¼ï¼Œä½¿å³ä¾§å•å…ƒæ ¼å·¦ç§»ä¸€æ ¼ï¼ˆä»…æœ¬è¡Œæ“ä½œï¼‰ã€‚
+    - æœ€ç»ˆæŠŠæ‰€æœ‰åŠ¨æ€åˆ—çš„è¡¨å¤´æ¸…ç©ºï¼ˆä¿ç•™å›ºå®šåˆ—è¡¨å¤´ï¼‰ã€‚
     """
 
-    # ¹Ì¶¨ÁĞ£¨²»Òª¸Ä£©
+    # å›ºå®šåˆ—ï¼ˆä¸è¦æ”¹ï¼‰
     fixed_columns = [
-        "´úÂë", "Ãû³Æ",
-        "2024-03(¹É¶«ÈËÊı)", "2024-06(¹É¶«ÈËÊı)",
-        "2024-09(¹É¶«ÈËÊı)", "2024-12(¹É¶«ÈËÊı)",
-        "2025-03(¹É¶«ÈËÊı)", "2025-06(¹É¶«ÈËÊı)"
+        "ä»£ç ", "åç§°",
+        "2024-03(è‚¡ä¸œäººæ•°)", "2024-06(è‚¡ä¸œäººæ•°)",
+        "2024-09(è‚¡ä¸œäººæ•°)", "2024-12(è‚¡ä¸œäººæ•°)",
+        "2025-03(è‚¡ä¸œäººæ•°)", "2025-06(è‚¡ä¸œäººæ•°)"
     ]
 
-    # ¶ÁÈ¡±íÍ·ÒÔÈ·¶¨ÁĞË³Ğò£¨Ö»¶ÁÈ¡±íÍ·Ò²¿ÉÒÔ£¬µ«ÕâÀï¶ÁÈ«²¿ÒÔ·ÀÍòÒ»£©
+    # è¯»å–è¡¨å¤´ä»¥ç¡®å®šåˆ—é¡ºåºï¼ˆåªè¯»å–è¡¨å¤´ä¹Ÿå¯ä»¥ï¼Œä½†è¿™é‡Œè¯»å…¨éƒ¨ä»¥é˜²ä¸‡ä¸€ï¼‰
     df = pd.read_excel(input_file)
     all_columns = list(df.columns)
 
-    # ¶¯Ì¬ÁĞ = È«²¿ÁĞÖĞ²»ÊôÓÚ¹Ì¶¨ÁĞµÄ
+    # åŠ¨æ€åˆ— = å…¨éƒ¨åˆ—ä¸­ä¸å±äºå›ºå®šåˆ—çš„
     dynamic_columns = [c for c in all_columns if c not in fixed_columns]
     if not dynamic_columns:
-        print("?? Ã»ÓĞ¼ì²âµ½¶¯Ì¬ÁĞ£¬Î´×öÈÎºÎĞŞ¸Ä¡£")
-        # Ö±½Ó¿½±´±£´æÔ­ÎÄ¼ş»òÍË³ö
+        print("âš ï¸ æ²¡æœ‰æ£€æµ‹åˆ°åŠ¨æ€åˆ—ï¼Œæœªåšä»»ä½•ä¿®æ”¹ã€‚")
+        # ç›´æ¥æ‹·è´ä¿å­˜åŸæ–‡ä»¶æˆ–é€€å‡º
         if output_file != input_file:
             df.to_excel(output_file, index=False)
-            print(f"ÒÑ½«Ô­ÎÄ¼ş¸´ÖÆÎª {output_file}")
+            print(f"å·²å°†åŸæ–‡ä»¶å¤åˆ¶ä¸º {output_file}")
         return
 
-    # ´ò¿ª Excel ¹¤×÷²¾
+    # æ‰“å¼€ Excel å·¥ä½œç°¿
     wb = load_workbook(input_file)
     ws = wb.active
 
-    # ÁĞÃû -> ÁĞºÅ Ó³Éä£¨openpyxl ÁĞºÅ´Ó1¿ªÊ¼£©
+    # åˆ—å -> åˆ—å· æ˜ å°„ï¼ˆopenpyxl åˆ—å·ä»1å¼€å§‹ï¼‰
     col_index_map = {c: i + 1 for i, c in enumerate(all_columns)}
     dynamic_start = min(col_index_map[c] for c in dynamic_columns)
     dynamic_end = max(col_index_map[c] for c in dynamic_columns)
 
     max_row = ws.max_row
 
-    # ±éÀúÃ¿Ò»ĞĞ£¬´ÓµÚ2ĞĞ¿ªÊ¼£¨µÚ1ĞĞÎª±íÍ·£©
+    # éå†æ¯ä¸€è¡Œï¼Œä»ç¬¬2è¡Œå¼€å§‹ï¼ˆç¬¬1è¡Œä¸ºè¡¨å¤´ï¼‰
     for row in range(2, max_row + 1):
         col = dynamic_start
-        # ¶Ôµ±Ç°ĞĞ£¬ÔÚ¶¯Ì¬ÁĞ·¶Î§ÄÚÑ­»·
+        # å¯¹å½“å‰è¡Œï¼Œåœ¨åŠ¨æ€åˆ—èŒƒå›´å†…å¾ªç¯
         while col <= dynamic_end:
             cell = ws.cell(row=row, column=col)
             val = cell.value
 
-            # ÅĞ¶ÏÊÇ·ñµÈÓÚ 0 £¨Ö§³Ö int/float »ò×Ö·û´® '0'£¬ºöÂÔ None/¿Õ×Ö·û´®£©
+            # åˆ¤æ–­æ˜¯å¦ç­‰äº 0 ï¼ˆæ”¯æŒ int/float æˆ–å­—ç¬¦ä¸² '0'ï¼Œå¿½ç•¥ None/ç©ºå­—ç¬¦ä¸²ï¼‰
             is_zero = False
             if val is None:
                 is_zero = False
@@ -121,28 +122,28 @@ def remove_zero_cells_and_shift_left(input_file, output_file):
                 is_zero = False
 
             if is_zero:
-                # ½«¸Ãµ¥Ôª¸ñÓÒ±ßËùÓĞ¶¯Ì¬ÁĞÖµ×óÒÆÒ»¸ñ
+                # å°†è¯¥å•å…ƒæ ¼å³è¾¹æ‰€æœ‰åŠ¨æ€åˆ—å€¼å·¦ç§»ä¸€æ ¼
                 for c in range(col, dynamic_end):
                     ws.cell(row=row, column=c).value = ws.cell(row=row, column=c + 1).value
-                # ×îÓÒ²à¶¯Ì¬ÁĞÎ»ÖÃÖÃ¿Õ
+                # æœ€å³ä¾§åŠ¨æ€åˆ—ä½ç½®ç½®ç©º
                 ws.cell(row=row, column=dynamic_end).value = None
-                # ×¢Òâ£º²»ÒªÔö¼Ó col£¬ÕâÑù»áÔÙ´Î¼ì²éµ±Ç°Î»ÖÃ£¨ÒòÎªÒÑ¾­×óÒÆÁËÒ»¸öĞÂÖµµ½µ±Ç°Î»ÖÃ£©
-                # ¶¯Ì¬_end ²»±ä£¨ÎÒÃÇ²»É¾³ıÁĞ£¬Ö»ÊÇ×óÒÆÊı¾İ£©
+                # æ³¨æ„ï¼šä¸è¦å¢åŠ  colï¼Œè¿™æ ·ä¼šå†æ¬¡æ£€æŸ¥å½“å‰ä½ç½®ï¼ˆå› ä¸ºå·²ç»å·¦ç§»äº†ä¸€ä¸ªæ–°å€¼åˆ°å½“å‰ä½ç½®ï¼‰
+                # åŠ¨æ€_end ä¸å˜ï¼ˆæˆ‘ä»¬ä¸åˆ é™¤åˆ—ï¼Œåªæ˜¯å·¦ç§»æ•°æ®ï¼‰
             else:
                 col += 1
 
-    # ×îºóÇå¿Õ¶¯Ì¬ÁĞµÄ±íÍ·£¨±£³Ö¹Ì¶¨ÁĞ±êÌâ²»±ä£©
+    # æœ€åæ¸…ç©ºåŠ¨æ€åˆ—çš„è¡¨å¤´ï¼ˆä¿æŒå›ºå®šåˆ—æ ‡é¢˜ä¸å˜ï¼‰
     for c in range(dynamic_start, dynamic_end + 1):
         ws.cell(row=1, column=c).value = ""
 
-    # ±£´æ
-    # Èç¹ûÊä³öÄ¿Â¼²»´æÔÚÔò´´½¨
+    # ä¿å­˜
+    # å¦‚æœè¾“å‡ºç›®å½•ä¸å­˜åœ¨åˆ™åˆ›å»º
     out_dir = os.path.dirname(os.path.abspath(output_file))
     if out_dir and not os.path.exists(out_dir):
         os.makedirs(out_dir, exist_ok=True)
 
     wb.save(output_file)
-    print(f"? ÒÑ´¦Àí²¢±£´æµ½: {output_file}")
+    print(f"âœ… å·²å¤„ç†å¹¶ä¿å­˜åˆ°: {output_file}")
 
 
 def calculate_diff_ratio(input_file, output_file):
@@ -151,30 +152,30 @@ def calculate_diff_ratio(input_file, output_file):
 
     max_row = ws.max_row
 
-    # ¶¯Ì¬»ñÈ¡×î´óÊı¾İÁĞ£¨¼ÙÉèÇ°Á½ÁĞÊÇ¡°´úÂë¡±¡°Ãû³Æ¡±£¬´ÓµÚ3ÁĞ¿ªÊ¼ÊÇÊıÖµÁĞ£©
+    # åŠ¨æ€è·å–æœ€å¤§æ•°æ®åˆ—ï¼ˆå‡è®¾å‰ä¸¤åˆ—æ˜¯â€œä»£ç â€â€œåç§°â€ï¼Œä»ç¬¬3åˆ—å¼€å§‹æ˜¯æ•°å€¼åˆ—ï¼‰
     max_col = 0
     for row in ws.iter_rows(min_row=2, max_row=max_row, min_col=3):
         for idx, cell in enumerate(row, start=3):
             if isinstance(cell.value, (int, float)):
                 max_col = max(max_col, idx)
 
-    # ¼ÆËã½á¹ûÁĞ´Ó×î´óÊı¾İÁĞÏòÓÒÌø 3~6 ÁĞ
+    # è®¡ç®—ç»“æœåˆ—ä»æœ€å¤§æ•°æ®åˆ—å‘å³è·³ 3~6 åˆ—
     p_col_index = max_col + 3
     y_col_index = max_col + 4
     z_col_index = max_col + 5
     aa_col_index = max_col + 6
 
-    # ±íÍ·
-    ws.cell(row=1, column=p_col_index).value = "2025-03 vs 2024-12 ±ÈÂÊ"
-    ws.cell(row=1, column=y_col_index).value = "2025-06 vs 2025-03 ±ÈÂÊ"
-    ws.cell(row=1, column=z_col_index).value = "µ¹ÊıµÚÒ» vs 2025-03 ±ÈÂÊ"
-    ws.cell(row=1, column=aa_col_index).value = "µ¹ÊıµÚÒ» vs µ¹ÊıµÚ¶ş ±ÈÂÊ"
+    # è¡¨å¤´
+    ws.cell(row=1, column=p_col_index).value = "2025-03 vs 2024-12 æ¯”ç‡"
+    ws.cell(row=1, column=y_col_index).value = "2025-06 vs 2025-03 æ¯”ç‡"
+    ws.cell(row=1, column=z_col_index).value = "å€’æ•°ç¬¬ä¸€ vs 2025-03 æ¯”ç‡"
+    ws.cell(row=1, column=aa_col_index).value = "å€’æ•°ç¬¬ä¸€ vs å€’æ•°ç¬¬äºŒ æ¯”ç‡"
 
-    # ÕÒµ½¹Ø¼üÁĞË÷Òı
+    # æ‰¾åˆ°å…³é”®åˆ—ç´¢å¼•
     header_row = {ws.cell(row=1, column=c).value: c for c in range(1, ws.max_column + 1)}
-    col_2025_06 = header_row.get("2025-06(¹É¶«ÈËÊı)")
-    col_2025_03 = header_row.get("2025-03(¹É¶«ÈËÊı)")
-    col_2024_12 = header_row.get("2024-12(¹É¶«ÈËÊı)")
+    col_2025_06 = header_row.get("2025-06(è‚¡ä¸œäººæ•°)")
+    col_2025_03 = header_row.get("2025-03(è‚¡ä¸œäººæ•°)")
+    col_2024_12 = header_row.get("2024-12(è‚¡ä¸œäººæ•°)")
 
     for row in range(2, max_row + 1):
         values = []
@@ -183,25 +184,25 @@ def calculate_diff_ratio(input_file, output_file):
             if isinstance(val, (int, float)):
                 values.append(val)
 
-        # P ÁĞ¼ÆËã£¨2025-03 vs 2024-12£©
+        # P åˆ—è®¡ç®—ï¼ˆ2025-03 vs 2024-12ï¼‰
         if col_2024_12 and col_2025_03:
             a_val = ws.cell(row=row, column=col_2025_03).value
             b_val = ws.cell(row=row, column=col_2024_12).value
             ws.cell(row=row, column=p_col_index).value = ((a_val - b_val) / b_val) if b_val else 0
 
-        # Q ÁĞ¼ÆËã£¨2025-06 vs 2025-03£©
+        # Q åˆ—è®¡ç®—ï¼ˆ2025-06 vs 2025-03ï¼‰
         if col_2025_06 and col_2025_03:
             a_val = ws.cell(row=row, column=col_2025_06).value
             b_val = ws.cell(row=row, column=col_2025_03).value
             ws.cell(row=row, column=y_col_index).value = ((a_val - b_val) / b_val) if b_val else 0
 
-        # R ÁĞ¼ÆËã£¨µ¹ÊıµÚÒ» vs 2025-03£©
+        # R åˆ—è®¡ç®—ï¼ˆå€’æ•°ç¬¬ä¸€ vs 2025-03ï¼‰
         if col_2025_03 and values:
             b_val = ws.cell(row=row, column=col_2025_03).value
             last_val = values[-1]
             ws.cell(row=row, column=z_col_index).value = ((last_val - b_val) / b_val) if b_val else 0
 
-        # S ÁĞ¼ÆËã£¨µ¹ÊıµÚÒ» vs µ¹ÊıµÚ¶ş£©
+        # S åˆ—è®¡ç®—ï¼ˆå€’æ•°ç¬¬ä¸€ vs å€’æ•°ç¬¬äºŒï¼‰
         if len(values) >= 2:
             last_val = values[-1]
             second_last_val = values[-2]
@@ -211,18 +212,77 @@ def calculate_diff_ratio(input_file, output_file):
             ws.cell(row=row, column=aa_col_index).value = 0
 
     wb.save(output_file)
-    print(f"? ÒÑÍê³É£¬½á¹ûÒÑ±£´æµ½ {output_file}")
+    print(f"âœ… å·²å®Œæˆï¼Œç»“æœå·²ä¿å­˜åˆ° {output_file}")
+
+
+def compare_and_mark(file_a, file_b, output_file):
+    wb_a = load_workbook(file_a)
+    ws_a = wb_a.active
+
+    wb_b = load_workbook(file_b)
+    ws_b = wb_b.active
+
+    # è·å–åˆ—åæ‰€åœ¨è¡Œï¼Œè¿™é‡Œå‡è®¾æ˜¯ç¬¬2è¡Œ
+    header_a = [cell.value for cell in ws_a[2]]
+    header_b = [cell.value for cell in ws_b[2]]
+
+    # æ‰¾åˆ°â€œä»£ç â€åˆ—ç´¢å¼•
+    code_col_a = header_a.index("ä»£ç ") + 1
+    code_col_b = header_b.index("ä»£ç ") + 1
+
+    # å¡«å……æ ·å¼
+    yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    white_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+
+    # æ„å»º B æ–‡ä»¶ code->è¡Œå¯¹è±¡çš„æ˜ å°„
+    b_code_map = {}
+    for row in ws_b.iter_rows(min_row=3):
+        code = row[code_col_b - 1].value
+        if code:
+            b_code_map[code] = row
+
+    # éå† A æ–‡ä»¶æ¯ä¸€è¡Œ
+    for row_a in ws_a.iter_rows(min_row=3):
+        code = row_a[code_col_a - 1].value
+        if not code or code not in b_code_map:
+            # æ²¡æœ‰åŒ¹é…è¡Œï¼Œæ ‡ç™½è‰²
+            for cell in row_a:
+                cell.fill = white_fill
+            continue
+
+        row_b = b_code_map[code]
+
+        # è®¡ç®—åŠ¨æ€æœ‰æ•ˆåˆ—æ•°é‡ï¼ˆæ²¡æœ‰åˆ—åçš„åˆ—ï¼‰
+        dyn_cols_a = [cell for idx, cell in enumerate(row_a) if
+                      idx >= 2 and (header_a[idx] is None or header_a[idx] == "") and cell.value not in (None, "")]
+        dyn_cols_b = [cell for idx, cell in enumerate(row_b) if
+                      idx >= 2 and (header_b[idx] is None or header_b[idx] == "") and cell.value not in (None, "")]
+
+        # æ¯”è¾ƒæ•°é‡
+        if len(dyn_cols_a) > len(dyn_cols_b):
+            for cell in row_a:
+                cell.fill = yellow_fill
+        else:
+            for cell in row_a:
+                cell.fill = white_fill
+
+    wb_a.save(output_file)
+    print(f"âœ… å·²å®Œæˆï¼Œç»“æœå·²ä¿å­˜åˆ° {output_file}")
 
 
 if __name__ == "__main__":
-    sh_gdrs = "/Users/zkp/Documents/gdrs/¸±±¾sh3_gdrs(1).xlsx"
-    sz_gdrs = "/Users/zkp/Documents/gdrs/¸±±¾sz3_gdrs(1).xlsx"
+    sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/å‰¯æœ¬sz3_gdrs(1).xlsx"
+    sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/å‰¯æœ¬sh3_gdrs(1).xlsx"
     remove_st_rows_excel(sh_gdrs)
     remove_st_rows_excel(sz_gdrs)
 
-    sh_gdrs = "/Users/zkp/Documents/gdrs/¸±±¾sh3_gdrs(1)_clean.xlsx"
-    sz_gdrs = "/Users/zkp/Documents/gdrs/¸±±¾sz3_gdrs(1)_clean.xlsx"
-    merged = "/Users/zkp/Documents/gdrs/merged.xlsx"
+    sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/å‰¯æœ¬sh3_gdrs(1)_clean.xlsx"
+    sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/å‰¯æœ¬sz3_gdrs(1)_clean.xlsx"
+    merged = "/Users/zkp/Desktop/B&Y/gdrs/merged.xlsx"
     merge_excels_with_dynamic_columns(sz_gdrs, sh_gdrs, merged)
     remove_zero_cells_and_shift_left(merged, merged)
     calculate_diff_ratio(merged, merged)
+
+    # compare_and_mark("/Users/zkp/Desktop/B&Y/gdrs/merged_å‰¯æœ¬.xlsx",
+    #                  "/Users/zkp/Desktop/B&Y/gdrs/merged.xlsx",
+    #                  "/Users/zkp/Desktop/B&Y/gdrs/merged_result.xlsx")
