@@ -153,11 +153,13 @@ def calculate_diff_ratio(input_file, output_file):
     max_col = ws.max_column
 
     # 列位置
+    p_col_index = 16  # P
     y_col_index = 17  # Q
     z_col_index = 18  # R
     aa_col_index = 19  # S
 
     # 表头
+    ws.cell(row=1, column=p_col_index).value = "2025-03 vs 2024-12 比率"
     ws.cell(row=1, column=y_col_index).value = "2025-06 vs 2025-03 比率"
     ws.cell(row=1, column=z_col_index).value = "倒数第一 vs 2025-03 比率"
     ws.cell(row=1, column=aa_col_index).value = "倒数第一 vs 倒数第二 比率"
@@ -166,6 +168,7 @@ def calculate_diff_ratio(input_file, output_file):
     col_map = {ws.cell(row=1, column=c).value: c for c in range(1, max_col + 1)}
     col_2025_06 = col_map.get("2025-06(股东人数)")
     col_2025_03 = col_map.get("2025-03(股东人数)")
+    col_2024_12 = col_map.get("2024-12(股东人数)")
 
     for row in range(2, max_row + 1):
         values = []
@@ -174,7 +177,16 @@ def calculate_diff_ratio(input_file, output_file):
             if isinstance(val, (int, float)):  # 只考虑数值
                 values.append(val)
 
-        # Y 列计算
+        # P 列计算
+        if col_2024_12 and col_2025_03:
+            a_val = ws.cell(row=row, column=col_2025_03).value
+            b_val = ws.cell(row=row, column=col_2024_12).value
+            if isinstance(a_val, (int, float)) and isinstance(b_val, (int, float)) and b_val != 0:
+                ws.cell(row=row, column=y_col_index).value = (a_val - b_val) / b_val
+            else:
+                ws.cell(row=row, column=y_col_index).value = 0
+
+        # Q 列计算
         if col_2025_06 and col_2025_03:
             a_val = ws.cell(row=row, column=col_2025_06).value
             b_val = ws.cell(row=row, column=col_2025_03).value
@@ -183,7 +195,7 @@ def calculate_diff_ratio(input_file, output_file):
             else:
                 ws.cell(row=row, column=y_col_index).value = 0
 
-        # Z 列计算
+        # R 列计算
         if col_2025_03:
             b_val = ws.cell(row=row, column=col_2025_03).value
             if isinstance(b_val, (int, float)) and len(values) > 0 and b_val != 0:
@@ -192,7 +204,7 @@ def calculate_diff_ratio(input_file, output_file):
             else:
                 ws.cell(row=row, column=z_col_index).value = 0
 
-        # AA 列计算
+        # S 列计算
         if len(values) >= 2:
             last_val = values[-1]
             second_last_val = values[-2]
