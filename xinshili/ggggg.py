@@ -150,13 +150,19 @@ def calculate_diff_ratio(input_file, output_file):
     ws = wb.active
 
     max_row = ws.max_row
-    max_col = ws.max_column
 
-    # 列位置
-    p_col_index = 16  # P
-    y_col_index = 17  # Q
-    z_col_index = 18  # R
-    aa_col_index = 19  # S
+    # 动态获取最大数据列（假设前两列是“代码”“名称”，从第3列开始是数值列）
+    max_col = 0
+    for row in ws.iter_rows(min_row=2, max_row=max_row, min_col=3):
+        for idx, cell in enumerate(row, start=3):
+            if isinstance(cell.value, (int, float)):
+                max_col = max(max_col, idx)
+
+    # 计算结果列从最大数据列向右跳 3~6 列
+    p_col_index = max_col + 3
+    y_col_index = max_col + 4
+    z_col_index = max_col + 5
+    aa_col_index = max_col + 6
 
     # 表头
     ws.cell(row=1, column=p_col_index).value = "2025-03 vs 2024-12 比率"
@@ -164,54 +170,43 @@ def calculate_diff_ratio(input_file, output_file):
     ws.cell(row=1, column=z_col_index).value = "倒数第一 vs 2025-03 比率"
     ws.cell(row=1, column=aa_col_index).value = "倒数第一 vs 倒数第二 比率"
 
-    # 找到“2025-06(股东人数)”和“2025-03(股东人数)”列索引
-    col_map = {ws.cell(row=1, column=c).value: c for c in range(1, max_col + 1)}
-    col_2025_06 = col_map.get("2025-06(股东人数)")
-    col_2025_03 = col_map.get("2025-03(股东人数)")
-    col_2024_12 = col_map.get("2024-12(股东人数)")
+    # 找到关键列索引
+    header_row = {ws.cell(row=1, column=c).value: c for c in range(1, ws.max_column + 1)}
+    col_2025_06 = header_row.get("2025-06(股东人数)")
+    col_2025_03 = header_row.get("2025-03(股东人数)")
+    col_2024_12 = header_row.get("2024-12(股东人数)")
 
     for row in range(2, max_row + 1):
         values = []
-        for col in range(3, max_col + 1):  # 第3列以后是数值列
+        for col in range(3, max_col + 1):
             val = ws.cell(row=row, column=col).value
-            if isinstance(val, (int, float)):  # 只考虑数值
+            if isinstance(val, (int, float)):
                 values.append(val)
 
-        # P 列计算
+        # P 列计算（2025-03 vs 2024-12）
         if col_2024_12 and col_2025_03:
             a_val = ws.cell(row=row, column=col_2025_03).value
             b_val = ws.cell(row=row, column=col_2024_12).value
-            if isinstance(a_val, (int, float)) and isinstance(b_val, (int, float)) and b_val != 0:
-                ws.cell(row=row, column=y_col_index).value = (a_val - b_val) / b_val
-            else:
-                ws.cell(row=row, column=y_col_index).value = 0
+            ws.cell(row=row, column=p_col_index).value = ((a_val - b_val) / b_val) if b_val else 0
 
-        # Q 列计算
+        # Q 列计算（2025-06 vs 2025-03）
         if col_2025_06 and col_2025_03:
             a_val = ws.cell(row=row, column=col_2025_06).value
             b_val = ws.cell(row=row, column=col_2025_03).value
-            if isinstance(a_val, (int, float)) and isinstance(b_val, (int, float)) and b_val != 0:
-                ws.cell(row=row, column=y_col_index).value = (a_val - b_val) / b_val
-            else:
-                ws.cell(row=row, column=y_col_index).value = 0
+            ws.cell(row=row, column=y_col_index).value = ((a_val - b_val) / b_val) if b_val else 0
 
-        # R 列计算
-        if col_2025_03:
+        # R 列计算（倒数第一 vs 2025-03）
+        if col_2025_03 and values:
             b_val = ws.cell(row=row, column=col_2025_03).value
-            if isinstance(b_val, (int, float)) and len(values) > 0 and b_val != 0:
-                last_val = values[-1]
-                ws.cell(row=row, column=z_col_index).value = (last_val - b_val) / b_val
-            else:
-                ws.cell(row=row, column=z_col_index).value = 0
+            last_val = values[-1]
+            ws.cell(row=row, column=z_col_index).value = ((last_val - b_val) / b_val) if b_val else 0
 
-        # S 列计算
+        # S 列计算（倒数第一 vs 倒数第二）
         if len(values) >= 2:
             last_val = values[-1]
             second_last_val = values[-2]
-            if second_last_val != 0:
-                ws.cell(row=row, column=aa_col_index).value = (last_val - second_last_val) / second_last_val
-            else:
-                ws.cell(row=row, column=aa_col_index).value = 0
+            ws.cell(row=row, column=aa_col_index).value = (
+                    (last_val - second_last_val) / second_last_val) if second_last_val else 0
         else:
             ws.cell(row=row, column=aa_col_index).value = 0
 
