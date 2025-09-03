@@ -223,16 +223,15 @@ def compare_and_mark(file_a, file_b, output_file):
     ws_b = wb_b.active
 
     # 获取列名所在行，这里假设是第2行
-    header_a = [cell.value for cell in ws_a[2]]
-    header_b = [cell.value for cell in ws_b[2]]
+    header_a = [cell.value for cell in ws_a[1]]
+    header_b = [cell.value for cell in ws_b[1]]
 
     # 找到“代码”列索引
     code_col_a = header_a.index("代码") + 1
     code_col_b = header_b.index("代码") + 1
 
-    # 填充样式
+    # 黄色填充样式
     yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-    white_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
 
     # 构建 B 文件 code->行对象的映射
     b_code_map = {}
@@ -245,10 +244,7 @@ def compare_and_mark(file_a, file_b, output_file):
     for row_a in ws_a.iter_rows(min_row=3):
         code = row_a[code_col_a - 1].value
         if not code or code not in b_code_map:
-            # 没有匹配行，标白色
-            for cell in row_a:
-                cell.fill = white_fill
-            continue
+            continue  # 不匹配的行保持默认背景
 
         row_b = b_code_map[code]
 
@@ -258,13 +254,11 @@ def compare_and_mark(file_a, file_b, output_file):
         dyn_cols_b = [cell for idx, cell in enumerate(row_b) if
                       idx >= 2 and (header_b[idx] is None or header_b[idx] == "") and cell.value not in (None, "")]
 
-        # 比较数量
+        # 如果 A 文件对应行动态列数量 > B 文件对应行数量，则标黄
         if len(dyn_cols_a) > len(dyn_cols_b):
             for cell in row_a:
                 cell.fill = yellow_fill
-        else:
-            for cell in row_a:
-                cell.fill = white_fill
+        # 否则保持默认背景，网格线自动显示
 
     wb_a.save(output_file)
     print(f"✅ 已完成，结果已保存到 {output_file}")
@@ -272,16 +266,16 @@ def compare_and_mark(file_a, file_b, output_file):
 
 if __name__ == "__main__":
     sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sz3_gdrs(1).xlsx"
-    sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sh3_gdrs(1).xlsx"
-    remove_st_rows_excel(sh_gdrs)
-    remove_st_rows_excel(sz_gdrs)
-
-    sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sh3_gdrs(1)_clean.xlsx"
-    sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sz3_gdrs(1)_clean.xlsx"
-    merged = "/Users/zkp/Desktop/B&Y/gdrs/merged.xlsx"
-    merge_excels_with_dynamic_columns(sz_gdrs, sh_gdrs, merged)
-    remove_zero_cells_and_shift_left(merged, merged)
-    calculate_diff_ratio(merged, merged)
+    # sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sh3_gdrs(1).xlsx"
+    # remove_st_rows_excel(sh_gdrs)
+    # remove_st_rows_excel(sz_gdrs)
+    #
+    # sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sh3_gdrs(1)_clean.xlsx"
+    # sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sz3_gdrs(1)_clean.xlsx"
+    # merged = "/Users/zkp/Desktop/B&Y/gdrs/merged.xlsx"
+    # merge_excels_with_dynamic_columns(sz_gdrs, sh_gdrs, merged)
+    # remove_zero_cells_and_shift_left(merged, merged)
+    # calculate_diff_ratio(merged, merged)
 
     # compare_and_mark("/Users/zkp/Desktop/B&Y/gdrs/merged_副本.xlsx",
     #                  "/Users/zkp/Desktop/B&Y/gdrs/merged.xlsx",
