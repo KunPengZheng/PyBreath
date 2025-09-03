@@ -606,7 +606,3 @@ def call(analyse_obj):
 if __name__ == '__main__':
     call(ClientConstants.sanrio)
     call(ClientConstants.xyl)
-
-
-# https://vth-vod.h5.xed.plus/asset/51891bfded2cf4579894dc6613a25879/0e592277fe9d7e1cc467ada970e86016.m3u8?sign=5491b659bee365cf24d313d9a2314d1c&t=68b61a31&us=dnRmtDxXML&whref=*.xiaoe-tech.com,*.xiaoeknow.com,*.xeknow.com,*.citv.cn,appfte6oc8n4154.xet-pc.citv.cn
-https://vth-vod.h5.xed.plus/asset/51891bfded2cf4579894dc6613a25879/8000007_qAdxTJR09Ikr_0.ts?sign=5491b659bee365cf24d313d9a2314d1c&t=68b61a31&us=dnRmtDxXML&whref=*.xiaoe-tech.com,*.xiaoeknow.com,*.xeknow.com,*.citv.cn,appfte6oc8n4154.xet-pc.citv.cn

@@ -104,7 +104,7 @@ if __name__ == '__main__':
     input_path = input("请输入源表文件或文件夹的绝对路径：")
     base_dir = "/Users/zkp/Desktop/B&Y/pdf/"
 
-    patterns = r'(\bUUS.{16}\b|\bGF\d{13}\b|\b\d{22,34}\b)'
+    patterns = r'(\bUUS.{16}\b|\bGF\d{13}\b|\bGFUS\d{14}\b|\b\d{22,34}\b)'
 
     if os.path.isfile(input_path):
         # 单个文件
