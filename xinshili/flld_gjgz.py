@@ -17,13 +17,13 @@ from xinshili.utils import convert_csv_to_xlsx, delete_file, getYmd, round2, is_
     get_computer_model
 
 
-def extract_path_before_csv(file_path):
+def extract_path_before_csv(file_path, encoding="utf-8"):
     # 判断文件路径是否以 .csv 结尾
     if file_path.endswith('.csv'):
         # 提取 .csv 前的所有字符
         base_path = file_path.rsplit('.csv', 1)[0]
         xlsx_ = base_path + ".xlsx"
-        convert_csv_to_xlsx(file_path, xlsx_)
+        convert_csv_to_xlsx(file_path, xlsx_, encoding)
         delete_file(file_path)
         return xlsx_
     else:
