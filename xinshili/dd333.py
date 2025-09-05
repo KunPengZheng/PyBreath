@@ -28,14 +28,14 @@ def get_play_url():
         "Sec-CH-UA-Platform": '"macOS"',
         # ⚠️ 如果需要，可以手动设置 cookie，或使用登录后 session 来管理
         "Cookie": (
-            'pc_user_key=950af0b9efe281c240b2fd14ff82b93a; '  # ⚠️ 
-            'xenbyfpfUnhLsdkZbX=0; '
-            'shop_version_type=8; '
-            'show_user_icon=1; '
-            'LANGUAGE_appfte6oc8n4154=cn; '
-            'sensorsdata2015jssdkcross=%7B%22%24device_id%22%3A%221987934099b11e4-07adacc35dc2e08-17525636-1440000-1987934099c14ca%22%7D; '
-            'appId="appfte6oc8n4154"; '
-            'userInfo={"app_id":"appfte6oc8n4154","user_id":"u_6888a238a49c6_EFVgSkIV5z","phone":"13923003003"}'
+            'pc_user_key=8ff6a46a8cc289a592f7d867a6520d5c;'  # ⚠️ 
+            'xenbyfpfUnhLsdkZbX=0;'
+            'shop_version_type=8;'
+            'show_user_icon=1;'
+            'LANGUAGE_appfte6oc8n4154=cn;'
+            'sensorsdata2015jssdkcross=%7B%22%24device_id%22%3A%22198b210de2a9e6-06cff2f94585198-16525636-1484784-198b210de2b1704%22%7D;'
+            'appId="appfte6oc8n4154";'
+            'userInfo={"app_id":"appfte6oc8n4154","birth":null,"can_modify_phone":true,"universal_union_id":null,"user_id":"u_6888a238a49c6_EFVgSkIV5z","wx_account":"","wx_avatar":"http://commonresource-1252524126.cdn.xiaoeknow.com/image/default.svg","wx_gender":0,"phone":"13923003003","pc_user_key":"8ff6a46a8cc289a592f7d867a6520d5c","permission_visit":0,"permission_comment":0,"permission_buy":0,"pwd_isset":true,"channels":[{"type":"wechat","active":0},{"type":"qq","active":0}],"area_code":"86"}'
         )
     }
 
@@ -44,10 +44,10 @@ def get_play_url():
         "app_id": "appfte6oc8n4154",  # ⚠️
         "user_id": "u_6888a238a49c6_EFVgSkIV5z",  # ⚠️
         "play_sign": [
-            "fBXFiMQdEhbgtEtHBmPRYDPysNDyRGJxtm2OiLIW-lZ4cpBl5J-OlHOvgaz4zXqtk0pzSl84YXb67l9Nl88Km1lYWvGFLxm__bl1epttAVM"
+            "fBXFiMQdEhbgtEtHBmPRYDPysNDyRGJxtm2OiLIW-lbRmYVxwNmbG1zUxMsyJXsXHmGeimdxjoGQXYaF9AskJbWSuNLe7Fc3GbsmSDO-NBc"
             # ⚠️
         ],
-        "play_line": "C",
+        "play_line": "A",
         "opr_sys": "MacIntel"
     }
 
@@ -162,7 +162,7 @@ def download_encrypted_m3u8_video(m3u8_url, output_dir, output_file):
     print(f"🎉 视频已保存为: {output_file}")
 
 
-def download_m3u8(host, path, param, ts, ts_folder):
+def download_m3u8(host, path, param, ts, ts_folder, cipher):
     url = f"{host}/{path}/{ts}&{param}"
     headers = {
         "Host": "vth-vod.h5.xed.plus",
@@ -181,43 +181,19 @@ def download_m3u8(host, path, param, ts, ts_folder):
         "Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7"
     }
     resp = requests.get(url, headers=headers)
+    enc_data = resp.content
+    # 确保数据长度是 16 的倍数（去掉 padding 不完整的部分）
+    enc_data = enc_data[:len(enc_data) - (len(enc_data) % 16)]
+    # 解密
+    result_data = cipher.decrypt(enc_data)
     with open(f"{ts_folder}{ts.rstrip('?')}", "wb") as f:
-        f.write(resp.content)
+        f.write(result_data)
 
 
 def extract_ts_files(text):
     # 匹配所有形如 xxx.ts? 的文件名
     ts_files = re.findall(r'(\S+?\.ts\?)', text)
     return ts_files
-
-
-def merge_ts_files(folder_path, merged_ts_path):
-    ts_files = [f for f in os.listdir(folder_path) if f.endswith('.ts')]
-    ts_files.sort()
-    with open(merged_ts_path, 'wb') as outfile:
-        for ts_file in ts_files:
-            file_path = os.path.join(folder_path, ts_file)
-            print(f"Merging {file_path} ...")
-            with open(file_path, 'rb') as infile:
-                outfile.write(infile.read())
-    print(f"Merged .ts file saved as {merged_ts_path}")
-
-
-def convert_ts_to_mp4(ts_path, mp4_path):
-    cmd = [
-        'ffmpeg',
-        '-y',  # 覆盖输出文件
-        '-i', ts_path,
-        '-c', 'copy',
-        mp4_path
-    ]
-    print("Converting to mp4...")
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode == 0:
-        print(f"Conversion successful: {mp4_path}")
-    else:
-        print("Conversion failed!")
-        print(result.stderr.decode())
 
 
 def download_key(key_url, headers=None):
@@ -239,79 +215,38 @@ def save_decrypted_ts(decrypted_data, save_path):
         f.write(decrypted_data)
 
 
-def decode(uri, iv):
-    # 你自己的配置
-    key_url = uri
-    ts_folder = '/Users/zkp/Downloads/未命名文件夹 2/'  # 已下载加密ts文件夹
-    decrypted_folder = '/Users/zkp/Downloads/未命名文件夹 2/decrypted_ts'
-    os.makedirs(decrypted_folder, exist_ok=True)
+def merge_ts_files(folder, output_file):
+    # 找到所有 .ts 文件，并按文件名排序
+    ts_files = sorted([f for f in os.listdir(folder) if f.endswith(".ts")])
 
-    # 下载密钥
-    key = download_key(key_url)
-    print(f"Key: {key.hex()}")
+    if not ts_files:
+        print("❌ 没有找到 .ts 文件")
+        return
 
-    iv_str = iv  # 这个是从m3u8里提取的原始字符串
+    # 写入 file_list.txt 供 ffmpeg 使用
+    list_file = os.path.join(folder, "file_list.txt")
+    with open(list_file, "w", encoding="utf-8") as f:
+        for ts in ts_files:
+            f.write(f"file '{os.path.join(folder, ts)}'\n")
 
-    # 去掉开头的 '0x' 或 '0X'
-    if iv_str.lower().startswith("0x"):
-        iv_hex = iv_str[2:]
-    else:
-        iv_hex = iv_str
-
-    # 把16进制字符串转成bytes
-    iv = bytes.fromhex(iv_hex)
-
-    print(f"IV (hex): {iv.hex()}")
-    print(f"IV (bytes): {iv}")
-
-    # 解密所有ts
-    ts_files = sorted([f for f in os.listdir(ts_folder) if f.endswith('.ts')],
-                      key=lambda x: int(x.split('_')[-1].split('.')[0]))
-    for ts_file in ts_files:
-        encrypted_path = os.path.join(ts_folder, ts_file)
-        decrypted_path = os.path.join(decrypted_folder, ts_file)
-        decrypted_data = decrypt_ts(encrypted_path, key, iv)
-        save_decrypted_ts(decrypted_data, decrypted_path)
-        print(f"Decrypted {ts_file}")
-
-    print("所有ts解密完成，下一步用ffmpeg合并decrypted_ts文件夹里的文件")
-
-
-def merge_ts_files_ffmpeg(decrypted_folder, output_file):
-    # 生成 filelist.txt，格式是：
-    # file 'path/to/file1.ts'
-    # file 'path/to/file2.ts'
-    filelist_path = os.path.join(decrypted_folder, 'filelist.txt')
-    with open(filelist_path, 'w', encoding='utf-8') as f:
-        # 按文件名排序（确保顺序）
-        ts_files = sorted([fn for fn in os.listdir(decrypted_folder) if fn.endswith('.ts')],
-                          key=lambda x: int(''.join(filter(str.isdigit, x))))
-        for ts_file in ts_files:
-            full_path = os.path.abspath(os.path.join(decrypted_folder, ts_file))
-            f.write(f"file '{full_path}'\n")
-
-    # 调用ffmpeg合并
+    # 调用 ffmpeg 合并
     cmd = [
-        'ffmpeg',
-        '-f', 'concat',
-        '-safe', '0',
-        '-i', filelist_path,
-        '-c', 'copy',
+        "ffmpeg",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", list_file,
+        "-c", "copy",
         output_file
     ]
-    print("Running ffmpeg merge command...")
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode == 0:
-        print(f"Merge successful! Output file: {output_file}")
-    else:
-        print("Merge failed!")
-        print(result.stderr)
+
+    subprocess.run(cmd, check=True)
+    print(f"✅ 合并完成: {output_file}")
 
 
 if __name__ == '__main__':
     # # 使用方法
     result = get_play_url()
-    print(result)
+    # print(result)
 
     first_key = next(iter(result["data"]))
     play_url = result["data"][first_key]["play_list"]["720p_hls"]["play_url"]
@@ -323,7 +258,7 @@ if __name__ == '__main__':
 
     m3u8_text = get_m3u8_content(play_url)
     if m3u8_text:
-        print(f"✅ {m3u8_text}")
+        # print(f"✅ {m3u8_text}")
 
         ts_files = extract_ts_files(m3u8_text)
         # 提取URI
@@ -331,23 +266,20 @@ if __name__ == '__main__':
         uri = uri_match.group(1) if uri_match else None
         # 提取IV
         iv_match = re.search(r'IV=0x([0-9a-fA-F]+)', m3u8_text)
-        iv = iv_match.group(1) if iv_match else None
+        iv_hex = iv_match.group(1) if iv_match else None
+        iv = bytes.fromhex(iv_hex)
 
-        # print("ts_files:", ts_files)
-        print("URI:", uri)
-        print("IV:", iv)
+        key_url = f"{uri}&uid=u_6888a238a49c6_EFVgSkIV5z"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+            "Referer": "https://appfte6oc8n4154.xet-pc.citv.cn/",
+        }
+        resp = requests.get(key_url, headers=headers)
+        key = resp.content  # 返回的就是原始 key（二进制）
+        cipher = AES.new(key, AES.MODE_CBC, iv)
 
-        # ts_folder = "/Users/zkp/Downloads/未命名文件夹 2/"
-        # for i in ts_files:
-        #     download_m3u8(host, path, param, i, ts_folder)
+        ts_folder = "/Users/zkp/Downloads/未命名文件夹 2/"
+        for i in ts_files:
+            download_m3u8(host, path, param, i, ts_folder, cipher)
 
-        # merged_ts = "/Users/zkp/Downloads/未命名文件夹 2/merged.ts"  # 合并后的ts文件名
-        # output_mp4 = "/Users/zkp/Downloads/未命名文件夹 2/output_video.mp4"  # 输出的mp4文件名
-        # merge_ts_files(ts_folder, merged_ts)
-        # convert_ts_to_mp4(merged_ts, output_mp4)
-
-        decode(uri, iv)
-        decrypted_folder = '/Users/zkp/Downloads/未命名文件夹 2/decrypted_ts/'  # 你的解密ts文件夹
-        output_file = '/Users/zkp/Downloads/final_video.mp4'  # 合并后的视频文件名
-        merge_ts_files_ffmpeg(decrypted_folder, output_file)
-
+        merge_ts_files(ts_folder, "/Users/zkp/Downloads/output.mp4")
