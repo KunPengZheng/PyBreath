@@ -2,6 +2,10 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 import os
+import glob
+from datetime import datetime, timedelta
+from xinshili.flld_gjgz import extract_path_before_csv
+from xinshili.utils import get_filename_without_extension, get_file_ext, delete_file
 
 
 def remove_st_rows_excel(input_file, output_file=None):
@@ -264,19 +268,75 @@ def compare_and_mark(file_a, file_b, output_file):
     print(f"✅ 已完成，结果已保存到 {output_file}")
 
 
+def extract_path_before_csv(file_path):
+    # 判断文件路径是否以 .csv 结尾
+    if file_path.endswith('.csv'):
+        # 提取 .csv 前的所有字符
+        base_path = file_path.rsplit('.csv', 1)[0]
+        xlsx_ = base_path + ".xlsx"
+        convert_csv_to_xlsx(file_path, xlsx_)
+        delete_file(file_path)
+        return xlsx_
+    else:
+        return file_path
+
+
+def convert_csv_to_xlsx(csv_file, xlsx_file):
+    """
+    将 CSV 文件转换为 XLSX 文件格式。
+
+    :param csv_file: 输入的 CSV 文件路径
+    :param xlsx_file: 输出的 XLSX 文件路径
+    """
+    try:
+        # 读取 CSV 文件
+        data = pd.read_csv(csv_file, encoding="gbk", dtype={"代码": str})
+
+        # 将数据写入 XLSX 文件
+        data.to_excel(xlsx_file, index=False)
+
+        print(f"文件已成功转换为 XLSX 格式: {xlsx_file}")
+    except Exception as e:
+        print(f"转换过程中发生错误: {e}")
+
+
 if __name__ == "__main__":
-    sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sz3_gdrs(1).xlsx"
-    # sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sh3_gdrs(1).xlsx"
+    days = 1
+    gdrs_folder_path = "/Users/zkp/Desktop/B&Y/gdrs"
+    csv_files = glob.glob(os.path.join(gdrs_folder_path, "*.csv"))
+    arr = []
+    for i, file in enumerate(csv_files):
+        xlsx = extract_path_before_csv(file)
+        path_without_ext = os.path.splitext(xlsx)[0]
+        file_extension = get_file_ext(xlsx)
+        result_file = path_without_ext + "_copy" + file_extension
+        remove_st_rows_excel(xlsx, xlsx)
+        arr.append(xlsx)
+
+    time_str = datetime.now().strftime("%Y-%m-%d")
+    yesterday = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    merged = gdrs_folder_path + f"/gdrs_merged_{time_str}.xlsx"
+    yesterday_merged = gdrs_folder_path + f"/gdrs_merged_{yesterday}.xlsx"
+    if len(arr) == 2:
+        merge_excels_with_dynamic_columns(arr[0], arr[1], merged)
+        remove_zero_cells_and_shift_left(merged, merged)
+        calculate_diff_ratio(merged, merged)
+        compare_and_mark(merged, yesterday_merged, merged)
+        # delete_file(arr[0])
+        # delete_file(arr[1])
+
+    # sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/sz5_gdrs.xlsx"
+    # sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/sh5_gdrs.xlsx"
     # remove_st_rows_excel(sh_gdrs)
     # remove_st_rows_excel(sz_gdrs)
     #
-    # sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sh3_gdrs(1)_clean.xlsx"
-    # sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/副本sz3_gdrs(1)_clean.xlsx"
-    # merged = "/Users/zkp/Desktop/B&Y/gdrs/merged.xlsx"
+    # sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/sz5_gdrs_clean.xlsx"
+    # sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/sh5_gdrs_clean.xlsx"
+    # merged = "/Users/zkp/Desktop/B&Y/gdrs/merged1.xlsx"
     # merge_excels_with_dynamic_columns(sz_gdrs, sh_gdrs, merged)
     # remove_zero_cells_and_shift_left(merged, merged)
     # calculate_diff_ratio(merged, merged)
-
-    # compare_and_mark("/Users/zkp/Desktop/B&Y/gdrs/merged_副本.xlsx",
-    #                  "/Users/zkp/Desktop/B&Y/gdrs/merged.xlsx",
+    #
+    # compare_and_mark("/Users/zkp/Desktop/B&Y/gdrs/merged1.xlsx",
+    #                  "/Users/zkp/Desktop/B&Y/gdrs/gdrs_merged_2025-09-03.xlsx",
     #                  "/Users/zkp/Desktop/B&Y/gdrs/merged_result.xlsx")
