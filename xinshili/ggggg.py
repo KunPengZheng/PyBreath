@@ -322,21 +322,5 @@ if __name__ == "__main__":
         remove_zero_cells_and_shift_left(merged, merged)
         calculate_diff_ratio(merged, merged)
         compare_and_mark(merged, yesterday_merged, merged)
-        # delete_file(arr[0])
-        # delete_file(arr[1])
-
-    # sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/sz5_gdrs.xlsx"
-    # sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/sh5_gdrs.xlsx"
-    # remove_st_rows_excel(sh_gdrs)
-    # remove_st_rows_excel(sz_gdrs)
-    #
-    # sh_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/sz5_gdrs_clean.xlsx"
-    # sz_gdrs = "/Users/zkp/Desktop/B&Y/gdrs/sh5_gdrs_clean.xlsx"
-    # merged = "/Users/zkp/Desktop/B&Y/gdrs/merged1.xlsx"
-    # merge_excels_with_dynamic_columns(sz_gdrs, sh_gdrs, merged)
-    # remove_zero_cells_and_shift_left(merged, merged)
-    # calculate_diff_ratio(merged, merged)
-    #
-    # compare_and_mark("/Users/zkp/Desktop/B&Y/gdrs/merged1.xlsx",
-    #                  "/Users/zkp/Desktop/B&Y/gdrs/gdrs_merged_2025-09-03.xlsx",
-    #                  "/Users/zkp/Desktop/B&Y/gdrs/merged_result.xlsx")
+        delete_file(arr[0])
+        delete_file(arr[1])
