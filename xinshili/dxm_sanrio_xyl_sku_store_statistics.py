@@ -380,7 +380,7 @@ def xyl_fs(formatted_date, template_copy_path):
     xyl_sku_zjhz_end_index = 124
 
     xyl_sku_ejyxhz_start_index = 126
-    xyl_sku_ejyxhz_end_index = 238
+    xyl_sku_ejyxhz_end_index = 239
 
     # 获取数据数组
     xyl_sku_zjhz_arr = get_range_column_data(template_copy_path, RowName.Sales_Update, RowName.Quantity,
