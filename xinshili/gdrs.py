@@ -7,6 +7,14 @@ from datetime import datetime, timedelta
 from xinshili.flld_gjgz import extract_path_before_csv
 from xinshili.utils import get_filename_without_extension, get_file_ext, delete_file
 
+# 固定列（不要改）
+fixed_columns = [
+    "代码", "名称", "浮标",
+    "2024-03(股东人数)", "2024-06(股东人数)",
+    "2024-09(股东人数)", "2024-12(股东人数)",
+    "2025-03(股东人数)", "2025-06(股东人数)"
+]
+
 
 def remove_st_rows_excel(input_file, output_file=None):
     # 读取 Excel
@@ -28,7 +36,7 @@ def remove_st_rows_excel(input_file, output_file=None):
 def merge_excels_with_dynamic_columns(file1, file2, output_file):
     # 固定列（顺序必须固定）
     fixed_columns = [
-        "代码", "名称",
+        "代码", "名称", "浮标",
         "2024-03(股东人数)", "2024-06(股东人数)",
         "2024-09(股东人数)", "2024-12(股东人数)",
         "2025-03(股东人数)", "2025-06(股东人数)"
@@ -72,14 +80,6 @@ def remove_zero_cells_and_shift_left(input_file, output_file):
       则删除该单元格，使右侧单元格左移一格（仅本行操作）。
     - 最终把所有动态列的表头清空（保留固定列表头）。
     """
-
-    # 固定列（不要改）
-    fixed_columns = [
-        "代码", "名称",
-        "2024-03(股东人数)", "2024-06(股东人数)",
-        "2024-09(股东人数)", "2024-12(股东人数)",
-        "2025-03(股东人数)", "2025-06(股东人数)"
-    ]
 
     # 读取表头以确定列顺序（只读取表头也可以，但这里读全部以防万一）
     df = pd.read_excel(input_file)
