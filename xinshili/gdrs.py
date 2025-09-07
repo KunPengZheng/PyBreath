@@ -9,7 +9,7 @@ from xinshili.utils import get_filename_without_extension, get_file_ext, delete_
 
 # 固定列
 fixed_columns = [
-    "代码", "名称", "浮标", "实际流通A股(万股)",
+    "代码", "名称", "浮标", "实际流通市值",
     "2024-03(股东人数)", "2024-06(股东人数)",
     "2024-09(股东人数)", "2024-12(股东人数)",
     "2025-03(股东人数)", "2025-06(股东人数)"
