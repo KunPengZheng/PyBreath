@@ -2,7 +2,6 @@ from datetime import datetime
 import os
 import re
 import glob
-from openpyxl import load_workbook
 import openpyxl
 from openpyxl import load_workbook
 import pandas as pd
@@ -10,8 +9,6 @@ from dataclasses import dataclass
 from collections import defaultdict
 import platform
 import subprocess
-
-from xinshili.dxm_xyl_yd_tack import convert_china_to_utc0
 
 
 @dataclass(frozen=True)
