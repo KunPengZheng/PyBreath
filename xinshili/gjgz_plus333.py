@@ -1240,7 +1240,8 @@ def get_in(file_path, sku_to_match):
         raise ValueError(f"文件中缺少所需的列，请检查文件结构")
 
     # 查找匹配的第一个 SKU
-    matched_row = data[data[RowName.SKU] == sku_to_match].iloc[0]  # 获取第一个匹配的行
+    # matched_row = data[data[RowName.SKU] == sku_to_match].iloc[0]  # 获取第一个匹配的行
+    matched_row = data[data[RowName.SKU].astype(str) == str(sku_to_match)].iloc[0]
 
     # 提取数据
     length = matched_row[RowName.Length]
