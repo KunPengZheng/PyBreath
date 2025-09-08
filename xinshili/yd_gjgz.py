@@ -858,7 +858,7 @@ def update_tracking_info(input_file, output_file, tracking_dict, analyse_obj):
     df = pd.read_excel(input_file, dtype=str)
 
     needed_columns = [
-        RowName.Courier, RowName.LatestEventSfDate, RowName.LatestEventSfTime,
+        RowName.Courier, RowName.LatestEventSfDate, RowName.LatestEventSfTime, RowName.UnpaidDate,
         RowName.LatestEventSfSite, RowName.PossessionSfDate, RowName.SfDateInterval
     ]
     for col in needed_columns:
@@ -866,6 +866,7 @@ def update_tracking_info(input_file, output_file, tracking_dict, analyse_obj):
             df[col] = ""
 
     time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    strftime = datetime.now().strftime("%Y-%m-%d")
 
     for idx, row in df.iterrows():
         if analyse_obj == "flld":
@@ -877,11 +878,16 @@ def update_tracking_info(input_file, output_file, tracking_dict, analyse_obj):
         if tracking_no in tracking_dict:
             data = tracking_dict[tracking_no]
 
-            df.at[idx, RowName.Courier] = str(data.get("Courier", "") or "")
+            courier_state = str(data.get("Courier", "") or "")
+            df.at[idx, RowName.Courier] = courier_state
             df.at[idx, RowName.LatestEventSfDate] = str(data.get("LastEventDate", "") or "")
             df.at[idx, RowName.LatestEventSfTime] = str(data.get("LastEventTime", "") or "")
             df.at[idx, RowName.LatestEventSfSite] = str(data.get("LastEventSite", "") or "")
             df.at[idx, RowName.PossessionSfDate] = str(data.get("PossessionLastDate", "") or "")
+
+            if courier_state == "unpaid":
+                df.at[idx, RowName.UnpaidDate] = strftime
+
             if analyse_obj == "flld" or analyse_obj == "zbw" or analyse_obj == "sanrio" or analyse_obj == "xyl":
                 df.at[idx, RowName.Tacking_Time] = time_str
 
