@@ -11,6 +11,8 @@ from collections import defaultdict
 import platform
 import subprocess
 
+from xinshili.dxm_xyl_yd_tack import convert_china_to_utc0
+
 
 @dataclass(frozen=True)
 class ClientConstants:
@@ -866,6 +868,8 @@ def update_tracking_info(input_file, output_file, tracking_dict, analyse_obj):
         if col not in df.columns:
             df[col] = ""
 
+    time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     for idx, row in df.iterrows():
         if analyse_obj == "flld":
             tracking_no = str(row.get("快递单号", "")).strip()
@@ -881,6 +885,8 @@ def update_tracking_info(input_file, output_file, tracking_dict, analyse_obj):
             df.at[idx, RowName.LatestEventSfTime] = str(data.get("LastEventTime", "") or "")
             df.at[idx, RowName.LatestEventSfSite] = str(data.get("LastEventSite", "") or "")
             df.at[idx, RowName.PossessionSfDate] = str(data.get("PossessionLastDate", "") or "")
+            if analyse_obj == "flld" or analyse_obj == "zbw" or analyse_obj == "sanrio" or analyse_obj == "xyl":
+                df.at[idx, RowName.Tacking_Time] = time_str
 
     df.to_excel(output_file, index=False, engine='openpyxl')
 
