@@ -292,8 +292,24 @@ def convert_csv_to_xlsx(csv_file, xlsx_file):
         print(f"转换过程中发生错误: {e}")
 
 
+def get_latest_gdrs_file(gdrs_folder_path, days=1, max_days=10):
+    """
+    获取最近存在的 gdrs_merged_xxx.xlsx 文件。
+
+    :param gdrs_folder_path: 文件夹路径
+    :param days: 默认往前推的天数
+    :param max_days: 最多往前推的天数（防止死循环）
+    :return: 文件路径 或 None
+    """
+    for i in range(days, max_days + 1):
+        target_date = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+        file_path = os.path.join(gdrs_folder_path, f"gdrs_merged_{target_date}.xlsx")
+        if os.path.exists(file_path):
+            return file_path
+    return None
+
+
 if __name__ == "__main__":
-    days = 1
     gdrs_folder_path = "/Users/zkp/Desktop/B&Y/gdrs"
     csv_files = glob.glob(os.path.join(gdrs_folder_path, "*.csv"))
     arr = []
@@ -306,9 +322,10 @@ if __name__ == "__main__":
         arr.append(xlsx)
 
     time_str = datetime.now().strftime("%Y-%m-%d")
-    yesterday = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
     merged = gdrs_folder_path + f"/gdrs_merged_{time_str}.xlsx"
-    yesterday_merged = gdrs_folder_path + f"/gdrs_merged_{yesterday}.xlsx"
+    # yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # yesterday_merged = gdrs_folder_path + f"/gdrs_merged_{yesterday}.xlsx"
+    yesterday_merged = get_latest_gdrs_file(gdrs_folder_path)
     if len(arr) == 2:
         merge_excels_with_dynamic_columns(arr[0], arr[1], merged)
         remove_zero_cells_and_shift_left(merged, merged)
