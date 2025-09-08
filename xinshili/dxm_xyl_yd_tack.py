@@ -659,7 +659,7 @@ def analyse_state(xlsx_path, irregular_number_list):
             fs_msg_flag = True
 
     if fs_msg_flag:
-        # print(result_fs_msg)
+        print(result_fs_msg)
         fs_msg(FsUserID.WP_ID, result_fs_msg)
         # fs_msg(FsUserID.LW_ID, result_fs_msg)
         # fs_msg(FsUserID.LJ_ID, result_fs_msg)

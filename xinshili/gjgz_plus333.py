@@ -2159,7 +2159,7 @@ def go(analyse_obj, xlsx_path, api_flag):
                 lj_msg_flag = True
 
     if fs_msg_flag:
-        # print(result_fs_msg)
+        print(result_fs_msg)
         fs_msg(FsUserID.WP_ID, result_fs_msg)
         # fs_msg(FsUserID.LW_ID, result_fs_msg)
 
