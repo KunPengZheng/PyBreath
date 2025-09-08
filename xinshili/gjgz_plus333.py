@@ -2160,10 +2160,10 @@ def go(analyse_obj, xlsx_path, api_flag):
     if fs_msg_flag:
         # print(result_fs_msg)
         fs_msg(FsUserID.WP_ID, result_fs_msg)
-        fs_msg(FsUserID.LW_ID, result_fs_msg)
+        # fs_msg(FsUserID.LW_ID, result_fs_msg)
 
-    if lj_msg_flag:
-        fs_msg(FsUserID.LJ_ID, lj_fs_msg)
+    # if lj_msg_flag:
+    #     fs_msg(FsUserID.LJ_ID, lj_fs_msg)
 
 
 def call2():
