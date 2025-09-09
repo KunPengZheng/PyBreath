@@ -7,7 +7,6 @@ import re
 from Crypto.Cipher import AES
 from urllib.parse import urljoin
 
-
 def get_play_url():
     url = "https://appfte6oc8n4154.xet-pc.citv.cn/xe.material-center.play/getPlayUrl"  # ⚠️
 
@@ -28,14 +27,16 @@ def get_play_url():
         "Sec-CH-UA-Platform": '"macOS"',
         # ⚠️ 如果需要，可以手动设置 cookie，或使用登录后 session 来管理
         "Cookie": (
-            'pc_user_key=8ff6a46a8cc289a592f7d867a6520d5c;'  # ⚠️ 
+            'pc_user_key=15eae61271c051400a0a871df30efb51;'  # ⚠️ 
             'xenbyfpfUnhLsdkZbX=0;'
+            'logintime=1757503537;'
+            'show_user_icon=1;'
             'shop_version_type=8;'
             'show_user_icon=1;'
             'LANGUAGE_appfte6oc8n4154=cn;'
             'sensorsdata2015jssdkcross=%7B%22%24device_id%22%3A%22198b210de2a9e6-06cff2f94585198-16525636-1484784-198b210de2b1704%22%7D;'
             'appId="appfte6oc8n4154";'
-            'userInfo={"app_id":"appfte6oc8n4154","birth":null,"can_modify_phone":true,"universal_union_id":null,"user_id":"u_6888a238a49c6_EFVgSkIV5z","wx_account":"","wx_avatar":"http://commonresource-1252524126.cdn.xiaoeknow.com/image/default.svg","wx_gender":0,"phone":"13923003003","pc_user_key":"8ff6a46a8cc289a592f7d867a6520d5c","permission_visit":0,"permission_comment":0,"permission_buy":0,"pwd_isset":true,"channels":[{"type":"wechat","active":0},{"type":"qq","active":0}],"area_code":"86"}'
+            'userInfo={"app_id":"appfte6oc8n4154","birth":null,"can_modify_phone":true,"universal_union_id":null,"user_id":"u_6888a238a49c6_EFVgSkIV5z","wx_account":"","wx_avatar":"http://commonresource-1252524126.cdn.xiaoeknow.com/image/default.svg","wx_gender":0,"phone":"13923003003","pc_user_key":"15eae61271c051400a0a871df30efb51","permission_visit":0,"permission_comment":0,"permission_buy":0,"pwd_isset":true,"channels":[{"type":"wechat","active":0},{"type":"qq","active":0}],"area_code":"86"}'
         )
     }
 
@@ -44,10 +45,10 @@ def get_play_url():
         "app_id": "appfte6oc8n4154",  # ⚠️
         "user_id": "u_6888a238a49c6_EFVgSkIV5z",  # ⚠️
         "play_sign": [
-            "fBXFiMQdEhbgtEtHBmPRYDPysNDyRGJxtm2OiLIW-lbRmYVxwNmbG1zUxMsyJXsXHmGeimdxjoGQXYaF9AskJbWSuNLe7Fc3GbsmSDO-NBc"
+            "fBXFiMQdEhbgtEtHBmPRYDPysNDyRGJxtm2OiLIW-lZeq7hePN5D5wf65-w7X2hxxILXi1jGGPCWJyhipOCW3JatpeeNz6uQWz5M60LbYeY"
             # ⚠️
         ],
-        "play_line": "A",
+        "play_line": "C",
         "opr_sys": "MacIntel"
     }
 
@@ -163,7 +164,7 @@ def download_encrypted_m3u8_video(m3u8_url, output_dir, output_file):
 
 
 def download_m3u8(host, path, param, ts, ts_folder, cipher):
-    url = f"{host}/{path}/{ts}&{param}"
+    url = f"{host}/{path}/{ts}{param}"
     headers = {
         "Host": "vth-vod.h5.xed.plus",
         "Connection": "keep-alive",
