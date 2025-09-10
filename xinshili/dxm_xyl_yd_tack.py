@@ -431,6 +431,46 @@ def update_yd_number(source_file, folder_path):
                     print(f"❌ 文件 {file_path} 处理失败: {e}")
 
 
+def get_no_tracking_data(
+        file_path,
+        courier_column='Courier/快递',
+        waybill_column='订单号',
+        tracking_column='运单号',
+        state_column='TrackTimeIntervalState/跟踪时间间隔状态',
+        courier_values=None,
+        state_value=None):
+    """
+    获取符合条件的数据：快递状态在 courier_values 且 跟踪时间间隔状态为 state_value
+    """
+
+    if courier_values is None:
+        courier_values = ["not_yet", "pre_ship", "no_tracking"]
+
+    # 读取 Excel
+    data = pd.read_excel(file_path, dtype=str)
+
+    # 检查列是否存在
+    required_cols = [courier_column, waybill_column, tracking_column, state_column]
+    for col in required_cols:
+        if col not in data.columns:
+            raise ValueError(f"缺少必要的列: {col}")
+
+    # 转小写去空格
+    courier_series = data[courier_column].fillna("").str.strip().str.lower()
+    state_series = data[state_column].fillna("").str.strip().str.lower()
+
+    # 筛选条件
+    courier_mask = courier_series.isin([v.lower() for v in courier_values])
+    state_mask = state_series == state_value.lower() if state_value else True
+
+    filtered_data = data[courier_mask & state_mask]
+
+    # 结果映射：单号 -> 快递单号
+    result_map = dict(zip(filtered_data[waybill_column], filtered_data[tracking_column]))
+
+    return result_map
+
+
 def analyse_state(xlsx_path, irregular_number_list):
     output_file = os.path.splitext(xlsx_path)[0] + "_去重0.xlsx"
     all_total_count = remove_duplicates_by_column(xlsx_path, output_file, "运单号")  # 无筛选订单总数
@@ -533,15 +573,20 @@ def analyse_state(xlsx_path, irregular_number_list):
             text += f"\n（单号：{key}, 快递单号：{value}）"
             fs_text += f"\n（单号：{key}, 快递单号：{value}）"
 
-    track_stop_72 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
-                                               waybill_column="订单号",
-                                               tracking_column="运单号", key_value="无法替换")
-    track_stop_48 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
-                                               waybill_column="订单号",
-                                               tracking_column="运单号", key_value="阳单替换")
-    track_stop_24 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
-                                               waybill_column="订单号",
-                                               tracking_column="运单号", key_value="预备阳单")
+    track_stop_72 = get_no_tracking_data(xlsx_path, state_value="无法替换")
+    track_stop_48 = get_no_tracking_data(xlsx_path, state_value="阳单替换")
+    track_stop_24 = get_no_tracking_data(xlsx_path, state_value="预备阳单")
+    # track_stop_120 = get_no_tracking_data(xlsx_path, state_value="超5天无轨迹补发")
+
+    # track_stop_72 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
+    #                                            waybill_column="订单号",
+    #                                            tracking_column="运单号", key_value="无法替换")
+    # track_stop_48 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
+    #                                            waybill_column="订单号",
+    #                                            tracking_column="运单号", key_value="阳单替换")
+    # track_stop_24 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
+    #                                            waybill_column="订单号",
+    #                                            tracking_column="运单号", key_value="预备阳单")
     # track_stop_120 = get_alert_intercepted_data(xlsx_path, courier_column="TrackTimeIntervalState/跟踪时间间隔状态",
     #                                             waybill_column="订单号",
     #                                             tracking_column="运单号", key_value="超5天无轨迹补发")
