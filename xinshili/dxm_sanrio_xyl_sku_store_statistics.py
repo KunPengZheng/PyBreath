@@ -569,6 +569,86 @@ def sanrio_fs(formatted_date, template_copy_path):
                 f"D1:D{len(sanrio_sku_dpxl_arr)}", sanrio_sku_dpxl_arr)
 
 
+def update_skus(file_a, file_b,
+                sku_column="SKU",
+                name_column="Product Name/产品名称",
+                sheet_update="销量更新",
+                sheet_exclude="不需要统计的SKU",
+                sheet_stock="库存更新"):
+    # 读取 A 文件
+    data_a = pd.read_excel(file_a, dtype=str)
+
+    # 读取 B 文件的指定 sheet
+    data_b_update = pd.read_excel(file_b, sheet_name=sheet_update, dtype=str)
+    data_b_exclude = pd.read_excel(file_b, sheet_name=sheet_exclude, dtype=str)
+
+    # 检查列
+    if sku_column not in data_a.columns or name_column not in data_a.columns:
+        raise ValueError(f"A 文件缺少 {sku_column} 或 {name_column}")
+    if "SKU" not in data_b_update.columns or "名称" not in data_b_update.columns or "数量" not in data_b_update.columns:
+        raise ValueError(f"B 文件的 [{sheet_update}] 表缺少 'SKU'、'名称' 或 '数量' 列")
+
+    # 构建 dict {SKU: 产品名称}
+    sku_map = dict(zip(data_a[sku_column].dropna().str.strip(),
+                       data_a[name_column].dropna().str.strip()))
+
+    # 取 B 文件“不需要统计的SKU”表的 A 列
+    excluded_skus = data_b_exclude.iloc[:, 0].dropna().astype(str).str.strip().tolist()
+
+    # 取 B 文件“销量更新”表的 SKU 列
+    existing_skus = data_b_update["SKU"].dropna().astype(str).str.strip().tolist()
+
+    # 过滤
+    filtered_map = {sku: pname for sku, pname in sku_map.items()
+                    if sku not in excluded_skus and sku not in existing_skus}
+
+    # 打开 B 文件
+    book = load_workbook(file_b)
+
+    # ---------------- 处理销量更新 ----------------
+    sheet = book[sheet_update]
+    header = [cell.value for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
+    try:
+        col_sku = header.index("SKU") + 1
+        col_name = header.index("名称") + 1
+        col_qty = header.index("数量") + 1
+    except ValueError:
+        raise ValueError(f"在 {sheet_update} 表头中未找到 'SKU'、'名称' 或 '数量' 列")
+
+    for sku, pname in filtered_map.items():
+        new_row_idx = sheet.max_row + 1
+        sheet.cell(row=new_row_idx, column=col_sku, value=sku)
+        sheet.cell(row=new_row_idx, column=col_name, value=pname)
+        sheet.cell(row=new_row_idx, column=col_qty,
+                   value=f'=IFERROR(VLOOKUP(B{new_row_idx},E:F,2,0),0)')
+
+    # ---------------- 处理库存更新 ----------------
+    if sheet_stock not in book.sheetnames:
+        raise ValueError(f"B 文件缺少表 {sheet_stock}")
+    stock_sheet = book[sheet_stock]
+
+    for sku, pname in filtered_map.items():
+        new_row_idx = stock_sheet.max_row + 1
+        stock_sheet.cell(row=new_row_idx, column=1, value=pname)  # A 列 名称
+        stock_sheet.cell(row=new_row_idx, column=2, value=sku)  # B 列 SKU
+        stock_sheet.cell(row=new_row_idx, column=3,
+                         value=f"=SUMIF(N:N,B{new_row_idx},S:S)")  # C 列
+        stock_sheet.cell(row=new_row_idx, column=4,
+                         value=f"=IFERROR(VLOOKUP(B{new_row_idx},G:L,3,0),0)")  # D 列
+        stock_sheet.cell(row=new_row_idx, column=5,
+                         value=f"=IFERROR(VLOOKUP(B{new_row_idx},G:L,4,0),0)")  # E 列
+
+    # 保存文件
+    book.save(file_b)
+
+    if filtered_map:
+        print(f"✅ 已追加 {len(filtered_map)} 个 SKU 到 {sheet_update} 和 {sheet_stock}")
+        for sku, pname in filtered_map.items():
+            print(f"SKU: {sku} | 名称: {pname}")
+    else:
+        print("ℹ️ 没有需要追加的 SKU。")
+
+
 def call(analyse_obj):
     root_path = "/Users/zkp/Desktop/B&Y/dxm/sku_store_statistics"
     analyse_dir_path = f"{root_path}/{analyse_obj}"
@@ -580,15 +660,18 @@ def call(analyse_obj):
     dszs_inventory_path = f"{analyse_dir_path}/dszs_inventory.csv"
     jhb_inventory_path = f"{analyse_dir_path}/头程计划跟踪表&产品信息.xlsx"
 
+    # 合并oms库存文件
+    merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
+
+    # 更新sku
+    update_skus(oms_store_merger_path, template_path)
+
     # 创建输出文件路径（复制一份文件2）
     template_copy_path = os.path.join(template_path, template_copy_path)
     shutil.copy(template_path, template_copy_path)
 
     # 更新店铺和sku的销量
     formatted_date = update_sales_data(dxm_order_path, template_copy_path)
-
-    # 合并oms库存文件
-    merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
 
     if analyse_obj == ClientConstants.xyl:
         # 更新库存
