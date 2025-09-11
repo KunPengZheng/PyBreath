@@ -82,17 +82,22 @@ def process_tracking_time1(file_path):
             outbound_time_flag = ship_time_str and ship_time_str.lower() != "nan"
 
             diff = None
-            if date_flag:  # 存在最新日期
-                if time_flag:  # 存在最新时间
-                    latest_date_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-                else:
-                    latest_date_time = datetime.strptime(f"{date_str}", "%Y-%m-%d")
-                # 现在时间 - 最新日期时间
-                diff = utc0_now - latest_date_time
-            elif outbound_time_flag:
-                creation_time = datetime.strptime(ship_time_str, "%Y-%m-%d %H:%M:%S")
-                # 现在时间 - 发货时间
-                diff = utc0_now - convert_china_to_utc0(creation_time)
+            # if date_flag:  # 存在最新日期
+            #     if time_flag:  # 存在最新时间
+            #         latest_date_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+            #     else:
+            #         latest_date_time = datetime.strptime(f"{date_str}", "%Y-%m-%d")
+            #     # 现在时间 - 最新日期时间
+            #     diff = utc0_now - latest_date_time
+            # elif outbound_time_flag:
+            #     creation_time = datetime.strptime(ship_time_str, "%Y-%m-%d %H:%M:%S")
+            #     # 现在时间 - 发货时间
+            #     diff = utc0_now - convert_china_to_utc0(creation_time)
+
+            # dxm使用发货时间为筛选条件下载文件，里面可能包含的下单时间是发货时间的昨天，前天，大前天（周六），如果用usps的最新时间（label create）来计算可能会导致误判
+            creation_time = datetime.strptime(ship_time_str, "%Y-%m-%d %H:%M:%S")
+            # 现在时间 - 发货时间
+            diff = utc0_now - convert_china_to_utc0(creation_time)
 
             if diff is not None:
                 hours = round(diff.total_seconds() / 3600, 2)
