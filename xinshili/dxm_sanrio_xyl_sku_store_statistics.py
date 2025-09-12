@@ -663,8 +663,9 @@ def call(analyse_obj):
     # 合并oms库存文件
     merge_excels_in_folder(oms_store_dir, oms_store_merger_path)
 
-    # 更新sku
-    update_skus(oms_store_merger_path, template_path)
+    if analyse_obj == ClientConstants.xyl:
+        # 更新sku
+        update_skus(oms_store_merger_path, template_path)
 
     # 创建输出文件路径（复制一份文件2）
     template_copy_path = os.path.join(template_path, template_copy_path)
