@@ -50,7 +50,15 @@ arr = ['Delivered\n\nDelivered, Individual Picked Up at Post Office\n\nLAKESIDE,
 # extract_info(result_map,excel_result_map)
 
 # split_excel_by_date_and_unique_count(
-#     "/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track/order_120250829111401423_1573179.xlsx",
-#     "发货时间", "订单号",
-#     "订单号", "发货时间",
-#     "/Users/zkp/Desktop/B&Y/轨迹统计/dxm_xyl_track")
+#     "/Users/zkp/Downloads/ParcelOutbound_20250912144130_副本.xlsx",
+#     "Creation time/创建时间",
+#     # "Platform Number/平台单号",
+#     "Tracking No./物流跟踪号",
+#     "Tracking No./物流跟踪号",
+#     "创建时间",
+#     "/Users/zkp/Downloads")
+
+# from xinshili.pd_utils import remove_duplicates_by_column
+# a = "/Users/zkp/Downloads/2025.9/创建时间9_450_副本.xlsx"
+# column = remove_duplicates_by_column(a, a, "Tracking No./物流跟踪号")
+# print(column)
