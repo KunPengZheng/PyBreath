@@ -196,6 +196,7 @@ column_map = {
     "Abbreviation": ["收件人州/省", "收件人省/州"],
     "City": ["收件人城市"],
     "phone num1": ["收件人电话"],
+    "ZIP/Postal code": ["收件人邮编"],
 }
 
 warehouse_configs = {
