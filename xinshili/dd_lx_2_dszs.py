@@ -6,9 +6,22 @@ from openpyxl.styles import PatternFill
 def insert_blank_row(filepath: str, row: int):
     wb = load_workbook(filepath)
     ws = wb.active
-    ws.insert_rows(row)  # 在第 row 行插入空白行
-    wb.save(filepath)
-    print(f"已在 {filepath} 的第 {row} 行插入空白行")
+
+    # 检查指定行是否全为空（None 或 空字符串）
+    def is_row_empty(worksheet, row_idx):
+        for cell in worksheet[row_idx]:
+            if cell.value not in (None, ""):
+                return False
+        return True
+
+    if is_row_empty(ws, row):
+        print(f"⚠️ {filepath} 的第 {row} 行已是空白行，跳过插入")
+    else:
+        ws.insert_rows(row)
+        wb.save(filepath)
+        print(f"✅ 已在 {filepath} 的第 {row} 行插入空白行")
+
+    wb.close()
 
 
 def unify_platform_order_and_highlight(filepath: str, output: str = None):
