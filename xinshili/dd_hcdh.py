@@ -12,6 +12,7 @@ class KeyName:
     zip = "邮编"
     name = "姓名"
     phone = "电话"
+    nation = "国家"
     mx = "美西"
     mz = "美中"
     fc = "费城"
@@ -26,6 +27,7 @@ WAREHOUSE_mz_xsd = {
     KeyName.zip: "77017",
     KeyName.name: "Jeck Som",
     KeyName.phone: "（+1）8328236666",
+    KeyName.nation: "US",
 }
 
 # 东谷 美西东谷
@@ -36,6 +38,7 @@ WAREHOUSE_mx_dg = {
     KeyName.zip: "91761",
     KeyName.name: "Jim Som",
     KeyName.phone: "（+1）3333333333",
+    KeyName.nation: "US",
 }
 
 # 费城 费城
@@ -46,6 +49,7 @@ WAREHOUSE_fc = {
     KeyName.zip: "19154",
     KeyName.name: "Tony Zheng",
     KeyName.phone: "（+1）4335115177",
+    KeyName.nation: "US",
 }
 
 # 佛罗里达
@@ -56,7 +60,46 @@ WAREHOUSE_flld = {
     KeyName.zip: "33323",
     KeyName.name: "kk dick",
     KeyName.phone: "(+1)5689741235",
+    KeyName.nation: "US",
 }
+
+
+def detect_header_row(file_path, max_rows):
+    """
+    自动检测 Excel 表头所在行
+    :param file_path: Excel 文件路径
+    :param max_rows: 在前多少行中检测
+    :return: 表头行号（0-based）
+    """
+    df_raw = pd.read_excel(file_path, header=None, nrows=max_rows)
+
+    best_row = 0
+    best_score = -1
+
+    for i in range(len(df_raw)):
+        row = df_raw.iloc[i]
+        non_null_ratio = row.notna().sum() / len(row)  # 非空比例
+        str_ratio = row.apply(lambda x: isinstance(x, str)).sum() / len(row)  # 字符串比例
+        unique_ratio = row.nunique() / len(row)  # 唯一值比例
+
+        # 简单打分：主要看非空和字符串比例
+        score = non_null_ratio * 0.5 + str_ratio * 0.4 + unique_ratio * 0.1
+
+        if score > best_score:
+            best_score = score
+            best_row = i
+
+    return best_row
+
+
+def read_excel_with_auto_header(file_path, max_rows=3):
+    """
+    自动检测表头并读取 Excel
+    """
+    header_row = detect_header_row(file_path, max_rows=max_rows)
+    print(f"✅ 自动检测到表头行: 第 {header_row + 1} 行")
+    df = pd.read_excel(file_path, dtype=str, header=header_row)
+    return df
 
 
 def copy_columns_between_excels(
@@ -65,11 +108,11 @@ def copy_columns_between_excels(
         output_file,
         column_map,
         warehouse_configs,
-        b_column_alias
+        warehouse_column_key_mapping
 ):
-    # 读取文件
-    df_a = pd.read_excel(file_a)
-    df_b = pd.read_excel(file_b)
+    # 读取文件（A 的表头一般规范，B 可能不在第一行）
+    df_a = pd.read_excel(file_a, dtype=str)
+    df_b = read_excel_with_auto_header(file_b)
 
     # 1️⃣ 判断仓库
     filename_a = os.path.basename(file_a)
@@ -83,9 +126,9 @@ def copy_columns_between_excels(
     # 2️⃣ 如果匹配到仓库，填充发件人信息
     if matched_warehouse:
         for attr, value in matched_warehouse.items():
-            if attr in b_column_alias:
+            if attr in warehouse_column_key_mapping:
                 matched_col = None
-                for alias in b_column_alias[attr]:
+                for alias in warehouse_column_key_mapping[attr]:
                     for col in df_b.columns:
                         if alias in col:  # 模糊匹配
                             matched_col = col
@@ -140,13 +183,14 @@ warehouse_configs = {
     KeyName.flld: WAREHOUSE_flld,
 }
 
-b_column_alias = {
+warehouse_column_key_mapping = {
     KeyName.name: ["发件人姓名", "发件人名称"],
     KeyName.state: ["发件人省/州", "发件人州/省", "发件人省", "发件人州"],
     KeyName.city: ["发件人城市"],
     KeyName.address: ["发件人地址"],
     KeyName.zip: ["发件人邮编"],
     KeyName.phone: ["发件人电话"],
+    KeyName.nation: ["发件人国家"],
 }
 
 file_a = "/Users/zkp/Desktop/B&Y/dd/9.23/科技单/打单_双木_佛罗里达_18单_0923.xlsx"
@@ -159,5 +203,5 @@ copy_columns_between_excels(
     file_result,
     column_map,
     warehouse_configs,
-    b_column_alias
+    warehouse_column_key_mapping
 )
