@@ -94,3 +94,36 @@ def copy_new_file(input_path, output_path):
     df.to_excel(output_path, index=False)
 
 
+def get_valid_data_rows(file_path, max_header_search=3):
+    """
+    获取 Excel 文件有效数据的行数（不包含列头行）
+    :param file_path: 文件路径
+    :param max_header_search: 前多少行内搜索表头
+    :return: 数据行数（int）
+    """
+    # 自动检测表头行
+    df_raw = pd.read_excel(file_path, header=None, nrows=max_header_search)
+    best_row = 0
+    best_score = -1
+    for i in range(len(df_raw)):
+        row = df_raw.iloc[i]
+        non_null_ratio = row.notna().sum() / len(row)
+        str_ratio = row.apply(lambda x: isinstance(x, str)).sum() / len(row)
+        unique_ratio = row.nunique() / len(row)
+        score = non_null_ratio * 0.5 + str_ratio * 0.4 + unique_ratio * 0.1
+        if score > best_score:
+            best_score = score
+            best_row = i
+
+    header_row = best_row
+
+    # 读取整个文件
+    df_all = pd.read_excel(file_path, header=None, dtype=str)
+    total_rows = len(df_all)
+
+    # 数据区行数 = 总行数 - 表头行 - 说明行之前的行
+    data_rows = total_rows - (header_row + 1)
+    data_rows = max(data_rows, 0)
+
+    print(f"✅ 文件 {file_path} 有效数据行数（不含表头）: {data_rows}")
+    return data_rows
