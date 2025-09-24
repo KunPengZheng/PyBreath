@@ -6,6 +6,10 @@ import pandas as pd
 from xinshili.pd_utils import get_valid_data_rows
 from xinshili.utils import dirname, get_filename_without_extension
 
+"""
+电商助手转换为回传单号模板
+"""
+
 
 @dataclass(frozen=True)
 class KeyName:
