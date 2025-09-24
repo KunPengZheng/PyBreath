@@ -67,41 +67,6 @@ def copy_columns_between_excels(
         warehouse_configs,
         b_column_alias
 ):
-    """
-    将 A 文件的指定列复制到 B 文件的对应列（支持 B 文件列名变化）。
-    同时根据 A 文件名匹配仓库，并将仓库对象的属性值写入 B 文件对应列。
-
-    :param file_a: A 文件路径
-    :param file_b: B 文件路径
-    :param column_map: dict, A→B 的列映射, e.g. {"单号": ["快递单号", "派送单号"]}
-    :param output_file: 输出文件路径
-    :param warehouse_configs: dict, 仓库配置
-        {
-            "美西": {"发件人姓名": "Jim Som", "发件人省州": "California", "发件人城市": "Los Angeles"},
-            "美中": {"发件人姓名": "Tom Lee", "发件人省州": "Illinois", "发件人城市": "Chicago"}
-        }
-    :param b_column_alias: dict, 属性名 → B 文件列名别名
-        {
-            "发件人姓名": ["发件人姓名", "发件人名称"],
-            "发件人省州": ["发件人省/州", "发件人省", "发件人州"],
-            "发件人城市": ["发件人城市", "发件人市"]
-        }
-    """
-
-    # 默认配置
-    if warehouse_configs is None:
-        warehouse_configs = {
-            "美西": {"发件人姓名": "Jim Som", "发件人省州": "California", "发件人城市": "Los Angeles"},
-            "美中": {"发件人姓名": "Tom Lee", "发件人省州": "Illinois", "发件人城市": "Chicago"}
-        }
-
-    if b_column_alias is None:
-        b_column_alias = {
-            "发件人姓名": ["发件人姓名", "发件人名称"],
-            "发件人省州": ["发件人省/州", "发件人省", "发件人州"],
-            "发件人城市": ["发件人城市", "发件人市"]
-        }
-
     # 读取文件
     df_a = pd.read_excel(file_a)
     df_b = pd.read_excel(file_b)
