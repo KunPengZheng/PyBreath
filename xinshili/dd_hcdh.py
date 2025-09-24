@@ -64,7 +64,7 @@ WAREHOUSE_flld = {
 }
 
 
-def detect_header_row(file_path, max_rows):
+def detect_header_row(file_path, max_rows=3):
     """
     自动检测 Excel 表头所在行
     :param file_path: Excel 文件路径
@@ -94,12 +94,22 @@ def detect_header_row(file_path, max_rows):
 
 def read_excel_with_auto_header(file_path, max_rows=3):
     """
-    自动检测表头并读取 Excel
+    自动检测表头并读取 Excel，同时保留表头前的说明行
     """
     header_row = detect_header_row(file_path, max_rows=max_rows)
     print(f"✅ 自动检测到表头行: 第 {header_row + 1} 行")
-    df = pd.read_excel(file_path, dtype=str, header=header_row)
-    return df
+
+    # 读完整文件（不设 header，保留所有行）
+    df_all = pd.read_excel(file_path, header=None, dtype=str)
+
+    # 提取表头
+    headers = df_all.iloc[header_row].tolist()
+
+    # 数据部分（去掉表头行之前的说明行 + 表头行）
+    df_data = df_all.iloc[header_row + 1:].copy()
+    df_data.columns = headers  # 设置列头
+
+    return df_all, df_data, header_row
 
 
 def copy_columns_between_excels(
@@ -110,9 +120,9 @@ def copy_columns_between_excels(
         warehouse_configs,
         warehouse_column_key_mapping
 ):
-    # 读取文件（A 的表头一般规范，B 可能不在第一行）
+    # 读取文件（A 的表头一般规范，B 可能表头不在第一行）
     df_a = pd.read_excel(file_a, dtype=str)
-    df_b = read_excel_with_auto_header(file_b)
+    df_b_all, df_b_data, header_row = read_excel_with_auto_header(file_b)
 
     # 1️⃣ 判断仓库
     filename_a = os.path.basename(file_a)
@@ -129,14 +139,14 @@ def copy_columns_between_excels(
             if attr in warehouse_column_key_mapping:
                 matched_col = None
                 for alias in warehouse_column_key_mapping[attr]:
-                    for col in df_b.columns:
+                    for col in df_b_data.columns:
                         if alias in col:  # 模糊匹配
                             matched_col = col
                             break
                     if matched_col:
                         break
                 if matched_col:
-                    df_b[matched_col] = value
+                    df_b_data[matched_col] = value
                     print(f"✅ 已将 {attr}({value}) → {matched_col}")
                 else:
                     print(f"⚠️ B 文件中未找到 {attr} 对应列")
@@ -148,7 +158,7 @@ def copy_columns_between_excels(
             continue
 
         target_col = None
-        for col in df_b.columns:
+        for col in df_b_data.columns:
             for kw in target_keywords:
                 if kw.lower() in col.lower():  # 忽略大小写
                     target_col = col
@@ -157,13 +167,25 @@ def copy_columns_between_excels(
                 break
 
         if target_col:
-            df_b[target_col] = df_a[source_col]
+            df_b_data[target_col] = df_a[source_col]
             print(f"✅ 已复制 {source_col} → {target_col}")
         else:
             print(f"❌ B 文件中未找到匹配列，跳过: {source_col}")
 
-    # 4️⃣ 保存结果
-    df_b.to_excel(output_file, index=False)
+    # 4️⃣ 将修改后的数据写回 df_b_all（保留原始说明行 + 表头行）
+    start_row = header_row + 1
+    end_row = start_row + len(df_b_data)
+
+    # 如果 df_b_all 行数不够，扩展
+    if len(df_b_all) < end_row:
+        extra_rows = end_row - len(df_b_all)
+        empty_block = pd.DataFrame([[""] * len(df_b_all.columns)] * extra_rows, columns=df_b_all.columns)
+        df_b_all = pd.concat([df_b_all, empty_block], ignore_index=True)
+
+    df_b_all.iloc[start_row:end_row, :len(df_b_data.columns)] = df_b_data.values
+
+    # 5️⃣ 保存结果（不要重新写 header，否则第一行会被覆盖）
+    df_b_all.to_excel(output_file, index=False, header=False)
     print(f"✅ 数据已更新并保存到 {output_file}")
 
 
