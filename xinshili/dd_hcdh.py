@@ -1,7 +1,10 @@
-from dataclasses import dataclass
-
-import pandas as pd
 import os
+import re
+from dataclasses import dataclass
+import pandas as pd
+
+from xinshili.pd_utils import get_valid_data_rows
+from xinshili.utils import dirname, get_filename_without_extension
 
 
 @dataclass(frozen=True)
@@ -271,7 +274,25 @@ if __name__ == '__main__':
 
     file_a = "/Users/zkp/Desktop/B&Y/dd/9.23/科技单/打单_双木_佛罗里达_18单_0923.xlsx"
     file_b = "/Users/zkp/Downloads/订单导入-模版.xlsx"
-    file_result = "/Users/zkp/Downloads/订单导入-1.xlsx"
+
+    dir_path = dirname(file_a)
+    # column_count = get_valid_data_rows(file_a)
+    # file_a_extension = get_filename_without_extension(file_a)
+    # # 1️⃣ 获取 "双木_" 和下一个 "_" 之间的内容
+    # match_middle = re.search(r"双木_(.*?)_", file_a_extension)
+    # warehouse_content = match_middle.group(1) if match_middle else None
+    # # 2️⃣ 获取最后一个 "_" 后面的内容
+    # date_content = file_a_extension.split("_")[-1]
+    #
+    file_b_extension = get_filename_without_extension(file_b)
+    #
+    # file_result = f"{dir_path}/{file_b_extension}_{warehouse_content}_{column_count}单_{date_content}.xlsx"
+
+    key = "双木_"
+    find_key = file_a.find(key)
+    split = file_a[find_key + len(key):]
+    file_result = f"{dir_path}/{file_b_extension}_{split}"
+    print(file_result)
 
     copy_columns_between_excels(
         file_a,
