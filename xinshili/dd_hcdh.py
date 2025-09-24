@@ -118,7 +118,8 @@ def copy_columns_between_excels(
         output_file,
         column_map,
         warehouse_configs,
-        warehouse_column_key_mapping
+        warehouse_column_key_mapping,
+        fill_mapping
 ):
     # 读取文件
     df_a = pd.read_excel(file_a, dtype=str)
@@ -133,7 +134,7 @@ def copy_columns_between_excels(
             print(f"✅ 文件名匹配到仓库: {keyword}")
             break
 
-    # 填充发件人信息（单值列）
+    # 2️⃣ 填充发件人信息（单值列）
     if matched_warehouse:
         for attr, value in matched_warehouse.items():
             if attr in warehouse_column_key_mapping:
@@ -147,15 +148,14 @@ def copy_columns_between_excels(
                     if matched_col:
                         break
                 if matched_col:
-                    # 如果 df_b_data 行数不足以覆盖 A 文件数据，先扩展
-                    total_rows_needed = max(len(df_b_data), len(df_a))  # 可根据 A 文件行数或模板数据行数
+                    # 自动扩展 df_b_data 行数，保证所有有效行都能填充
+                    total_rows_needed = max(len(df_b_data), len(df_a))
                     if len(df_b_data) < total_rows_needed:
                         extra_rows = total_rows_needed - len(df_b_data)
                         empty_block = pd.DataFrame([[""] * len(df_b_data.columns)] * extra_rows,
                                                    columns=df_b_data.columns)
                         df_b_data = pd.concat([df_b_data, empty_block], ignore_index=True)
 
-                    # 将单值填充到数据区所有行
                     for row_idx in range(len(df_b_data)):
                         df_b_data.at[row_idx, matched_col] = value
 
@@ -179,17 +179,33 @@ def copy_columns_between_excels(
                 break
 
         if target_col:
-            # 自动扩展 df_b_data 行数以匹配 df_a
             if len(df_b_data) < len(df_a):
                 extra_rows = len(df_a) - len(df_b_data)
-                empty_block = pd.DataFrame([[""] * len(df_b_data.columns)] * extra_rows, columns=df_b_data.columns)
+                empty_block = pd.DataFrame([[""] * len(df_b_data.columns)] * extra_rows,
+                                           columns=df_b_data.columns)
                 df_b_data = pd.concat([df_b_data, empty_block], ignore_index=True)
+
             df_b_data[target_col] = df_a[source_col].values
             print(f"✅ 已复制 {source_col} → {target_col}")
         else:
             print(f"❌ B 文件中未找到匹配列，跳过: {source_col}")
 
-    # 4️⃣ 写回 df_b_all，保留说明行 + 表头行
+    # 4️⃣ 填充固定列值（fill_mapping）
+    if fill_mapping:
+        for key, value in fill_mapping.items():
+            matched_col = None
+            for col in df_b_data.columns:
+                if key in str(col):
+                    matched_col = col
+                    break
+            if matched_col:
+                for row_idx in range(len(df_b_data)):
+                    df_b_data.at[row_idx, matched_col] = value
+                print(f"✅ 已将列 '{matched_col}' 全部填充为 {value}")
+            else:
+                print(f"⚠️ 未找到匹配列: {key}")
+
+    # 5️⃣ 写回 df_b_all，保留说明行 + 表头行
     start_row = header_row + 1
     end_row = start_row + len(df_b_data)
 
@@ -200,47 +216,69 @@ def copy_columns_between_excels(
 
     df_b_all.iloc[start_row:end_row, :len(df_b_data.columns)] = df_b_data.values
 
-    # 5️⃣ 保存结果，不写 header 保留模板
+    # 6️⃣ 保存结果，不写 header 保留模板
     df_b_all.to_excel(output_file, index=False, header=False)
     print(f"✅ 数据已更新并保存到 {output_file}")
 
 
-column_map = {
-    "order num": ["客户单号/入库单号", "客户单号/入库单号"],
-    "Item-sku": ["物流产品", "物流产品(产品编号)", "配货备注1"],
-    "Name": ["收件人名称", "收件人姓名"],
-    "Abbreviation": ["收件人州/省", "收件人省/州"],
-    "City": ["收件人城市"],
-    "phone num1": ["收件人电话"],
-    "ZIP/Postal code": ["收件人邮编"],
-}
+if __name__ == '__main__':
+    column_map = {
+        "order num": ["客户单号/入库单号", "客户单号/入库单号"],
+        "Item-sku": ["物流产品", "物流产品(产品编号)", "配货备注1"],
+        "Name": ["收件人名称", "收件人姓名"],
+        "Abbreviation": ["收件人州/省", "收件人省/州"],
+        "City": ["收件人城市"],
+        "phone num1": ["收件人电话"],
+        "ZIP/Postal code": ["收件人邮编"],
+    }
 
-warehouse_configs = {
-    KeyName.mx: WAREHOUSE_mx_dg,
-    KeyName.mz: WAREHOUSE_mz_xsd,
-    KeyName.fc: WAREHOUSE_fc,
-    KeyName.flld: WAREHOUSE_flld,
-}
+    warehouse_configs = {
+        KeyName.mx: WAREHOUSE_mx_dg,
+        KeyName.mz: WAREHOUSE_mz_xsd,
+        KeyName.fc: WAREHOUSE_fc,
+        KeyName.flld: WAREHOUSE_flld,
+    }
 
-warehouse_column_key_mapping = {
-    KeyName.name: ["发件人姓名", "发件人名称"],
-    KeyName.state: ["发件人省/州", "发件人州/省", "发件人省", "发件人州"],
-    KeyName.city: ["发件人城市"],
-    KeyName.address: ["发件人地址"],
-    KeyName.zip: ["发件人邮编"],
-    KeyName.phone: ["发件人电话"],
-    KeyName.nation: ["发件人国家"],
-}
+    warehouse_column_key_mapping = {
+        KeyName.name: ["发件人姓名", "发件人名称"],
+        KeyName.state: ["发件人省/州", "发件人州/省", "发件人省", "发件人州"],
+        KeyName.city: ["发件人城市"],
+        KeyName.address: ["发件人地址"],
+        KeyName.zip: ["发件人邮编"],
+        KeyName.phone: ["发件人电话"],
+        KeyName.nation: ["发件人国家"],
+    }
 
-file_a = "/Users/zkp/Desktop/B&Y/dd/9.23/科技单/打单_双木_佛罗里达_18单_0923.xlsx"
-file_b = "/Users/zkp/Downloads/订单导入-模版.xlsx"
-file_result = "/Users/zkp/Downloads/订单导入-1.xlsx"
+    fill_mapping = {
+        "收件人国家": "US",
+        "箱数(件数)": 1,
+        "毛重/箱": 0.2,
+        "净重/箱": 0.2,
+        "长/箱": 5,
+        "宽/箱": 3,
+        "高/箱": 1,
 
-copy_columns_between_excels(
-    file_a,
-    file_b,
-    file_result,
-    column_map,
-    warehouse_configs,
-    warehouse_column_key_mapping
-)
+        "长(cm)": 30,
+        "宽(cm)": 25,
+        "高(cm)": 2,
+        "重量(kg)": 1,
+        "申报单价1": 1,
+        "单位净重1": 1,
+        "中文品名1": 1,
+        "英文品名1": 1,
+        "数量1": 1,
+    }
+
+    file_a = "/Users/zkp/Desktop/B&Y/dd/9.23/科技单/打单_双木_佛罗里达_18单_0923.xlsx"
+    file_b = "/Users/zkp/Downloads/订单导入-模版.xlsx"
+    file_result = "/Users/zkp/Downloads/订单导入-1.xlsx"
+
+    copy_columns_between_excels(
+        file_a,
+        file_b,
+        file_result,
+        column_map,
+        warehouse_configs,
+        warehouse_column_key_mapping,
+        fill_mapping
+    )
