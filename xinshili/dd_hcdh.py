@@ -120,7 +120,7 @@ def copy_columns_between_excels(
         warehouse_configs,
         warehouse_column_key_mapping
 ):
-    # 读取文件（A 的表头一般规范，B 可能表头不在第一行）
+    # 读取文件
     df_a = pd.read_excel(file_a, dtype=str)
     df_b_all, df_b_data, header_row = read_excel_with_auto_header(file_b)
 
@@ -133,25 +133,37 @@ def copy_columns_between_excels(
             print(f"✅ 文件名匹配到仓库: {keyword}")
             break
 
-    # 2️⃣ 如果匹配到仓库，填充发件人信息
+    # 填充发件人信息（单值列）
     if matched_warehouse:
         for attr, value in matched_warehouse.items():
             if attr in warehouse_column_key_mapping:
                 matched_col = None
+                # 列名模糊匹配
                 for alias in warehouse_column_key_mapping[attr]:
                     for col in df_b_data.columns:
-                        if alias in col:  # 模糊匹配
+                        if alias in str(col):
                             matched_col = col
                             break
                     if matched_col:
                         break
                 if matched_col:
-                    df_b_data[matched_col] = value
-                    print(f"✅ 已将 {attr}({value}) → {matched_col}")
+                    # 如果 df_b_data 行数不足以覆盖 A 文件数据，先扩展
+                    total_rows_needed = max(len(df_b_data), len(df_a))  # 可根据 A 文件行数或模板数据行数
+                    if len(df_b_data) < total_rows_needed:
+                        extra_rows = total_rows_needed - len(df_b_data)
+                        empty_block = pd.DataFrame([[""] * len(df_b_data.columns)] * extra_rows,
+                                                   columns=df_b_data.columns)
+                        df_b_data = pd.concat([df_b_data, empty_block], ignore_index=True)
+
+                    # 将单值填充到数据区所有行
+                    for row_idx in range(len(df_b_data)):
+                        df_b_data.at[row_idx, matched_col] = value
+
+                    print(f"✅ 已将 {attr}({value}) → {matched_col}，填充到 {len(df_b_data)} 行")
                 else:
                     print(f"⚠️ B 文件中未找到 {attr} 对应列")
 
-    # 3️⃣ 按映射关系复制 A→B 列
+    # 3️⃣ 按映射关系复制 A→B 列（多值列）
     for source_col, target_keywords in column_map.items():
         if source_col not in df_a.columns:
             print(f"⚠️ A 文件中没有列: {source_col}，跳过")
@@ -160,23 +172,27 @@ def copy_columns_between_excels(
         target_col = None
         for col in df_b_data.columns:
             for kw in target_keywords:
-                if kw.lower() in col.lower():  # 忽略大小写
+                if kw.lower() in str(col).lower():
                     target_col = col
                     break
             if target_col:
                 break
 
         if target_col:
-            df_b_data[target_col] = df_a[source_col]
+            # 自动扩展 df_b_data 行数以匹配 df_a
+            if len(df_b_data) < len(df_a):
+                extra_rows = len(df_a) - len(df_b_data)
+                empty_block = pd.DataFrame([[""] * len(df_b_data.columns)] * extra_rows, columns=df_b_data.columns)
+                df_b_data = pd.concat([df_b_data, empty_block], ignore_index=True)
+            df_b_data[target_col] = df_a[source_col].values
             print(f"✅ 已复制 {source_col} → {target_col}")
         else:
             print(f"❌ B 文件中未找到匹配列，跳过: {source_col}")
 
-    # 4️⃣ 将修改后的数据写回 df_b_all（保留原始说明行 + 表头行）
+    # 4️⃣ 写回 df_b_all，保留说明行 + 表头行
     start_row = header_row + 1
     end_row = start_row + len(df_b_data)
 
-    # 如果 df_b_all 行数不够，扩展
     if len(df_b_all) < end_row:
         extra_rows = end_row - len(df_b_all)
         empty_block = pd.DataFrame([[""] * len(df_b_all.columns)] * extra_rows, columns=df_b_all.columns)
@@ -184,7 +200,7 @@ def copy_columns_between_excels(
 
     df_b_all.iloc[start_row:end_row, :len(df_b_data.columns)] = df_b_data.values
 
-    # 5️⃣ 保存结果（不要重新写 header，否则第一行会被覆盖）
+    # 5️⃣ 保存结果，不写 header 保留模板
     df_b_all.to_excel(output_file, index=False, header=False)
     print(f"✅ 数据已更新并保存到 {output_file}")
 
