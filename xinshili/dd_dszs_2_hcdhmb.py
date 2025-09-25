@@ -176,24 +176,25 @@ def copy_columns_between_excels(
             print(f"⚠️ A 文件中没有列: {source_col}，跳过")
             continue
 
-        target_col = None
+        matched_targets = []
         for col in df_b_data.columns:
             for kw in target_keywords:
                 if kw.lower() in str(col).lower():
-                    target_col = col
-                    break
-            if target_col:
-                break
+                    matched_targets.append(col)
+                    break  # 一个目标列只需要匹配一次关键字
 
-        if target_col:
+        if matched_targets:
+            # 如果 B 的行数不够，扩展空行
             if len(df_b_data) < len(df_a):
                 extra_rows = len(df_a) - len(df_b_data)
                 empty_block = pd.DataFrame([[""] * len(df_b_data.columns)] * extra_rows,
                                            columns=df_b_data.columns)
                 df_b_data = pd.concat([df_b_data, empty_block], ignore_index=True)
 
-            df_b_data[target_col] = df_a[source_col].values
-            print(f"✅ 已复制 {source_col} → {target_col}")
+            # 将 A 的列复制到所有匹配的目标列
+            for target_col in matched_targets:
+                df_b_data[target_col] = df_a[source_col].values
+                print(f"✅ 已复制 {source_col} → {target_col}")
         else:
             print(f"❌ B 文件中未找到匹配列，跳过: {source_col}")
 
