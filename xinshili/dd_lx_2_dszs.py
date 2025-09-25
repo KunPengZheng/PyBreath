@@ -26,17 +26,41 @@ def insert_blank_row(filepath: str, row: int):
     wb.close()
 
 
+import os
+import pandas as pd
+from collections import defaultdict
+from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
+
+
+def get_color_palette():
+    """生成一组颜色（可扩展）"""
+    return [
+        "FFFF00",  # 黄色
+        "00FF00",  # 绿色
+        "00FFFF",  # 青色
+        "FF00FF",  # 紫色
+        "FF9900",  # 橙色
+        "9999FF",  # 蓝紫
+        "FF6666",  # 浅红
+        "66CC99",  # 青绿
+        "CC99FF",  # 淡紫
+        "CCCC00",  # 橄榄
+    ]
+
+
 def unify_orders_across_files(folder: str, output_suffix="_processed"):
     """
     处理文件夹下所有文件：
     - 合并订单（统一平台单号）
     - 拆分订单（跨文件判断，加后缀）
+    - 合并订单 + 拆分订单 → 不同组使用不同颜色标记
     """
     files = [f for f in os.listdir(folder) if f.endswith(".xlsx") and not f.startswith("~$")]
     files.sort()
 
-    all_data = []  # 存储所有文件的数据 {file_idx, row_idx, sysno, platform, 标签}
-    files_data = []  # 存储每个文件的DataFrame
+    all_data = []
+    files_data = []
 
     # 读取所有文件
     for i, fname in enumerate(files):
@@ -79,7 +103,6 @@ def unify_orders_across_files(folder: str, output_suffix="_processed"):
     for (sysno, platform), group in split_groups.items():
         if len(group) <= 1:
             continue
-        # 按文件顺序 + 行顺序排序
         group_sorted = sorted(group, key=lambda x: (x["file_idx"], x["row_idx"]))
         for i, rec in enumerate(group_sorted[1:], start=1):
             file_meta = files_data[rec["file_idx"]]
@@ -89,8 +112,10 @@ def unify_orders_across_files(folder: str, output_suffix="_processed"):
             df.at[rec["row_idx"], "平台单号"] = new_val
             print(f"✏️ 修改 {file_meta['filename']} 第 {rec['row_idx'] + 2} 行: {old_val} → {new_val}")
 
-    # ---------------- 保存并标黄 ---------------- #
-    yellow = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    # ---------------- 保存并标色（统一逻辑） ---------------- #
+    palette = get_color_palette()
+    color_map = {}
+    color_idx = 0
 
     for meta in files_data:
         df = meta["df"]
@@ -100,11 +125,21 @@ def unify_orders_across_files(folder: str, output_suffix="_processed"):
         wb = load_workbook(output_path)
         ws = wb.active
 
+        # 合并订单 + 拆分订单
         mask = df["标签"].str.contains("合并订单|拆分订单", na=False)
-        for idx in df[mask].index:
-            excel_row = idx + 2  # pandas index → Excel 行号
-            for cell in ws[excel_row]:
-                cell.fill = yellow
+        for (tag, sys_id), group in df[mask].groupby(["标签", "系统单号"]):
+            if (tag, sys_id) not in color_map:
+                color_map[(tag, sys_id)] = PatternFill(
+                    start_color=palette[color_idx % len(palette)],
+                    end_color=palette[color_idx % len(palette)],
+                    fill_type="solid"
+                )
+                color_idx += 1
+
+            fill = color_map[(tag, sys_id)]
+            for idx in group.index:
+                for cell in ws[idx + 2]:  # pandas index → Excel 行号
+                    cell.fill = fill
 
         wb.save(output_path)
         wb.close()
