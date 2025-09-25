@@ -26,16 +26,10 @@ def insert_blank_row(filepath: str, row: int):
     wb.close()
 
 
-import os
-import pandas as pd
-from collections import defaultdict
-from openpyxl import load_workbook
-from openpyxl.styles import PatternFill
-
-
 def get_color_palette():
-    """生成一组颜色（可扩展）"""
+    """生成一组颜色（30种）"""
     return [
+        # 基础亮色
         "FFFF00",  # 黄色
         "00FF00",  # 绿色
         "00FFFF",  # 青色
@@ -46,15 +40,36 @@ def get_color_palette():
         "66CC99",  # 青绿
         "CC99FF",  # 淡紫
         "CCCC00",  # 橄榄
+
+        # 额外扩展色
+        "FFCC00",  # 金黄
+        "0099FF",  # 天蓝
+        "FF3399",  # 桃红
+        "33CC33",  # 草绿
+        "9966FF",  # 深紫
+        "FF9933",  # 杏橙
+        "33CCCC",  # 湖蓝
+        "CC3333",  # 红棕
+        "6699FF",  # 浅蓝
+        "99CC33",  # 青柠
+
+        # 柔和淡色
+        "FFCCCC",  # 粉红
+        "CCFFCC",  # 浅绿
+        "CCCCFF",  # 浅蓝紫
+        "FFFFCC",  # 浅黄
+        "FFCCFF",  # 浅粉紫
+        "CCFFFF",  # 浅青
+        "FFE5CC",  # 米橙
+        "E6CCFF",  # 淡紫
+        "CCE5FF",  # 淡天蓝
+        "E6FFE6",  # 淡绿
     ]
 
 
-def unify_orders_across_files(folder: str, output_suffix="_processed"):
+def unify_orders_inplace(folder: str):
     """
-    处理文件夹下所有文件：
-    - 合并订单（统一平台单号）
-    - 拆分订单（跨文件判断，加后缀）
-    - 合并订单 + 拆分订单 → 不同组使用不同颜色标记
+    修改后直接保存回原文件（覆盖）
     """
     files = [f for f in os.listdir(folder) if f.endswith(".xlsx") and not f.startswith("~$")]
     files.sort()
@@ -112,14 +127,14 @@ def unify_orders_across_files(folder: str, output_suffix="_processed"):
             df.at[rec["row_idx"], "平台单号"] = new_val
             print(f"✏️ 修改 {file_meta['filename']} 第 {rec['row_idx'] + 2} 行: {old_val} → {new_val}")
 
-    # ---------------- 保存并标色（统一逻辑） ---------------- #
+    # ---------------- 保存并标色（覆盖原文件） ---------------- #
     palette = get_color_palette()
     color_map = {}
     color_idx = 0
 
     for meta in files_data:
         df = meta["df"]
-        output_path = meta["path"].replace(".xlsx", f"{output_suffix}.xlsx")
+        output_path = meta["path"]  # ⚠️ 覆盖原文件
         df.to_excel(output_path, index=False)
 
         wb = load_workbook(output_path)
@@ -138,14 +153,14 @@ def unify_orders_across_files(folder: str, output_suffix="_processed"):
 
             fill = color_map[(tag, sys_id)]
             for idx in group.index:
-                for cell in ws[idx + 2]:  # pandas index → Excel 行号
+                for cell in ws[idx + 2]:
                     cell.fill = fill
 
         wb.save(output_path)
         wb.close()
-        print(f"✅ 保存完成: {output_path}")
+        print(f"✅ 已覆盖保存: {output_path}")
 
 
 if __name__ == '__main__':
     folder_path = "/Users/zkp/Downloads/未命名文件夹 2/"
-    unify_orders_across_files(folder_path)
+    unify_orders_inplace(folder_path)
