@@ -230,13 +230,15 @@ def copy_columns_between_excels(
 
 if __name__ == '__main__':
     column_map = {
-        "order num": ["客户单号/入库单号", "客户单号/入库单号"],
+        "order num": ["客户单号/入库单号", "客户单号/入库单号", "客户订单号"],
         "Item-sku": ["物流产品", "物流产品(产品编号)", "配货备注1"],
         "Name": ["收件人名称", "收件人姓名"],
         "Abbreviation": ["收件人州/省", "收件人省/州"],
         "City": ["收件人城市"],
         "phone num1": ["收件人电话"],
         "ZIP/Postal code": ["收件人邮编"],
+        "Address": ["收件人地址一"],
+        "Address2": ["收件人地址二"],
     }
 
     warehouse_configs = {
@@ -276,8 +278,8 @@ if __name__ == '__main__':
         "数量1": 1,
     }
 
-    file_a = "/Users/zkp/Desktop/B&Y/dd/9.23/科技单/打单_双木_佛罗里达_18单_0923.xlsx"
-    file_b = "/Users/zkp/Downloads/订单导入-模版.xlsx"
+    file_a = "/Users/zkp/Desktop/B&Y/dd/9.25/科技单/打单_双木_美中1 美中休斯敦_71单_0925.xlsx"
+    file_b = "/Users/zkp/Downloads/(HLT)-通用导入.xlsx"
 
     dir_path = dirname(file_a)
     # column_count = get_valid_data_rows(file_a)
